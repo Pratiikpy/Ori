@@ -62,6 +62,9 @@ importers:
       '@prisma/client':
         specifier: ^6.1.0
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.12.2
       bech32:
         specifier: ^2.0.0
         version: 2.0.0
@@ -184,6 +187,15 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.96.0
         version: 5.99.0(react@19.2.4)
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.12.2
+      '@types/react':
+        specifier: ^19
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.2.14)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -236,18 +248,9 @@ importers:
       '@types/libsodium-wrappers-sumo':
         specifier: ^0.7.8
         version: 0.7.8
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.12.2
       '@types/qrcode':
         specifier: ^1.5.6
         version: 1.5.6
-      '@types/react':
-        specifier: ^19
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.14)
       babel-plugin-react-compiler:
         specifier: 1.0.0
         version: 1.0.0
