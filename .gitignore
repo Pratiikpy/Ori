@@ -62,3 +62,5 @@ apps/*/.ori-*-wallets.json
 # directory is disposable. docs/architecture-graph/cache/ is also rebuildable.
 graphify-out/
 docs/architecture-graph/cache/
+
+.vercel

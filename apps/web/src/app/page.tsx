@@ -31,6 +31,7 @@ import {
   HeaderConnectPill,
   HeroPrimaryCta,
   DeviceParallax,
+  LiveDeviceChat,
 } from '@/components/landing-interactive'
 
 export default function LandingPage() {
@@ -71,21 +72,43 @@ export default function LandingPage() {
           <section className="shell pt-20 md:pt-28 pb-20 md:pb-28">
             <div className="grid md:grid-cols-[1.1fr_1fr] gap-12 md:gap-16 items-center">
               <div className="reveal">
-                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white/[0.02] px-2.5 h-7 text-[11px] tracking-wide text-ink-2">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary-bright)] opacity-60 animate-ping" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--color-primary-bright)]" />
+                {/* Hero tag — green pulse, not indigo. Reference uses --ok
+                    because the dot signals "live & healthy", not "new feature". */}
+                <div className="inline-flex items-center gap-2.5 rounded-full border border-[var(--color-border-strong)] bg-white/[0.022] px-3.5 h-[30px] text-[12px] text-ink-2">
+                  <span className="relative inline-flex">
+                    <span
+                      className="h-[6px] w-[6px] rounded-full bg-[var(--color-success)]"
+                      style={{
+                        boxShadow: '0 0 0 4px rgba(107, 208, 163, 0.15)',
+                        animation: 'ori-hero-pulse 2.4s ease-in-out infinite',
+                      }}
+                    />
                   </span>
-                  <span className="font-mono text-ink-3">Live on Initia · v0.1</span>
+                  <span className="font-mono text-ink-2">Now on Initia · v0.1</span>
                 </div>
 
-                <h1 className="mt-6 text-[40px] md:text-[64px] leading-[0.98] tracked-tighter font-medium">
-                  Messages that
-                  <br />
-                  <span className="font-serif text-foreground">move</span> money.
+                {/* Reference hero sizing: clamp(42px, 7.2vw, 104px), font-weight 400,
+                    letter-spacing -0.045em. Our type was too small + too heavy — this
+                    is the single biggest visual parity move with the reference. */}
+                <h1
+                  className="mt-10 leading-[0.98] text-foreground"
+                  style={{
+                    fontSize: 'clamp(42px, 7.2vw, 104px)',
+                    fontWeight: 400,
+                    letterSpacing: '-0.045em',
+                    maxWidth: '14ch',
+                  }}
+                >
+                  Messages that <span className="font-serif">move</span> money.
                 </h1>
 
-                <p className="mt-6 max-w-xl text-[17px] leading-[1.55] text-ink-2">
+                <p
+                  className="mt-8 leading-[1.55] text-ink-2"
+                  style={{
+                    fontSize: 'clamp(16px, 1.35vw, 19px)',
+                    maxWidth: '52ch',
+                  }}
+                >
                   Ori is a chat wallet where your friends, your funds, and your AI agents
                   share one surface. One name everywhere. Settlement in a hundred
                   milliseconds. Nothing to confirm.
@@ -464,13 +487,20 @@ function ArrowIcon({ className = '' }: { className?: string }) {
 }
 
 function Stat({ k, unit, v }: { k: string; unit?: string; v: string }) {
+  // Reference pattern: MONO at 28px with a slightly smaller ink-3 suffix
+  // for the unit. Tabular-nums keeps the column aligned across stats.
   return (
     <div>
-      <div className="tnum text-[28px] md:text-[30px] font-medium tracked-tight leading-none">
+      <div
+        className="tnum font-mono text-foreground leading-none"
+        style={{ fontSize: '28px', fontWeight: 500, letterSpacing: '-0.03em' }}
+      >
         {k}
-        {unit && <span className="text-ink-3 text-[16px] ml-0.5 align-[0.08em]">{unit}</span>}
+        {unit && <span className="text-ink-3 text-[20px] ml-0.5">{unit}</span>}
       </div>
-      <div className="mt-1.5 text-[11px] uppercase tracking-[0.12em] text-ink-3">{v}</div>
+      <div className="mt-1 text-[12px] text-ink-3" style={{ letterSpacing: '0.01em' }}>
+        {v}
+      </div>
     </div>
   )
 }
@@ -484,17 +514,39 @@ function SectionHead({
   title: React.ReactNode
   sub?: string
 }) {
+  // Reference section-title: clamp(28px, 4vw, 48px), weight 400,
+  // -0.035em tracking. Thin-tracked Geist at 400 with serif italic accents
+  // reads far more editorial than 500 — that's the reference's whole point.
   return (
     <div className="reveal grid md:grid-cols-[1.2fr_1fr] gap-6 md:gap-14 items-end">
       <div>
-        <div className="text-[11px] uppercase tracking-[0.16em] text-ink-3 font-mono">
+        <div
+          className="text-ink-3 font-mono"
+          style={{
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+          }}
+        >
           {kicker}
         </div>
-        <h2 className="mt-4 text-[32px] md:text-[44px] leading-[1.05] tracked-tighter font-medium max-w-3xl">
+        <h2
+          className="mt-4 leading-[1.05] max-w-3xl"
+          style={{
+            fontSize: 'clamp(28px, 4vw, 48px)',
+            fontWeight: 400,
+            letterSpacing: '-0.035em',
+          }}
+        >
           {title}
         </h2>
       </div>
-      {sub && <p className="text-[15px] leading-[1.6] text-ink-2 max-w-md">{sub}</p>}
+      {sub && (
+        <p className="text-ink-2" style={{ fontSize: '15px', lineHeight: 1.55, maxWidth: '42ch' }}>
+          {sub}
+        </p>
+      )}
     </div>
   )
 }
@@ -542,13 +594,22 @@ function PanelBody({
   text: React.ReactNode
   children?: React.ReactNode
 }) {
+  // Reference panel-body .h: 22px, font-weight 400, -0.02em, line-height 1.15.
   return (
-    <div className="flex flex-col md:flex-row gap-6 md:gap-8 p-6 md:p-8 flex-1">
+    <div className="flex flex-col md:flex-row gap-6 md:gap-8 p-7 md:p-7 flex-1">
       <div className="md:max-w-[52%] flex flex-col justify-center">
-        <h3 className="text-[22px] md:text-[26px] font-medium leading-[1.1] tracked-tight">
+        <h3
+          className="leading-[1.15] text-foreground"
+          style={{ fontSize: '22px', fontWeight: 400, letterSpacing: '-0.02em' }}
+        >
           {title}
         </h3>
-        <p className="mt-3 text-[14px] leading-[1.6] text-ink-2">{text}</p>
+        <p
+          className="mt-2.5 text-ink-2"
+          style={{ fontSize: '13.5px', lineHeight: 1.55, maxWidth: '46ch' }}
+        >
+          {text}
+        </p>
       </div>
       {children && <div className="flex-1 flex items-center justify-center">{children}</div>}
     </div>
@@ -621,12 +682,10 @@ function DeviceMock() {
             <div className="text-[10.5px] text-ink-3">typing…</div>
           </div>
         </div>
-        <div className="px-4 py-4 space-y-2 min-h-[280px]">
-          <MsgIn>dinner at nobu, 64.80 split 4 ways?</MsgIn>
-          <MsgOut>sending now</MsgOut>
-          <PayCard amt="16.20" meta="Landed · 97ms · 0x4a…b3c2" />
-          <MsgIn>ty</MsgIn>
-        </div>
+        {/* Hero's beating heart: a looping 4-beat performance of the
+            product pitch. Client component; reduced-motion users get the
+            full conversation frozen at the final frame. */}
+        <LiveDeviceChat />
         <div className="px-4 py-3 border-t border-[var(--color-line-hairline)] flex items-center gap-2">
           <span className="text-[12px] text-ink-3 font-mono">$</span>
           <div className="flex-1 flex items-center justify-between bg-white/[0.04] border border-border rounded-full px-3 h-8 text-[12px] text-ink-3">

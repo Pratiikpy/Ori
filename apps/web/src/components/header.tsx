@@ -19,15 +19,22 @@ export function Header({ title }: { title?: string }) {
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--color-line-hairline)] backdrop-blur-xl bg-background/70 safe-area-top">
       <div className="flex items-center justify-between px-4 h-14">
-        <Link href="/" className="flex items-center gap-2.5 group">
+        <Link href="/" className="flex items-center gap-2.5 group" aria-label="Ori home">
           <svg viewBox="0 0 24 24" className="h-6 w-6 text-foreground" aria-hidden>
             <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="1.25" fill="none" />
             <circle cx="12" cy="12" r="4" fill="currentColor" />
           </svg>
           <span className="text-[14px] font-medium tracking-tight">
-            <span className="font-serif">{title ? title.charAt(0) : 'O'}</span>
-            {title ? title.slice(1) : 'ri'}
+            <span className="font-serif">O</span>ri
           </span>
+          {title && title !== 'Ori' && (
+            <>
+              <span className="text-ink-4 mx-1.5" aria-hidden>
+                /
+              </span>
+              <span className="text-[13px] text-ink-2 font-medium">{title}</span>
+            </>
+          )}
         </Link>
 
         <div className="flex items-center gap-2">

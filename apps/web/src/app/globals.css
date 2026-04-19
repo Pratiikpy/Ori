@@ -8,29 +8,52 @@
    border-strong, serif) sit alongside for the landing + refined chrome.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
-  /* Canvas + layered surfaces -- lift by 1 luminance step each */
-  --color-background:       #08090a;
-  --color-surface-1:        #0f1011;
+  /* =================================================================
+     TOKENS: direct port from the Ori-handoff reference
+     (C:/Users/prate/Downloads/Ori-handoff/ori/project/Ori.html).
+     Nothing here is original — this is aesthetic parity with the
+     reference so the app inherits its publication-grade calibration.
+     ================================================================= */
+
+  /* Canvas + elevated bg (device screen, window interior) */
+  --color-background:       #07070a;     /* was #08090a */
+  --color-bg-2:             #0b0b10;     /* NEW — device-screen + window tone */
+  --color-surface-1:        #0b0b10;     /* alias of bg-2 */
   --color-surface-2:        #191a1b;
   --color-surface-3:        #28282c;
-  --color-muted:            #191a1b;     /* alias of surface-2 for back-compat */
 
-  /* Ink -- 4-stop content ladder (prefer over opacity classes) */
-  --color-foreground:       #f7f8f8;
-  --color-ink-2:            #d0d6e0;
-  --color-ink-3:            #8a8f98;
-  --color-ink-4:            #62666d;
-  --color-muted-foreground: #8a8f98;     /* alias of ink-3 */
+  /* --color-muted: the reference has no "muted" concept; it uses
+     surface-2 (white @ 4%) for card tops and surface-3 (white @ 7%)
+     for hover. Keeping our alias for back-compat; value is surface-3
+     so bg-muted/X0 renders visibly on all screens. */
+  --color-muted:            #28282c;
 
-  /* Accent -- three-state indigo rhythm */
-  --color-primary:           #5e6ad2;
-  --color-primary-foreground:#ffffff;
-  --color-primary-bright:    #7170ff;
-  --color-primary-hover:     #828fff;
-  --color-accent:            #7170ff;    /* alias */
+  /* Ink — opacity-based on #f4f4f6, exactly as the reference does.
+     This keeps every level mathematically consistent instead of
+     drifting across bespoke hex codes. */
+  --color-foreground:       #f4f4f6;                          /* was #f7f8f8 */
+  --color-ink-2:            rgba(244, 244, 246, 0.62);        /* was #d0d6e0 */
+  --color-ink-3:            rgba(244, 244, 246, 0.38);        /* was #8a8f98 */
+  --color-ink-4:            rgba(244, 244, 246, 0.22);        /* was #62666d */
+  --color-muted-foreground: rgba(244, 244, 246, 0.38);        /* alias of ink-3 */
 
-  /* Borders -- semi-transparent whites; only real way to get structure
-     without visual noise on near-black. */
+  /* Accent — reference uses "soft electric indigo" + dark ink ON accent.
+     This is the single biggest visible shift: our indigo #5e6ad2 was
+     too muted. #6c7bff is brighter, more blue-shifted, and the reference's
+     signature move is using dark ink (#0a0a12) on indigo buttons — NOT
+     white — which looks far more refined. */
+  --color-primary:            #6c7bff;     /* was #5e6ad2 */
+  --color-primary-foreground: #0a0a12;     /* was #ffffff  — dark ink on accent */
+  --color-primary-bright:     #8a95ff;     /* was #7170ff  */
+  --color-primary-hover:      #a6afff;
+  --color-accent:             #6c7bff;     /* alias of primary */
+  --color-accent-2:           #8a95ff;
+  --color-accent-ink:         #0a0a12;     /* dark ink token when on accent surfaces */
+
+  /* Borders — reference has a 3-stop line ladder. Going BACK from our
+     0.09 audit bump to the reference's 0.06, because we're also raising
+     surface backgrounds in tandem so cards read via bg contrast, not
+     border strength. */
   --color-border:            rgba(255, 255, 255, 0.06);
   --color-border-strong:     rgba(255, 255, 255, 0.10);
   --color-border-emphasis:   rgba(255, 255, 255, 0.16);
@@ -106,14 +129,29 @@ body {
   letter-spacing: -0.033em;
 }
 
+/* Hero live-dot pulse — reference uses an expanding ok-colored ring pulse
+   instead of the generic animate-ping halo. 2.4s ease-in-out breathing. */
+@keyframes ori-hero-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(107, 208, 163, 0.15); }
+  50%      { box-shadow: 0 0 0 8px rgba(107, 208, 163, 0.06); }
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    AMBIENT BACKDROP
    Three stacked radial gradients + a tiny-star field. Same trick as your
    Ori.html landing — deliberately subtle so it reads as atmosphere, not
    decoration. Pointer-events: none so nothing is ever unclickable.
+
+   Two intensities:
+     .backdrop-stars       — landing. Full strength, readable as "view".
+     .backdrop-stars-quiet — inner pages. ~40% intensity, reads as "room".
+                             Content gets more visual weight; the brand
+                             signature still persists after sign-in.
    ────────────────────────────────────────────────────────────────────────── */
 .backdrop-stars::before,
-.backdrop-stars::after {
+.backdrop-stars::after,
+.backdrop-stars-quiet::before,
+.backdrop-stars-quiet::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -138,21 +176,59 @@ body {
   background-size: 1400px 900px;
 }
 
+/* Inner-page variant — same geometry, lower intensity so content reads as
+   the foreground. Gradients lifted toward the top so the content column
+   gets a cleaner canvas; stars dimmed to ~38%. */
+.backdrop-stars-quiet::before {
+  background:
+    radial-gradient(ellipse 1400px 500px at 50% -20%, rgba(113, 112, 255, 0.055), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 95% 20%, rgba(94, 106, 210, 0.035), transparent 60%);
+}
+.backdrop-stars-quiet::after {
+  opacity: 0.38;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.4) 0.5px, transparent 1px),
+    radial-gradient(circle at 75% 15%, rgba(255, 255, 255, 0.32) 0.5px, transparent 1px),
+    radial-gradient(circle at 45% 70%, rgba(255, 255, 255, 0.28) 0.5px, transparent 1px),
+    radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.4) 0.5px, transparent 1px),
+    radial-gradient(circle at 10% 55%, rgba(255, 255, 255, 0.25) 0.5px, transparent 1px),
+    radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.28) 0.5px, transparent 1px);
+  background-size: 1600px 1100px;
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    REVEAL ANIMATION
    Landing uses `IntersectionObserver` to add `.in` on scroll; transform +
    opacity transition below is what actually animates. Kept in global CSS
    so React component stays clean.
    ────────────────────────────────────────────────────────────────────────── */
+/* Reveal — reference uses 0.9s + 20px translateY for a slower, more
+   cinematic entrance. We were at 0.6s/14px (Linear's default). The
+   slower curve matches the reference's "publication-grade" feel. */
 .reveal {
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+  transform: translateY(20px);
+  transition: opacity 0.9s var(--ease-out), transform 0.9s var(--ease-out);
   will-change: opacity, transform;
 }
 .reveal.in {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   CARD PANEL — the default inner-page content surface.
+
+   Post-audit: inner pages were rendering with bg-muted/40 (~1.5% effective
+   contrast with canvas) + border-border at 6% white — on non-retina screens
+   these both vanished. .card-panel is the canonical "readable card" surface:
+   3% white wash + 13% white border. Pair with .panel-hover for interactive
+   cards. Use directly on static info cards.
+   ────────────────────────────────────────────────────────────────────────── */
+.card-panel {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

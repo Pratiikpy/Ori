@@ -8,6 +8,7 @@ import { CheckCircle2, ExternalLink, Loader2 } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
 import { BridgeButton } from '@/components/bridge-button'
+import { PageHeader, Serif } from '@/components/page-header'
 import { useSession } from '@/hooks/use-session'
 import { useSignChallenge } from '@/hooks/use-sign-challenge'
 import {
@@ -205,7 +206,7 @@ export default function OnboardPage() {
         autoSign,
         fee: autoSign ? buildAutoSignFee(400_000) : undefined,
       })
-      toast.success('You’re in 🎉')
+      toast.success('You’re in.')
       setStage('done')
       setTimeout(() => router.push('/chats'), 800)
     } catch (e) {
@@ -234,20 +235,25 @@ export default function OnboardPage() {
   )
 
   return (
-    <AppShell title="Welcome to Ori" hideNav>
-      <div className="flex-1 px-5 py-6 max-w-md mx-auto w-full">
-        <h1 className="text-3xl font-bold tracking-tight">Set up your identity</h1>
-        <p className="mt-2 text-muted-foreground">
-          Five one-tap steps. After this, messages and money move at the same speed.
-        </p>
+    <AppShell title="Welcome" hideNav>
+      <div className="flex-1 px-5 pt-8 pb-8 max-w-md mx-auto w-full">
+        <PageHeader
+          kicker="01 · Welcome"
+          title={
+            <>
+              Set up your <Serif>identity</Serif>.
+            </>
+          }
+          sub="Five one-tap steps. After this, messages and money move at the same speed."
+        />
 
         {error && (
-          <div className="mt-4 rounded-xl border border-danger/40 bg-danger/10 text-danger text-sm px-4 py-3">
+          <div className="mt-4 rounded-xl border border-danger/40 bg-danger/10 text-danger text-[13.5px] px-4 py-3">
             {error}
           </div>
         )}
         {sessionError && !error && (
-          <div className="mt-4 rounded-xl border border-danger/40 bg-danger/10 text-danger text-sm px-4 py-3">
+          <div className="mt-4 rounded-xl border border-danger/40 bg-danger/10 text-danger text-[13.5px] px-4 py-3">
             {sessionError}
           </div>
         )}
@@ -262,7 +268,7 @@ export default function OnboardPage() {
           {!isConnected ? (
             <button
               onClick={openConnect}
-              className="w-full rounded-2xl py-4 bg-primary text-primary-foreground font-medium"
+              className={primaryPillClass}
             >
               Connect wallet
             </button>
@@ -270,7 +276,7 @@ export default function OnboardPage() {
             <button
               onClick={handleSignIn}
               disabled={busy || isSigning || sessionStatus === 'signing' || sessionStatus === 'checking'}
-              className="w-full rounded-2xl py-4 bg-primary text-primary-foreground font-medium disabled:opacity-50"
+              className={primaryPillClass + ' disabled:opacity-50'}
             >
               {busy || isSigning ? <Inline spin label="Signing…" /> : 'Sign in'}
             </button>
@@ -299,7 +305,7 @@ export default function OnboardPage() {
             <button
               onClick={handleDeriveKeys}
               disabled={busy}
-              className="w-full rounded-2xl py-4 bg-primary text-primary-foreground font-medium disabled:opacity-50"
+              className={primaryPillClass + ' disabled:opacity-50'}
             >
               {busy ? <Inline spin label="Deriving…" /> : 'Derive E2E key'}
             </button>
@@ -307,16 +313,18 @@ export default function OnboardPage() {
             <button
               onClick={handlePublishPubkey}
               disabled={busy}
-              className="w-full rounded-2xl py-4 bg-primary text-primary-foreground font-medium disabled:opacity-50"
+              className={primaryPillClass + ' disabled:opacity-50'}
             >
               {busy ? <Inline spin label="Publishing…" /> : 'Publish pubkey'}
             </button>
           ) : stage === 'create-profile' ? (
             <div className="space-y-3">
               <label className="block">
-                <span className="text-sm text-muted-foreground">Short bio (optional)</span>
+                <span className="text-[12px] uppercase tracking-[0.12em] text-ink-3 font-mono">
+                  Short bio · optional
+                </span>
                 <textarea
-                  className="mt-1 w-full rounded-xl bg-muted border border-border px-3 py-3 text-sm focus:outline-none focus:border-primary"
+                  className="mt-2 w-full rounded-xl bg-white/[0.02] border border-border px-3.5 py-3 text-[14px] leading-[1.5] focus:outline-none focus:border-[var(--color-primary)]/60 focus:bg-white/[0.03] transition"
                   rows={3}
                   maxLength={280}
                   placeholder={username ? `Hi, I'm ${username}…` : 'Hi, I’m here for fast money.'}
@@ -327,25 +335,28 @@ export default function OnboardPage() {
               <button
                 onClick={handleCreateProfile}
                 disabled={busy}
-                className="w-full rounded-2xl py-4 bg-primary text-primary-foreground font-medium disabled:opacity-50"
+                className={primaryPillClass + ' disabled:opacity-50'}
               >
                 {busy ? <Inline spin label="Creating…" /> : 'Finish'}
               </button>
             </div>
           ) : (
-            <div className="w-full rounded-2xl py-4 bg-success/15 border border-success/40 text-success text-center font-medium">
-              <Inline icon={<CheckCircle2 className="w-5 h-5" />} label="All set — opening Ori" />
+            <div className="w-full rounded-full h-11 px-5 bg-[var(--color-success)]/10 border border-[var(--color-success)]/40 text-[var(--color-success)] text-[14px] font-medium inline-flex items-center justify-center">
+              <Inline icon={<CheckCircle2 className="w-4 h-4" />} label="All set — opening Ori" />
             </div>
           )}
         </div>
 
         {isAuthenticated && stage !== 'done' && (
-          <div className="mt-8 rounded-2xl border border-border bg-muted/30 p-4">
-            <div className="text-sm font-medium">Need INIT to pay gas?</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Bridge from Initia L1 in one tap. No leaving Ori.
-            </p>
-            <div className="mt-3">
+          <div className="mt-8 panel-hover rounded-2xl border border-border bg-white/[0.02] p-5">
+            <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
+              Ran out of gas?
+            </div>
+            <div className="mt-2 text-[15px] font-medium">
+              Bridge from Initia L1 in <Serif>one tap</Serif>.
+            </div>
+            <p className="mt-1.5 text-[12.5px] text-ink-3">No leaving Ori.</p>
+            <div className="mt-4">
               <BridgeButton variant="inline" className="w-full" />
             </div>
           </div>
@@ -354,6 +365,15 @@ export default function OnboardPage() {
     </AppShell>
   )
 }
+
+/**
+ * Canonical primary-pill CTA — matches the landing's Hero "Open Ori" and the
+ * header "Sign in" buttons. Full-width inside the onboard column (w-full)
+ * but keeps the h-11/rounded-full so the pill geometry is identical at any
+ * width. Do not let this divergence sneak back in.
+ */
+const primaryPillClass =
+  'w-full rounded-full h-11 px-5 inline-flex items-center justify-center gap-1.5 text-[14px] font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-bright)] transition'
 
 function ClaimInitCard({
   hasInitName,
@@ -373,38 +393,43 @@ function ClaimInitCard({
   const feeInit = (sponsorFeeUmin / 1_000_000).toFixed(2)
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-primary/40 bg-primary/5 p-4">
-        <div className="text-sm font-medium">Register your .init on Initia L1</div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Ori uses your <span className="font-mono">.init</span> as identity across every feature.
-          Registration happens in the official Initia portal (opens in a new tab).
+      <div className="rounded-2xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 p-5">
+        <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
+          Initia L1 · Usernames
+        </div>
+        <div className="mt-2 text-[15px] font-medium leading-[1.3]">
+          Claim your <span className="font-mono">.init</span> name.
+        </div>
+        <p className="mt-1.5 text-[12.5px] text-ink-3 leading-[1.55]">
+          Ori uses <span className="font-mono">.init</span> as identity across every feature. Registration happens
+          in the official Initia portal — it opens in a new tab.
         </p>
 
         {canSponsor && (
-          <div className="mt-3 rounded-lg bg-muted/40 border border-border p-3">
-            <div className="text-[11px] uppercase tracking-wide text-success">
+          <div className="mt-4 rounded-xl bg-white/[0.02] border border-border p-3.5">
+            <div className="text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-success)] font-mono">
               Free for you — we cover the {feeInit} INIT fee
             </div>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2.5 flex gap-2">
               <input
                 value={desiredName}
                 onChange={(e) => setDesiredName(e.target.value.toLowerCase())}
                 placeholder="yourname"
                 maxLength={24}
                 pattern="[a-z0-9_-]+"
-                className="flex-1 rounded-lg bg-background border border-border px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary"
+                className="flex-1 rounded-lg bg-background border border-border px-3 h-9 text-[13px] font-mono focus:outline-none focus:border-[var(--color-primary)]/60 transition"
               />
-              <span className="inline-flex items-center text-sm text-muted-foreground">.init</span>
+              <span className="inline-flex items-center text-[13px] text-ink-3 font-mono">.init</span>
             </div>
             <button
               onClick={() => void onSponsor(desiredName)}
               disabled={sponsoring || !/^[a-z0-9_-]{3,24}$/.test(desiredName)}
-              className="mt-2 w-full rounded-lg py-2 bg-primary/20 text-primary text-sm font-medium disabled:opacity-40"
+              className="mt-2.5 w-full rounded-full h-9 bg-[var(--color-primary)]/15 hover:bg-[var(--color-primary)]/25 text-[var(--color-primary-bright)] text-[12.5px] font-medium transition disabled:opacity-40"
             >
               {sponsoring ? 'Funding…' : `Sponsor my ${desiredName || 'name'}.init`}
             </button>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              We send you exactly the fee, then the portal below finalises on L1.
+            <p className="mt-2 text-[11px] text-ink-4">
+              We send you exactly the fee, then the portal finalises on L1.
             </p>
           </div>
         )}
@@ -413,27 +438,30 @@ function ClaimInitCard({
           href={L1_USERNAMES_PORTAL_URL}
           target="_blank"
           rel="noreferrer noopener"
-          className="mt-3 w-full rounded-xl py-3 bg-primary text-primary-foreground font-medium inline-flex items-center justify-center gap-2"
+          className="mt-4 w-full rounded-full h-11 px-5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-bright)] text-white text-[14px] font-medium inline-flex items-center justify-center gap-2 transition"
         >
           Open registration portal
-          <ExternalLink className="w-4 h-4" />
+          <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
 
-      <div className="rounded-xl border border-border bg-muted/30 p-4 text-xs text-muted-foreground">
+      <div className="rounded-xl border border-border bg-white/[0.02] p-4 text-[12px] text-ink-3">
         <div className="flex items-center gap-2">
           {hasInitName === null ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : hasInitName ? (
-            <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-success)]" />
           ) : (
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary-bright)] opacity-60 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--color-primary-bright)]" />
+            </span>
           )}
           {hasInitName === null
             ? 'Checking…'
             : hasInitName
               ? 'Registered — continuing…'
-              : 'Waiting for your .init to appear on L1. This page refreshes automatically once done.'}
+              : 'Waiting for your .init to appear on L1. This page refreshes once it does.'}
         </div>
       </div>
     </div>
@@ -449,32 +477,40 @@ function StepRow({
   hint: string
   state: 'pending' | 'current' | 'done'
 }) {
+  // Same three-tone scheme the landing uses: current = indigo tint, done =
+  // success tint, pending = base white/[0.02] surface with the hairline
+  // panel-hover border-brighten. No solid accent borders — they shout.
+  const rowClass =
+    state === 'current'
+      ? 'border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5'
+      : state === 'done'
+        ? 'border-[var(--color-success)]/40 bg-[var(--color-success)]/5'
+        : 'border-border bg-white/[0.02] panel-hover'
+
+  const bubbleClass =
+    state === 'done'
+      ? 'bg-[var(--color-success)] text-[var(--color-success-foreground)]'
+      : state === 'current'
+        ? 'bg-[var(--color-primary)] text-white'
+        : 'bg-white/[0.06] text-ink-4'
+
   return (
     <li
       className={
-        'flex items-start gap-3 rounded-xl border px-4 py-3 transition ' +
-        (state === 'current'
-          ? 'border-primary bg-primary/5'
-          : state === 'done'
-            ? 'border-success/40 bg-success/5'
-            : 'border-border bg-muted/40')
+        'flex items-start gap-3 rounded-xl border px-4 py-3.5 transition ' + rowClass
       }
     >
       <div
         className={
-          'mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ' +
-          (state === 'done'
-            ? 'bg-success text-background'
-            : state === 'current'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-border text-muted-foreground')
+          'mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 ' +
+          bubbleClass
         }
       >
         {state === 'done' ? '✓' : state === 'current' ? '•' : ''}
       </div>
-      <div className="flex-1">
-        <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-muted-foreground">{hint}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13.5px] font-medium leading-[1.25]">{label}</div>
+        <div className="mt-0.5 text-[12px] text-ink-3 leading-[1.45]">{hint}</div>
       </div>
     </li>
   )
