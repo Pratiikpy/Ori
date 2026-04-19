@@ -67,6 +67,29 @@ function originUrl(req: Request): string {
 }
 
 async function handle(req: Request): Promise<Response> {
+  // Diagnostic wrapper — if anything in the boot or inject path throws,
+  // Next.js 16's default error handler swallows the stack and returns
+  // its branded __next_error__ HTML page. Catching here lets us return
+  // the real message + stack as JSON, which is what you want on prod
+  // when a user reports "nothing happens" on an API-dependent flow.
+  try {
+    return await handleInner(req)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    const stack = e instanceof Error ? e.stack : ''
+    const body = JSON.stringify({
+      error: 'APP_FAILURE',
+      message: msg,
+      stack,
+    })
+    return new Response(body, {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
+}
+
+async function handleInner(req: Request): Promise<Response> {
   const app = await getApp()
 
   // Copy request headers into plain object — fastify.inject wants a dict.

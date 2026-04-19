@@ -94,11 +94,25 @@ function loadConfig(): Config {
   if (!parsed.success) {
     // eslint-disable-next-line no-console
     console.error('❌ Invalid environment configuration:')
+    const fieldSummary: string[] = []
     for (const issue of parsed.error.issues) {
+      const field = issue.path.join('.')
+      const line = `  - ${field}: ${issue.message}`
       // eslint-disable-next-line no-console
-      console.error(`  - ${issue.path.join('.')}: ${issue.message}`)
+      console.error(line)
+      fieldSummary.push(line)
     }
-    process.exit(1)
+    // Changed from `process.exit(1)` → throw. On serverless, exit(1) kills the
+    // entire worker before the Next.js route handler can return anything,
+    // leaving clients with an opaque 500 + no diagnostic. Throwing lets the
+    // catchall's try/catch serialize the field list into the JSON response so
+    // you can see WHICH env var failed from a browser devtools tab.
+    const err = new Error(
+      'Invalid environment configuration:\n' + fieldSummary.join('\n'),
+    ) as Error & { code?: string; zodIssues?: unknown }
+    err.code = 'CONFIG_INVALID'
+    err.zodIssues = parsed.error.issues
+    throw err
   }
   return parsed.data
 }
