@@ -153,8 +153,12 @@ export function HeroPrimaryCta() {
   return (
     <Link
       href={href}
-      className="group inline-flex items-center gap-2 rounded-full h-[46px] px-5 text-[14px] font-medium bg-foreground text-background hover:-translate-y-[1px] transition will-change-transform"
-      style={{ letterSpacing: '-0.005em' }}
+      className="group inline-flex items-center gap-2 rounded-full h-[46px] px-5 text-[14px] font-medium hover:-translate-y-[1px] transition will-change-transform"
+      style={{
+        backgroundColor: 'var(--color-foreground)',
+        color: 'var(--color-background)',
+        letterSpacing: '-0.005em',
+      }}
     >
       Open the app
       <svg

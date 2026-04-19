@@ -269,6 +269,7 @@ export default function OnboardPage() {
             <button
               onClick={openConnect}
               className={primaryPillClass}
+              style={primaryPillInlineStyle}
             >
               Connect wallet
             </button>
@@ -277,6 +278,7 @@ export default function OnboardPage() {
               onClick={handleSignIn}
               disabled={busy || isSigning || sessionStatus === 'signing' || sessionStatus === 'checking'}
               className={primaryPillClass + ' disabled:opacity-50'}
+              style={primaryPillInlineStyle}
             >
               {busy || isSigning ? <Inline spin label="Signing…" /> : 'Sign in'}
             </button>
@@ -306,6 +308,7 @@ export default function OnboardPage() {
               onClick={handleDeriveKeys}
               disabled={busy}
               className={primaryPillClass + ' disabled:opacity-50'}
+              style={primaryPillInlineStyle}
             >
               {busy ? <Inline spin label="Deriving…" /> : 'Derive E2E key'}
             </button>
@@ -314,6 +317,7 @@ export default function OnboardPage() {
               onClick={handlePublishPubkey}
               disabled={busy}
               className={primaryPillClass + ' disabled:opacity-50'}
+              style={primaryPillInlineStyle}
             >
               {busy ? <Inline spin label="Publishing…" /> : 'Publish pubkey'}
             </button>
@@ -324,7 +328,8 @@ export default function OnboardPage() {
                   Short bio · optional
                 </span>
                 <textarea
-                  className="mt-2 w-full rounded-xl bg-white/[0.02] border border-border px-3.5 py-3 text-[14px] leading-[1.5] focus:outline-none focus:border-[var(--color-primary)]/60 focus:bg-white/[0.03] transition"
+                  className="mt-2 w-full rounded-xl border border-border px-3.5 py-3 text-[14px] leading-[1.5] focus:outline-none focus:border-[var(--color-primary)]/60 transition"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)' }}
                   rows={3}
                   maxLength={280}
                   placeholder={username ? `Hi, I'm ${username}…` : 'Hi, I’m here for fast money.'}
@@ -336,6 +341,7 @@ export default function OnboardPage() {
                 onClick={handleCreateProfile}
                 disabled={busy}
                 className={primaryPillClass + ' disabled:opacity-50'}
+                style={primaryPillInlineStyle}
               >
                 {busy ? <Inline spin label="Creating…" /> : 'Finish'}
               </button>
@@ -368,13 +374,23 @@ export default function OnboardPage() {
 
 /**
  * Canonical primary-pill CTA — reference-faithful: white pill + dark ink.
- * Matches the landing's `HeroPrimaryCta` exactly. Uses named theme tokens
- * (`bg-foreground text-background`), not arbitrary `bg-[var(...)]` syntax,
- * because the arbitrary form failed to compile under Tailwind v4 on some
- * builds and buttons rendered as plain text with no pill at all.
+ * Matches the landing's `HeroPrimaryCta` exactly.
+ *
+ * Two-layer styling belt + braces:
+ *   - Tailwind class `bg-foreground text-background` for normal theming.
+ *   - Inline style with raw CSS vars as a fallback, because on some Tailwind
+ *     v4 builds the `bg-foreground` / `text-background` classes didn't make
+ *     it into the compiled CSS chunks and buttons rendered as plain text.
+ * Inline styles win on specificity, so if the classes ARE present they just
+ * agree with the inline values; if the classes are missing, inline catches.
  */
 const primaryPillClass =
-  'w-full rounded-full h-11 px-5 inline-flex items-center justify-center gap-1.5 text-[14px] font-medium bg-foreground text-background hover:-translate-y-[1px] transition will-change-transform disabled:translate-y-0'
+  'w-full rounded-full h-11 px-5 inline-flex items-center justify-center gap-1.5 text-[14px] font-medium hover:-translate-y-[1px] transition will-change-transform disabled:translate-y-0'
+
+const primaryPillInlineStyle: React.CSSProperties = {
+  backgroundColor: 'var(--color-foreground)',
+  color: 'var(--color-background)',
+}
 
 function ClaimInitCard({
   hasInitName,
@@ -425,7 +441,7 @@ function ClaimInitCard({
             <button
               onClick={() => void onSponsor(desiredName)}
               disabled={sponsoring || !/^[a-z0-9_-]{3,24}$/.test(desiredName)}
-              className="mt-2.5 w-full rounded-full h-9 bg-[var(--color-primary)]/15 hover:bg-[var(--color-primary)]/25 text-[var(--color-primary-bright)] text-[12.5px] font-medium transition disabled:opacity-40"
+              className="mt-2.5 w-full rounded-full h-9 bg-primary/15 hover:bg-primary/25 text-primary text-[12.5px] font-medium transition disabled:opacity-40"
             >
               {sponsoring ? 'Funding…' : `Sponsor my ${desiredName || 'name'}.init`}
             </button>
@@ -439,7 +455,8 @@ function ClaimInitCard({
           href={L1_USERNAMES_PORTAL_URL}
           target="_blank"
           rel="noreferrer noopener"
-          className="mt-4 w-full rounded-full h-11 px-5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-bright)] text-white text-[14px] font-medium inline-flex items-center justify-center gap-2 transition"
+          className="mt-4 w-full rounded-full h-11 px-5 text-[14px] font-medium inline-flex items-center justify-center gap-2 transition hover:-translate-y-[1px] will-change-transform"
+          style={{ backgroundColor: 'var(--color-foreground)', color: 'var(--color-background)' }}
         >
           Open registration portal
           <ExternalLink className="w-3.5 h-3.5" />
