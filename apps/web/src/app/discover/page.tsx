@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Sparkles, Trophy, TrendingUp } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
+import { PageHeader, Serif } from '@/components/page-header'
 import {
   getDiscoverRecent,
   getDiscoverRising,
@@ -39,27 +40,39 @@ export default function DiscoverPage() {
 
   return (
     <AppShell title="Discover">
-      <div className="max-w-md mx-auto w-full px-4 py-5 space-y-6">
-        <section>
-          <SectionHeader icon={<Trophy className="w-4 h-4 text-warning" />}>
-            Top creators
-          </SectionHeader>
-          <Shelf entries={topCreators ?? []} metric="tip-volume" />
-        </section>
+      <div className="max-w-md mx-auto w-full px-5 pt-8 pb-8">
+        <PageHeader
+          kicker="02 · Discover"
+          title={
+            <>
+              Find your <Serif>people</Serif>.
+            </>
+          }
+          sub="Top creators by tip volume, who's rising today, and who just joined the conversation."
+        />
 
-        <section>
-          <SectionHeader icon={<TrendingUp className="w-4 h-4 text-success" />}>
-            Rising · last 24h
-          </SectionHeader>
-          <Shelf entries={rising ?? []} metric="payments-24h" />
-        </section>
+        <div className="mt-8 space-y-7">
+          <section>
+            <SectionHeader icon={<Trophy className="w-3.5 h-3.5 text-warning" />}>
+              Top creators
+            </SectionHeader>
+            <Shelf entries={topCreators ?? []} metric="tip-volume" />
+          </section>
 
-        <section>
-          <SectionHeader icon={<Sparkles className="w-4 h-4 text-primary" />}>
-            Recently active
-          </SectionHeader>
-          <Shelf entries={recent ?? []} metric="last-active" />
-        </section>
+          <section>
+            <SectionHeader icon={<TrendingUp className="w-3.5 h-3.5 text-success" />}>
+              Rising · last 24h
+            </SectionHeader>
+            <Shelf entries={rising ?? []} metric="payments-24h" />
+          </section>
+
+          <section>
+            <SectionHeader icon={<Sparkles className="w-3.5 h-3.5 text-[var(--color-primary-bright)]" />}>
+              Recently active
+            </SectionHeader>
+            <Shelf entries={recent ?? []} metric="last-active" />
+          </section>
+        </div>
       </div>
     </AppShell>
   )
@@ -73,9 +86,11 @@ function SectionHeader({
   children: React.ReactNode
 }) {
   return (
-    <div className="mb-2 inline-flex items-center gap-2">
+    <div className="mb-3 inline-flex items-center gap-2">
       {icon}
-      <h2 className="text-sm font-semibold">{children}</h2>
+      <h2 className="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">
+        {children}
+      </h2>
     </div>
   )
 }
@@ -85,18 +100,18 @@ type Metric = 'tip-volume' | 'payments-24h' | 'last-active'
 function Shelf({ entries, metric }: { entries: DiscoverEntry[]; metric: Metric }) {
   if (entries.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-muted/30 p-4 text-xs text-muted-foreground">
-        Nobody on this shelf yet — the first profile here gets the top slot.
+      <div className="rounded-2xl border border-[var(--color-border-strong)] bg-white/[0.022] px-4 py-5 text-[12.5px] text-ink-3 leading-[1.55]">
+        Nobody on this shelf <Serif>yet</Serif> — the first profile here gets the top slot.
       </div>
     )
   }
   return (
-    <ul className="grid grid-cols-2 gap-2">
+    <ul className="grid grid-cols-2 gap-2.5">
       {entries.map((e) => (
         <li key={e.address}>
           <Link
             href={`/${encodeURIComponent(e.initName ?? e.address)}`}
-            className="block rounded-2xl border border-border bg-muted/30 p-3 hover:border-primary/40 transition"
+            className="block panel-hover rounded-2xl border border-border bg-white/[0.022] p-3.5 transition"
           >
             <div className="flex items-center gap-2">
               <Avatar seed={e.address} />

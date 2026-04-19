@@ -90,11 +90,15 @@ export default function ChatsPage() {
         />
 
         {isLoading ? (
-          <div className="px-4 py-10 text-center text-muted-foreground">Loading…</div>
+          <div className="px-5 py-12 text-center text-ink-3 text-[13px]">
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-4">
+              Loading conversations…
+            </span>
+          </div>
         ) : chats.length === 0 ? (
           <EmptyState />
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-[var(--color-line-hairline)]">
             {chats.map((c) => {
               const href = `/chat/${c.counterparty.initName ?? c.counterparty.initiaAddress}`
               // Last activity within 2 minutes → "live right now" signal.
@@ -106,25 +110,25 @@ export default function ChatsPage() {
                 <li key={c.chatId}>
                   <Link
                     href={href}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition"
                   >
                     <Avatar seed={c.counterparty.initiaAddress} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium truncate inline-flex items-center gap-1">
+                        <span className="text-[13.5px] font-medium tracking-[-0.005em] truncate inline-flex items-center gap-1.5">
                           {displayName(c.counterparty)}
                           {isFresh && (
                             <Zap
-                              className="w-3.5 h-3.5 text-warning shrink-0"
+                              className="w-3 h-3 text-[var(--color-primary-bright)] shrink-0"
                               aria-label="Active in the last 2 minutes"
                             />
                           )}
                         </span>
-                        <span className="text-xs text-muted-foreground flex-none">
+                        <span className="text-[10.5px] font-mono text-ink-4 flex-none tnum">
                           {timeAgo(c.lastMessageAt)}
                         </span>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate">
+                      <div className="mt-0.5 text-[11.5px] text-ink-3 truncate">
                         {c.counterparty.initName ? (
                           <span className="font-mono">
                             {c.counterparty.initiaAddress.slice(0, 12)}…
@@ -135,7 +139,13 @@ export default function ChatsPage() {
                       </div>
                     </div>
                     {c.unreadCount > 0 && (
-                      <span className="ml-2 min-w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center px-1.5">
+                      <span
+                        className="tnum ml-2 min-w-[18px] h-[18px] rounded-full text-[10.5px] font-semibold inline-flex items-center justify-center px-1.5"
+                        style={{
+                          backgroundColor: 'var(--color-primary)',
+                          color: 'var(--color-primary-foreground)',
+                        }}
+                      >
                         {c.unreadCount}
                       </span>
                     )}
@@ -150,20 +160,40 @@ export default function ChatsPage() {
   )
 }
 
+/**
+ * Empty state — editorial voice. Reference principle: an empty state is
+ * STILL content. Treat it with the same rhythm as the page header (mono
+ * kicker + italic serif accent), not a generic "nothing here yet" shrug.
+ */
 function EmptyState() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 text-center text-muted-foreground">
-      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-        <MessageSquarePlus className="w-7 h-7 text-primary" />
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+        style={{
+          background: 'rgba(255,255,255, 0.04)',
+          border: '1px solid var(--color-border-strong)',
+        }}
+      >
+        <MessageSquarePlus className="w-6 h-6 text-[var(--color-primary-bright)]" />
       </div>
-      <h2 className="text-lg font-semibold text-foreground">No conversations yet</h2>
-      <p className="mt-1 max-w-xs text-sm">
-        Start a chat with someone&rsquo;s <span className="font-mono">.init</span> name, or send a
-        payment link to bring a friend on.
+      <div className="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">
+        Your threads
+      </div>
+      <h2 className="mt-2 text-[22px] font-medium tracking-[-0.02em] leading-[1.2] text-foreground">
+        Your <Serif>people</Serif> live here.
+      </h2>
+      <p className="mt-2.5 max-w-xs text-[13px] text-ink-3 leading-[1.55]">
+        Start a chat with someone&rsquo;s <span className="font-mono text-ink-2">.init</span>{' '}
+        name, or share a payment link to bring a friend on.
       </p>
       <Link
         href="/chats/new"
-        className="mt-5 rounded-full px-4 h-9 inline-flex items-center bg-primary text-primary-foreground text-sm font-medium"
+        className="mt-6 rounded-full h-10 px-5 text-[13px] font-medium inline-flex items-center gap-1.5 hover:-translate-y-[1px] transition will-change-transform"
+        style={{
+          backgroundColor: 'var(--color-foreground)',
+          color: 'var(--color-background)',
+        }}
       >
         Start a chat
       </Link>
