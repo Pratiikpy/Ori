@@ -257,13 +257,15 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-muted/30 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold">{title}</h2>
+    <section className="rounded-2xl border border-[var(--color-border-strong)] bg-white/[0.022] p-5">
+      <div className="flex items-center justify-between mb-3.5">
+        <h2 className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
+          {title}
+        </h2>
         <button
           onClick={() => void onSave()}
           disabled={busy}
-          className="rounded-lg px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50 inline-flex items-center gap-1.5"
+          className="rounded-full h-7 px-3 text-[11.5px] font-medium bg-primary text-primary-foreground disabled:opacity-50 inline-flex items-center gap-1.5 hover:-translate-y-[1px] transition will-change-transform"
         >
           {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
           Save

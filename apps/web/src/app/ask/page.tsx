@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Bot, Copy, Check, ExternalLink } from 'lucide-react'
+import { Copy, Check, ExternalLink } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
+import { PageHeader, Serif } from '@/components/page-header'
 
 const MCP_CONFIG = `{
   "mcpServers": {
@@ -62,65 +63,64 @@ export default function AskClaudePage() {
   }
 
   return (
-    <AppShell title="Ask Claude">
-      <div className="px-5 py-6 max-w-xl mx-auto w-full space-y-8">
-        <section>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
-              <Bot className="w-5 h-5" />
-            </div>
-            <h1 className="text-2xl font-bold">Let Claude spend your INIT</h1>
-          </div>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Ori is the agent wallet for Initia. Plug it into Claude Desktop as an MCP server
-            and a single prompt can tip creators, buy paywalled content, open predictions,
-            and send gifts — all on-chain. Solo-first. Works without friends on the platform.
-          </p>
-        </section>
+    <AppShell title="Ask">
+      <div className="px-5 pt-8 pb-10 max-w-xl mx-auto w-full">
+        <PageHeader
+          kicker="01 · Ask"
+          title={
+            <>
+              Let Claude <Serif>spend</Serif> your INIT.
+            </>
+          }
+          sub="Plug Ori into Claude Desktop as an MCP server. A single prompt can tip creators, buy paywalled content, open predictions, and send gifts — all on-chain."
+        />
 
-        <section>
-          <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
-            Step 1 · Connect Claude to Ori
-          </h2>
-          <div className="rounded-xl border border-border bg-muted/30 overflow-hidden">
-            <div className="flex items-center justify-between px-3 h-10 border-b border-border">
-              <span className="text-xs font-mono text-muted-foreground">claude_desktop_config.json</span>
+        {/* Step 1 — config */}
+        <section className="mt-8">
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
+            Step 1 · Connect
+          </div>
+          <div className="mt-3 rounded-2xl border border-[var(--color-border-strong)] bg-white/[0.022] overflow-hidden">
+            <div className="flex items-center justify-between px-3.5 h-10 border-b border-[var(--color-line-hairline)]">
+              <span className="text-[11px] font-mono text-ink-3">claude_desktop_config.json</span>
               <button
                 onClick={copyConfig}
-                className="inline-flex items-center gap-1.5 rounded-md px-2 h-7 text-xs font-medium bg-background hover:bg-border transition"
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 h-7 text-[11px] font-medium text-ink-2 border border-[var(--color-border-strong)] hover:text-foreground hover:border-[var(--color-border-emphasis)] hover:bg-white/[0.04] transition"
               >
                 {copiedConfig ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {copiedConfig ? 'Copied' : 'Copy'}
               </button>
             </div>
-            <pre className="text-[11px] leading-relaxed overflow-x-auto p-3 font-mono">
+            <pre className="text-[11px] leading-[1.65] overflow-x-auto p-3.5 font-mono text-ink-2 bg-black/40">
               <code>{MCP_CONFIG}</code>
             </pre>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Restart Claude Desktop, then look for <span className="font-mono">ori</span> in
-            the MCP server list. 11 tools will be available. A2A server also starts on{' '}
-            <span className="font-mono">ORI_A2A_PORT</span> if set.
+          <p className="mt-3 text-[12.5px] text-ink-3 leading-[1.55]">
+            Restart Claude Desktop, then look for <span className="font-mono text-ink-2">ori</span>{' '}
+            in the MCP server list. 14 tools will be available.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
+        {/* Step 2 — prompts */}
+        <section className="mt-10">
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
             Step 2 · Try a prompt
-          </h2>
-          <div className="space-y-2">
+          </div>
+          <div className="mt-3 space-y-2.5">
             {PROMPTS.map((p, idx) => (
               <button
                 key={idx}
                 onClick={() => copyPrompt(idx)}
-                className="w-full text-left rounded-xl border border-border bg-muted/30 p-3 hover:bg-muted/60 transition"
+                className="w-full text-left panel-hover rounded-2xl border border-border bg-white/[0.022] p-4 hover:bg-white/[0.04] transition group"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-primary mb-1">{p.title}</div>
-                    <p className="text-sm text-foreground leading-snug">{p.text}</p>
+                    <div className="text-[11px] font-mono uppercase tracking-[0.12em] text-[var(--color-primary-bright)]">
+                      {p.title}
+                    </div>
+                    <p className="mt-1.5 text-[13.5px] text-foreground leading-[1.5]">{p.text}</p>
                   </div>
-                  <span className="shrink-0 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <span className="shrink-0 inline-flex items-center gap-1 text-[11px] text-ink-3 group-hover:text-ink-2 transition">
                     {copiedPromptIdx === idx ? (
                       <>
                         <Check className="w-3 h-3" /> Copied
@@ -137,26 +137,31 @@ export default function AskClaudePage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-border bg-muted/20 p-4">
-          <h2 className="text-sm font-semibold mb-2">Agent-to-agent (A2A) too</h2>
-          <p className="text-xs text-muted-foreground mb-3">
-            Ori also speaks A2A JSON-RPC 2.0 over HTTP for agents outside the MCP ecosystem.
-            Point any JSON-RPC client at <span className="font-mono">http://localhost:$ORI_A2A_PORT/a2a</span>{' '}
-            to use the same 11 tools.
+        {/* A2A card */}
+        <section className="mt-10 rounded-2xl border border-[var(--color-border-strong)] bg-white/[0.022] p-5">
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
+            A2A · JSON-RPC
+          </div>
+          <div className="mt-2 text-[15px] font-medium leading-[1.3]">
+            Any agent. <Serif>One endpoint.</Serif>
+          </div>
+          <p className="mt-2 text-[12.5px] text-ink-3 leading-[1.55]">
+            Ori also speaks A2A JSON-RPC 2.0 over HTTP. Point any JSON-RPC client at{' '}
+            <span className="font-mono text-ink-2">/a2a</span> to use the same 14 tools.
           </p>
           <a
             href="https://modelcontextprotocol.io"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+            className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-primary-bright)] hover:underline"
           >
             Learn about MCP <ExternalLink className="w-3 h-3" />
           </a>
         </section>
 
-        <footer className="text-xs text-muted-foreground text-center pt-4 pb-6">
-          Your <span className="font-mono">.init</span> is your identity and your agent's identity.
-        </footer>
+        <p className="mt-12 text-[11.5px] font-mono text-ink-4 text-center">
+          Your <span className="text-ink-2">.init</span> is your identity — and your agent's identity.
+        </p>
       </div>
     </AppShell>
   )

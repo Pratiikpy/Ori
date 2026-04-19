@@ -59,49 +59,61 @@ export default function TodayPage() {
         {/* Weekly digest */}
         <WeeklyStatsRow address={initiaAddress} />
 
-        {/* Agent banner */}
-        <section className="panel-hover rounded-2xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+        {/* Agent banner — quiet card, editorial copy. The indigo accent is
+            reserved for the icon tile only; the surface stays neutral so the
+            banner doesn't compete with actual data below. */}
+        <section className="panel-hover rounded-2xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/[0.05] p-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
               <Bot className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold">Your agent</div>
-              <div className="text-xs text-muted-foreground truncate">
-                {mcpSignerAddr
-                  ? `Signs as ${mcpSignerAddr.slice(0, 14)}…${mcpSignerAddr.slice(-6)}`
-                  : 'Not configured yet'}
+              <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
+                Agent · signer
+              </div>
+              <div className="mt-0.5 text-[13px] text-foreground truncate">
+                {mcpSignerAddr ? (
+                  <>
+                    Signs as <span className="font-mono text-ink-2">{mcpSignerAddr.slice(0, 14)}…{mcpSignerAddr.slice(-6)}</span>
+                  </>
+                ) : (
+                  <>Not configured <Serif>yet</Serif>.</>
+                )}
               </div>
             </div>
             <Link
               href="/ask"
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline shrink-0"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-[12px] font-medium text-ink-2 border border-[var(--color-border-strong)] hover:text-foreground hover:bg-white/[0.04] hover:border-[var(--color-border-emphasis)] transition shrink-0"
             >
               Setup <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
         </section>
 
-        {/* Quick actions */}
+        {/* Quick actions — mono kickers + italic serif accent on the number. */}
         <section className="grid grid-cols-2 gap-3">
           <Link
             href="/predict"
-            className="panel-hover rounded-2xl border border-border bg-white/[0.02] p-4 flex flex-col gap-1"
+            className="panel-hover rounded-2xl border border-border bg-white/[0.022] p-4 flex flex-col gap-2"
           >
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <div className="font-semibold text-sm">Predict</div>
-            <div className="text-xs text-muted-foreground">
-              60-sec markets, no liquidation
+            <TrendingUp className="w-[18px] h-[18px] text-[var(--color-primary-bright)]" />
+            <div className="text-[15px] font-medium tracking-[-0.01em]">
+              <Serif>Predict</Serif>
+            </div>
+            <div className="text-[11.5px] text-ink-3 leading-[1.45]">
+              60-sec markets · no counterparty
             </div>
           </Link>
           <Link
             href="/ask"
-            className="panel-hover rounded-2xl border border-border bg-white/[0.02] p-4 flex flex-col gap-1"
+            className="panel-hover rounded-2xl border border-border bg-white/[0.022] p-4 flex flex-col gap-2"
           >
-            <Bot className="w-5 h-5 text-primary" />
-            <div className="font-semibold text-sm">Ask Claude</div>
-            <div className="text-xs text-muted-foreground">
-              11 MCP tools · 1 prompt
+            <Bot className="w-[18px] h-[18px] text-[var(--color-primary-bright)]" />
+            <div className="text-[15px] font-medium tracking-[-0.01em]">
+              Ask <Serif>Claude</Serif>
+            </div>
+            <div className="text-[11.5px] text-ink-3 leading-[1.45]">
+              14 MCP tools · one prompt
             </div>
           </Link>
         </section>
