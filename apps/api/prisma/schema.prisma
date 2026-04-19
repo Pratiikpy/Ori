@@ -1,0 +1,305 @@
+// Ori API — Prisma schema
+//
+// Persists only what must live off-chain:
+//   - Encrypted message blobs (on-chain would leak metadata + be expensive)
+//   - Auth sessions (JWT alternative we can revoke server-side)
+//   - Push subscriptions (per device)
+//   - Payment-link metadata (maps short-code → on-chain gift_id + secret context)
+//   - Cached .init profile data (for fast queries without hitting L1 every time)
+//
+// EVERYTHING else lives on-chain (Move resources).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User identity — keyed by .init name OR bech32 address (whichever is canonical).
+// We store bech32 primary; .init resolution is done at query time via L1.
+model User {
+  id              String    @id @default(uuid())
+  initiaAddress   String    @unique              // init1...
+  hexAddress      String    @unique              // 0x... (for EVM ops)
+  initName        String?   @unique              // alice.init (cached; authoritative is L1)
+  encryptionPubkey Bytes?                         // X25519 public key (also on-chain)
+  onboardedAt     DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+
+  // Relations
+  sessions              AuthSession[]
+  sentMessages          Message[]          @relation("SentMessages")
+  receivedMessages      Message[]          @relation("ReceivedMessages")
+  pushSubscriptions     PushSubscription[]
+  paymentLinksCreated   PaymentLink[]      @relation("PaymentLinkCreator")
+
+  @@index([initName])
+  @@map("users")
+}
+
+// Auth session — server-side revocable alternative to pure JWT.
+// Token is the session_id; we verify on every request.
+model AuthSession {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token         String    @unique              // 256-bit random hex, sent as Bearer
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  ipHash        String?                        // pseudonymized IP for anomaly detection
+  userAgent     String?
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+// Encrypted messages. Backend NEVER decrypts. We store sealed blobs only.
+model Message {
+  id              String    @id @default(uuid())
+  chatId          String                           // stable hash of participants
+  senderId        String
+  sender          User      @relation("SentMessages", fields: [senderId], references: [id])
+  recipientId     String
+  recipient       User      @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  // Libsodium sealed box: client encrypts with recipient's pubkey.
+  // Backend has no ability to decrypt. Max ~4KB per message recommended.
+  ciphertext      Bytes
+  /// Optional second ciphertext encrypted to sender's own pubkey so they can
+  /// read their own history after reload / on a different device with the
+  /// same wallet. Same sealed-box primitive, different recipient pubkey.
+  senderCiphertext Bytes?
+  // Senders sign the envelope (not the content) so recipients can prove authenticity.
+  // Signature covers: chatId | ciphertextHash | timestamp
+  senderSignature Bytes
+  createdAt       DateTime  @default(now())
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  // Optional TTL — auto-delete from backend after this timestamp.
+  expiresAt       DateTime?
+
+  @@index([chatId, createdAt])
+  @@index([recipientId, createdAt])
+  @@index([expiresAt])
+  @@map("messages")
+}
+
+// Web Push subscriptions — one per device/browser per user.
+model PushSubscription {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint     String   @unique
+  p256dhKey    String
+  authKey      String
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+// Payment-link claims — off-chain metadata for the viral loop.
+// The on-chain gift_packet holds the actual funds. Here we store:
+//   - short URL code → on-chain gift_id mapping
+//   - the secret ciphertext (encrypted with short-code-derived key)
+//   - claim state for resumability
+model PaymentLink {
+  id           String    @id @default(uuid())
+  shortCode    String    @unique                 // e.g., "x7k9p2" — the URL segment
+  creatorId    String
+  creator      User      @relation("PaymentLinkCreator", fields: [creatorId], references: [id])
+  // The secret (32 bytes) is sent to the creator and shared with recipient via URL fragment.
+  // We store ONLY the hash server-side for anti-enumeration (O(1) lookup via shortCode).
+  secretHashHex String
+  // The corresponding gift_packet.id on-chain
+  onChainGiftId String?                           // set after successful on-chain creation
+  amount       BigInt                             // for display pre-claim
+  denom        String
+  theme        Int       @default(0)
+  message      String    @default("")
+  claimed      Boolean   @default(false)
+  claimedByAddress String?
+  claimedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime                           // links expire after 7 days
+
+  @@index([shortCode])
+  @@index([creatorId])
+  @@index([expiresAt])
+  @@map("payment_links")
+}
+
+// Cached profile data pulled from on-chain profile_registry module.
+// Refreshed on every chain event for that user. Lets us serve profile
+// queries without hitting Move view fns on every request.
+model ProfileCache {
+  address       String   @id                     // bech32 init1...
+  initName      String?
+  bio           String   @default("")
+  avatarUrl     String   @default("")
+  linksJson     Json     @default("[]")         // [{label, url}, ...]
+  hideBalance   Boolean  @default(false)
+  hideActivity  Boolean  @default(false)
+  whitelistOnly Boolean  @default(false)
+  cachedAt      DateTime @default(now())
+
+  @@index([initName])
+  @@map("profile_cache")
+}
+
+// Event cursor — tracks last processed rollup block height per event listener.
+// Used so we can resume indexing after backend restart without replay.
+model EventCursor {
+  listenerName String   @id                     // e.g., "payment_router", "tip_jar"
+  lastHeight   BigInt
+  lastTxHash   String?
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@map("event_cursors")
+}
+
+// On-chain follow-graph edges (indexed from `follow_graph::Followed` events).
+// The authoritative source is the Move module; this table enables paginated
+// follower / following lists and fast "do I follow X?" lookups.
+model Follow {
+  id        String   @id @default(uuid())
+  fromAddr  String                                // bech32 init1...
+  toAddr    String                                // bech32 init1...
+  createdAt DateTime @default(now())
+
+  @@unique([fromAddr, toAddr])
+  @@index([fromAddr, createdAt])
+  @@index([toAddr, createdAt])
+  @@map("follows")
+}
+
+// Tip records indexed from `tip_jar::TipSent` events. Used for leaderboards
+// and creator activity feeds. Amounts stored in base units (u64 string).
+model TipEvent {
+  id         String   @id @default(uuid())
+  tipperAddr String
+  creatorAddr String
+  grossAmount BigInt
+  netAmount   BigInt
+  feeAmount   BigInt
+  denom       String
+  message     String   @default("")
+  txHash      String?
+  createdAt   DateTime @default(now())
+
+  @@index([creatorAddr, createdAt])
+  @@index([tipperAddr, createdAt])
+  @@index([creatorAddr, grossAmount])
+  @@map("tip_events")
+}
+
+// Payment records indexed from `payment_router::PaymentSent` events. Used
+// for activity feed and portfolio aggregation.
+model PaymentEvent {
+  id         String   @id @default(uuid())
+  fromAddr   String
+  toAddr     String
+  amount     BigInt
+  denom      String
+  memo       String   @default("")
+  chatId     String   @default("")
+  txHash     String?
+  createdAt  DateTime @default(now())
+
+  @@index([fromAddr, createdAt])
+  @@index([toAddr, createdAt])
+  @@map("payment_events")
+}
+
+// Per-user aggregate counters. Derived from events; refreshed incrementally
+// by the event listener. Powers the trust-score calculation and tiered
+// achievement thresholds.
+model UserStats {
+  address          String   @id                    // bech32 init1...
+  paymentsSent     Int      @default(0)
+  paymentsReceived Int      @default(0)
+  tipsGiven        Int      @default(0)
+  tipsReceived     Int      @default(0)
+  tipsGivenVolume  BigInt   @default(0)
+  tipsReceivedVolume BigInt @default(0)
+  giftsSent        Int      @default(0)
+  giftsClaimed     Int      @default(0)
+  wagersWon        Int      @default(0)
+  billsSplit       Int      @default(0)
+  referrals        Int      @default(0)
+  followersCount   Int      @default(0)
+  followingCount   Int      @default(0)
+  firstSeenAt      DateTime @default(now())
+  lastActiveAt     DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  @@index([tipsReceivedVolume])
+  @@index([paymentsSent])
+  @@index([lastActiveAt])
+  @@map("user_stats")
+}
+
+// Outbox pattern: every downstream event (pub/sub publish, webhook dispatch,
+// push notification) is written HERE in the same DB transaction as the
+// primary write. A separate OutboxWorker polls unpublished rows and
+// publishes them. If the worker crashes, events are retried; the DB is the
+// source of truth. This eliminates the race where a DB write succeeds but
+// the subsequent pub/sub publish silently fails.
+model DomainEvent {
+  id          String    @id @default(uuid())
+  topic       String    // e.g. "ori:event:tip", "ori:event:payment"
+  payload     String    // JSON-serialized event body
+  publishedAt DateTime? // null until the worker publishes successfully
+  attempts    Int       @default(0)
+  lastError   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([publishedAt, createdAt]) // worker query: WHERE publishedAt IS NULL ORDER BY createdAt
+  @@index([topic, createdAt])        // ops query: recent events by topic
+  @@map("domain_events")
+}
+
+/// Per-action log of everything the agent (MCP signer) did on behalf of a
+/// user. Attribution column: which prompt hash triggered it. Lets us build
+/// a public receipts page that proves "Claude did X because Alice asked
+/// it to do Y" without trusting the Ori backend.
+model AgentAction {
+  id          String   @id @default(uuid())
+  ownerAddr   String   // the user whose wallet/account owns the agent
+  agentAddr   String   // the signing key identity (MCP mnemonic -> bech32)
+  toolName    String   // "ori.send_tip", "ori.predict", etc.
+  argsJson    String   // JSON of redacted args (no secrets)
+  promptHash  String?  // SHA-256 of the LLM prompt that triggered this, if provided
+  txHash      String?  // on-chain tx hash, when an action settles on-chain
+  resultJson  String?  // JSON of the returned result (short form)
+  status      String   @default("pending") // pending | success | failed
+  errorMsg    String?  // populated if status=failed
+  createdAt   DateTime @default(now())
+  settledAt   DateTime?
+
+  @@index([ownerAddr, createdAt])
+  @@index([agentAddr, createdAt])
+  @@index([promptHash])
+  @@index([txHash])
+  @@map("agent_actions")
+}
+
+// Completed quests per user. Quest definitions are code-side (QUESTS[]);
+// only completion state is persisted here.
+model QuestCompletion {
+  id         String   @id @default(uuid())
+  userAddress String
+  questId    String
+  completedAt DateTime @default(now())
+
+  @@unique([userAddress, questId])
+  @@index([userAddress])
+  @@map("quest_completions")
+}

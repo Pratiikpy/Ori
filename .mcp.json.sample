@@ -1,0 +1,24 @@
+{
+  "_comment": "Sample MCP configuration that loads BOTH the Ori MCP server (for driving Ori actions) and the official Initia Docs MCP (for searching Initia documentation). Copy to .mcp.json at your repo root for Claude Code, or merge into your Claude Desktop config. See RUNBOOK.md § Optional MCP section.",
+  "mcpServers": {
+    "ori": {
+      "command": "node",
+      "args": ["./apps/mcp-server/dist/index.js"],
+      "env": {
+        "ORI_MODULE_ADDRESS": "0x05dd0c60873d4d93658d5144fd0615bcfa43a53a",
+        "ORI_CHAIN_ID": "ori-1",
+        "ORI_RPC_URL": "http://localhost:26657",
+        "ORI_REST_URL": "http://localhost:1317",
+        "L1_CHAIN_ID": "initiation-2",
+        "L1_REST_URL": "https://rest.testnet.initia.xyz",
+        "ORI_DENOM": "umin",
+        "ORI_API_URL": "http://localhost:3001",
+        "ORI_MCP_MNEMONIC": "replace-with-24-word-mnemonic-of-a-funded-init-wallet"
+      }
+    },
+    "initia-docs": {
+      "type": "http",
+      "url": "https://docs.initia.xyz/mcp"
+    }
+  }
+}

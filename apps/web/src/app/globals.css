@@ -1,0 +1,254 @@
+@import 'tailwindcss';
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ORI DESIGN SYSTEM
+   Dark-native, Linear-aligned palette. Existing Tailwind token names
+   (background/foreground/muted/border/primary) are preserved so every inner
+   page auto-upgrades. New tokens (surface-1/2/3, ink-2/3/4, primary-bright,
+   border-strong, serif) sit alongside for the landing + refined chrome.
+   ────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Canvas + layered surfaces -- lift by 1 luminance step each */
+  --color-background:       #08090a;
+  --color-surface-1:        #0f1011;
+  --color-surface-2:        #191a1b;
+  --color-surface-3:        #28282c;
+  --color-muted:            #191a1b;     /* alias of surface-2 for back-compat */
+
+  /* Ink -- 4-stop content ladder (prefer over opacity classes) */
+  --color-foreground:       #f7f8f8;
+  --color-ink-2:            #d0d6e0;
+  --color-ink-3:            #8a8f98;
+  --color-ink-4:            #62666d;
+  --color-muted-foreground: #8a8f98;     /* alias of ink-3 */
+
+  /* Accent -- three-state indigo rhythm */
+  --color-primary:           #5e6ad2;
+  --color-primary-foreground:#ffffff;
+  --color-primary-bright:    #7170ff;
+  --color-primary-hover:     #828fff;
+  --color-accent:            #7170ff;    /* alias */
+
+  /* Borders -- semi-transparent whites; only real way to get structure
+     without visual noise on near-black. */
+  --color-border:            rgba(255, 255, 255, 0.06);
+  --color-border-strong:     rgba(255, 255, 255, 0.10);
+  --color-border-emphasis:   rgba(255, 255, 255, 0.16);
+  --color-line-hairline:     rgba(255, 255, 255, 0.04);
+
+  /* Semantic */
+  --color-success:            #6bd0a3;
+  --color-success-foreground: #04120c;
+  --color-warning:            #e8b472;
+  --color-warning-foreground: #1a1002;
+  --color-danger:             #f56b6b;
+  --color-danger-foreground:  #1a0404;
+
+  /* Fonts -- Geist sans + Geist Mono + Instrument Serif for editorial accents */
+  --font-sans:  var(--font-sans);
+  --font-mono:  var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  /* Radii -- two-tier system, no micro-rounding */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-2xl: 28px;
+  --radius-3xl: 40px;
+
+  /* Motion */
+  --ease:        cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+  font-feature-settings: 'ss01', 'ss02', 'cv11';
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  overscroll-behavior-y: none;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   TYPOGRAPHY HELPERS
+   - .font-serif  → Instrument Serif for single-word editorial accents
+                    inside sans headlines ("messages that *move* money")
+   - .tnum        → tabular figures for money, metrics, monospace alignment
+   - .tracked-tight → Linear's aggressive display tracking (-1.584px at 72px
+                     scales linearly to smaller sizes)
+   ────────────────────────────────────────────────────────────────────────── */
+.font-serif {
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'cv11';
+}
+
+.tracked-tight {
+  letter-spacing: -0.022em;
+}
+
+.tracked-tighter {
+  letter-spacing: -0.033em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   AMBIENT BACKDROP
+   Three stacked radial gradients + a tiny-star field. Same trick as your
+   Ori.html landing — deliberately subtle so it reads as atmosphere, not
+   decoration. Pointer-events: none so nothing is ever unclickable.
+   ────────────────────────────────────────────────────────────────────────── */
+.backdrop-stars::before,
+.backdrop-stars::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.backdrop-stars::before {
+  background:
+    radial-gradient(ellipse 1200px 600px at 50% -10%, rgba(113, 112, 255, 0.10), transparent 60%),
+    radial-gradient(ellipse 900px 700px at 90% 40%, rgba(94, 106, 210, 0.06), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 10% 80%, rgba(255, 255, 255, 0.025), transparent 60%);
+}
+.backdrop-stars::after {
+  opacity: 0.65;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.5) 0.5px, transparent 1px),
+    radial-gradient(circle at 75% 15%, rgba(255, 255, 255, 0.4) 0.5px, transparent 1px),
+    radial-gradient(circle at 45% 70%, rgba(255, 255, 255, 0.35) 0.5px, transparent 1px),
+    radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.5) 0.5px, transparent 1px),
+    radial-gradient(circle at 10% 55%, rgba(255, 255, 255, 0.3) 0.5px, transparent 1px),
+    radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.35) 0.5px, transparent 1px);
+  background-size: 1400px 900px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   REVEAL ANIMATION
+   Landing uses `IntersectionObserver` to add `.in` on scroll; transform +
+   opacity transition below is what actually animates. Kept in global CSS
+   so React component stays clean.
+   ────────────────────────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+  will-change: opacity, transform;
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PANEL HOVER
+   Linear-style: subtle border-brighten + almost-imperceptible surface lift
+   + inset hairline ring. Apply with `.panel-hover` on anything card-like
+   that should feel interactive (clickable cards, group-hover targets).
+   ────────────────────────────────────────────────────────────────────────── */
+.panel-hover {
+  transition:
+    background-color 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    box-shadow 240ms var(--ease-out),
+    transform 240ms var(--ease-out);
+}
+.panel-hover:hover {
+  background-color: rgba(255, 255, 255, 0.035);
+  border-color: var(--color-border-strong);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 8px 32px -12px rgba(113, 112, 255, 0.12);
+}
+/* Active/pressed state — tiny inward push so it feels tactile. */
+.panel-hover:active {
+  transform: translateY(0.5px);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SHELL + LAYOUT UTILITIES
+   `.shell` = the canonical 1200px content column.
+   ────────────────────────────────────────────────────────────────────────── */
+.shell {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(20px, 4vw, 40px);
+  padding-right: clamp(20px, 4vw, 40px);
+}
+
+/* Safe area insets for mobile PWA (unchanged) */
+@supports (padding: max(0px)) {
+  .safe-area-top    { padding-top: max(1rem, env(safe-area-inset-top)); }
+  .safe-area-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+}
+
+/* Keyboard-accessible focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-primary-bright);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid var(--color-primary-bright);
+  outline-offset: 2px;
+}
+
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  z-index: 100;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  border-radius: 0 0 0.5rem 0;
+}
+.skip-to-content:focus { top: 0; }
+
+/* Dark-theme scrollbar */
+@media (pointer: fine) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}

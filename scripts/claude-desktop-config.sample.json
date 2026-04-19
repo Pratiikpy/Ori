@@ -1,0 +1,25 @@
+{
+  "_comment": "Copy the mcpServers object into ~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%\\Claude\\claude_desktop_config.json (Windows). Fill in the placeholders, then restart Claude Desktop. Both servers load together — 'ori' drives actions, 'initia-docs' lets Claude search the official Initia documentation.",
+  "mcpServers": {
+    "ori": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/ori/apps/mcp-server/dist/index.js"],
+      "env": {
+        "ORI_MCP_MNEMONIC": "REPLACE_WITH_24_WORDS",
+        "ORI_CHAIN_ID": "ori-1",
+        "ORI_RPC_URL": "http://localhost:26657",
+        "ORI_REST_URL": "http://localhost:1317",
+        "ORI_MODULE_ADDRESS": "0xREPLACE_WITH_HEX_FROM_DEPLOY",
+        "ORI_DENOM": "umin",
+        "ORI_API_URL": "http://localhost:3001",
+        "L1_CHAIN_ID": "initiation-2",
+        "L1_REST_URL": "https://rest.testnet.initia.xyz",
+        "L1_USERNAMES_MODULE": "0x42cd8467b1c86e59bf319e5664a09b6b5840bb3fac64f5ce690b5041c530565a"
+      }
+    },
+    "initia-docs": {
+      "type": "http",
+      "url": "https://docs.initia.xyz/mcp"
+    }
+  }
+}

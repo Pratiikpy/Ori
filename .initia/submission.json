@@ -1,0 +1,93 @@
+{
+  "project": "Ori",
+  "tagline": "Messages that move money.",
+  "one_liner": "Chat wallet where friends, funds, and AI agents share one surface. Eighteen Move modules on the Initia ori-1 MiniMove rollup. MCP + A2A + x402 for agents.",
+  "pitch_500": "Ori is a chat wallet built on the Initia MiniMove rollup (ori-1). Eighteen Move modules ship everything a consumer chat app needs: send, tip, gift, stream, predict, paywall, subscribe, wager, follow, and more. Every one of those actions is also a tool on an MCP server, so Claude Desktop or any MCP client can transact with permission. An A2A JSON-RPC endpoint makes every tool callable over plain HTTP, and the paywall module speaks x402. An on-chain agent_policy module enforces per-agent daily caps and a kill switch the user controls from any device. Prediction markets resolve by Connect oracle across all pairs the rollup tracks — no counterparty required. The whole stack runs free-tier on Vercel + Supabase + Upstash.",
+
+  "primary_track": "AI",
+  "secondary_track": "Consumer",
+
+  "chain": {
+    "name": "ori",
+    "chain_id": "ori-1",
+    "vm": "MiniMove",
+    "l1_chain_id": "initiation-2",
+    "settlement": "OPinit to Initia L1"
+  },
+
+  "contract_address": {
+    "hex": "0x05dd0c60873d4d93658d5144fd0615bcfa43a53a",
+    "bech32": "init1qhwsccy884xexevd29z06ps4hnay8ff6szgkt2"
+  },
+
+  "move_modules": [
+    "profile_registry",
+    "payment_router",
+    "tip_jar",
+    "gift_packet",
+    "gift_box_catalog",
+    "gift_group",
+    "wager_escrow",
+    "achievement_sbt",
+    "follow_graph",
+    "subscription_vault",
+    "payment_stream",
+    "paywall",
+    "reputation",
+    "merchant_registry",
+    "lucky_pool",
+    "squads",
+    "prediction_pool",
+    "agent_policy"
+  ],
+
+  "agent_surface": {
+    "mcp_tools": 14,
+    "a2a_jsonrpc": true,
+    "x402_paywall": true,
+    "on_chain_policy": true,
+    "protocols_implemented": ["MCP stdio", "A2A JSON-RPC 2.0 over HTTP", "x402 HTTP 402"]
+  },
+
+  "initia_native_features": {
+    "auto_signing": {
+      "used": true,
+      "notes": "InterwovenKit session keys grant 24h transacting for /initia.move.v1.MsgExecute, covering every user action."
+    },
+    "sponsored_onboarding": {
+      "used": true,
+      "notes": "New users get a small seed grant + sponsored .init username registration on first login."
+    },
+    "minimove_vm": {
+      "used": true,
+      "notes": "Every module is Move source, compiled via minitiad move build."
+    },
+    "opinit": {
+      "used": true,
+      "notes": "ori-1 settles to initiation-2 via OPinit."
+    },
+    "connect_oracle": {
+      "used": true,
+      "notes": "prediction_pool markets resolve against Connect price feeds (BTC/USD, ETH/USD, SOL/USD, and 60+ other pairs the rollup tracks)."
+    }
+  },
+
+  "tokenomics": "No token launch. Platform uses bridged INIT via Interwoven Bridge as both gas and unit of account.",
+
+  "verification": {
+    "onchain_user_flows": "Pass: scripts/wsl-onchain-user-flows.sh (16 real tx flows)",
+    "tier2_modules": "Pass: scripts/wsl-test-tier2-modules.sh (21 on-chain tests)",
+    "mcp_stdio": "Pass: scripts/wsl-test-mcp-stdio.sh (14 tools list + invoke)",
+    "auth_and_a2a": "Pass: scripts/wsl-test-auth-and-a2a.js (17 cases)",
+    "frontend_renders": "Pass: scripts/wsl-test-frontend-renders.sh (15 routes)",
+    "event_decoder_parity": "Pass: packages/event-decoder (7 tests, pure TS shared by Node + Deno)",
+    "move_tests": "Pass: packages/contracts (Move unit tests for each module)"
+  },
+
+  "repo": "https://github.com/Pratiikpy/Ori"
+  ,
+  "licenses": {
+    "code": "MIT",
+    "move_contracts": "MIT"
+  }
+}

@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+build/
+.next/
+.turbo/
+out/
+*.tsbuildinfo
+
+# Move build artifacts
+build/
+artifacts/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.vercel
+!.env.example
+!.env.production.example
+!.env.*.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment
+.vercel
+
+# Testing
+coverage/
+
+# Keys (NEVER commit)
+*.pem
+*.key
+deployer-key.json
+# BIP-39 test wallets (testnet only, still private)
+.ori-*-wallets.json
+apps/*/.ori-*-wallets.json
+**/.ori-*-wallets.json
+
+# graphify — the CLI writes to ./graphify-out/ by default; we sync to
+# docs/architecture-graph/ via scripts/update-graph.sh, so the raw output
+# directory is disposable. docs/architecture-graph/cache/ is also rebuildable.
+graphify-out/
+docs/architecture-graph/cache/

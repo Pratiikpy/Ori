@@ -1,0 +1,22 @@
+{
+  "name": "Ori — Messages + Money",
+  "short_name": "Ori",
+  "description": "iMessage + Venmo, for real. On Initia.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#4349FF",
+  "background_color": "#060606",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

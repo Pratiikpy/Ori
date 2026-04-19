@@ -1,0 +1,28 @@
+# Ori — Supabase project config
+#
+# Used by `supabase` CLI. Only the pieces we actually configure are listed;
+# everything else inherits Supabase defaults.
+
+[project]
+id = "ori-prod"
+
+# ──────────────────────────────────────────────────────────────────────────
+# Edge Functions
+# ──────────────────────────────────────────────────────────────────────────
+
+[functions.event-listener]
+# pg_cron invokes this without a user JWT -- it's a server-to-server call.
+# The function is still protected via the service-role key passed in the
+# Authorization header (see migrations/*_schedule_event_listener.sql).
+verify_jwt = false
+
+# Import map so Deno resolves our shared decoder copy at _shared/event-decoder.ts
+# without pulling from the public internet.
+
+# Future Shipment 3 functions (scaffolded here so the config file is complete):
+# [functions.achievement-issuer]
+#   verify_jwt = false
+# [functions.web-push-fanout]
+#   verify_jwt = false
+# [functions.scheduled-action-runner]
+#   verify_jwt = false

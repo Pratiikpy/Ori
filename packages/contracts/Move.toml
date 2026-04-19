@@ -1,0 +1,15 @@
+[package]
+name = "ori"
+version = "0.1.0"
+upgrade_policy = "compatible"
+
+[addresses]
+# Supply via --named-addresses at build time:
+#   minitiad move build --named-addresses ori=0x<your_hex>
+ori = "_"
+initia_std = "0x1"
+std = "0x1"
+
+[dependencies]
+InitiaStdlib = { git = "https://github.com/initia-labs/move-natives.git", subdir = "initia_stdlib", rev = "main" }
+MoveStdlib = { git = "https://github.com/initia-labs/move-natives.git", subdir = "move_stdlib", rev = "main" }
