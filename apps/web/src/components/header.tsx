@@ -65,9 +65,19 @@ export function Header({ title }: { title?: string }) {
           ) : (
             <button
               onClick={openConnect}
-              className="rounded-full px-4 h-8 bg-[var(--color-primary)] hover:bg-[var(--color-primary-bright)] text-white text-[11.5px] font-medium transition"
+              className="rounded-full px-3.5 h-8 text-[12px] text-foreground border border-[var(--color-border-strong)] hover:bg-white/[0.04] hover:border-[var(--color-border-emphasis)] transition inline-flex items-center gap-1.5"
             >
               Sign in
+              <svg
+                viewBox="0 0 16 16"
+                className="h-3 w-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden
+              >
+                <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           )}
         </div>
