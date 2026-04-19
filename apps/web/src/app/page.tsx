@@ -39,7 +39,19 @@ export default function LandingPage() {
     <ScrollReveal>
       <main className="relative min-h-dvh backdrop-stars overflow-x-hidden">
         {/* ========== Site header ========== */}
-        <header className="sticky top-0 z-30 border-b border-[var(--color-line-hairline)] backdrop-blur-xl bg-background/70">
+        <header
+          className="sticky top-0 z-30 border-b border-[var(--color-line-hairline)]"
+          style={{
+            // Reference spec: blur(20px) WITH saturate(1.4) — the saturation
+            // boost makes the starfield behind the navbar read as *colored*
+            // rather than gray-washed. Subtle but one of those cues that
+            // separates "premium" from "premium-ish".
+            backdropFilter: 'blur(20px) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+            background:
+              'linear-gradient(180deg, rgba(7, 7, 10, 0.86) 0%, rgba(7, 7, 10, 0.6) 100%)',
+          }}
+        >
           <div className="shell flex items-center justify-between h-14">
             <Link href="/" className="flex items-center gap-2.5 group" aria-label="Ori home">
               <OriMark className="h-7 w-7 text-foreground transition-transform group-hover:scale-[1.06]" />
@@ -48,6 +60,12 @@ export default function LandingPage() {
               </span>
             </Link>
 
+            {/* Nav labels match the Ori-landing.html reference copy. The
+                sections they point to (#agents, #philosophy) keep their
+                existing anchors + content — we rename the LABEL, not the
+                section ID, so nothing else in the page needs to move.
+                Renaming both labels and IDs would break every deep-link
+                already in the wild (twitter cards, docs, etc.). */}
             <nav className="hidden md:flex items-center gap-7 text-[13px] text-ink-3">
               <a href="#capabilities" className="hover:text-foreground transition">
                 Capabilities
@@ -56,10 +74,10 @@ export default function LandingPage() {
                 Flow
               </a>
               <a href="#agents" className="hover:text-foreground transition">
-                Agents
+                Creators
               </a>
               <a href="#philosophy" className="hover:text-foreground transition">
-                Philosophy
+                System
               </a>
             </nav>
 
@@ -68,9 +86,19 @@ export default function LandingPage() {
         </header>
 
         <div className="relative z-10">
-          {/* ========== Hero ========== */}
-          <section className="shell pt-20 md:pt-28 pb-20 md:pb-28">
-            <div className="grid md:grid-cols-[1.1fr_1fr] gap-12 md:gap-16 items-center">
+          {/* ========== Hero ==========
+              Reference spec: padding: clamp(48px, 10vw, 140px) top, 72px
+              bottom. Makes the hero consume roughly a full viewport on
+              desktop so the headline + device get real breathing room,
+              not the cramped "everything in the first fold" layout. */}
+          <section
+            className="shell"
+            style={{
+              paddingTop: 'clamp(48px, 10vw, 140px)',
+              paddingBottom: '72px',
+            }}
+          >
+            <div className="grid md:grid-cols-[1.05fr_1fr] gap-12 md:gap-16 items-start">
               <div className="reveal">
                 {/* Hero tag — green pulse, not indigo. Reference uses --ok
                     because the dot signals "live & healthy", not "new feature". */}
@@ -114,22 +142,18 @@ export default function LandingPage() {
                   milliseconds. Nothing to confirm.
                 </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-3">
+                {/* Reference has no stats inside the hero. That slab was cramped
+                    and fought the headline for attention. It now lives in its
+                    own framed ribbon after the hero, below. */}
+                <div className="mt-11 flex flex-wrap items-center gap-3">
                   <HeroPrimaryCta />
                   <a
                     href="#capabilities"
-                    className="inline-flex items-center gap-1.5 rounded-full h-11 px-5 text-[14px] font-medium text-ink-2 border border-border hover:border-[var(--color-border-strong)] hover:text-foreground transition"
+                    className="inline-flex items-center gap-1.5 rounded-full h-[46px] px-5 text-[14px] font-medium text-ink-2 border border-[var(--color-border-strong)] hover:border-[var(--color-border-emphasis)] hover:text-foreground hover:bg-white/[0.022] transition"
                   >
                     See it work
                   </a>
                 </div>
-
-                <dl className="mt-14 grid grid-cols-4 max-w-xl gap-4 md:gap-6">
-                  <Stat k="97" unit="ms" v="median settle" />
-                  <Stat k="1" unit="%" v="creator fee" />
-                  <Stat k="0" v="wallet popups" />
-                  <Stat k="e2e" v="encrypted" />
-                </dl>
               </div>
 
               <div className="reveal">
@@ -138,6 +162,28 @@ export default function LandingPage() {
                 </DeviceParallax>
               </div>
             </div>
+          </section>
+
+          {/* ========== Stats ribbon ==========
+              Reference pattern: top + bottom 1px lines frame the row as a
+              distinct slab; mono numbers with a slightly smaller ink-3 unit
+              suffix read as "data", not marketing. Full shell-width so the
+              rhythm lands cleanly regardless of grid. */}
+          <section className="shell">
+            <dl
+              className="reveal grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10"
+              style={{
+                paddingTop: '32px',
+                paddingBottom: '32px',
+                borderTop: '1px solid var(--color-border)',
+                borderBottom: '1px solid var(--color-border)',
+              }}
+            >
+              <Stat k="97" unit="ms" v="median settlement" />
+              <Stat k="1" unit="%" v="creator tip fee" />
+              <Stat k="0" v="wallet popups" />
+              <Stat k="e2e" v="encryption by default" />
+            </dl>
           </section>
 
           {/* ========== 01 · Capabilities ========== */}
@@ -659,39 +705,101 @@ function FooterCol({
 /* ────────────────────────────────────────────────────────────────────────── */
 
 function DeviceMock() {
+  // Reference device spec — these values are exact so the mock reads as a
+  // real phone, not a portrait card. The aspect-ratio 9/19.5 is what makes
+  // the silhouette recognizable; the notch (::before pseudo) is what sells
+  // it as an iPhone rather than a generic device. The 80px indigo glow
+  // below grounds the device against the ambient backdrop — remove it and
+  // the phone floats in space.
   return (
     <div
-      className="relative rounded-[44px] border border-border bg-[var(--color-surface-1)] p-2.5 shadow-[0_40px_120px_-20px_rgba(113,112,255,0.28),0_20px_60px_-20px_rgba(0,0,0,0.7)]"
-      style={{ width: 320, maxWidth: '100%' }}
+      className="relative border border-[var(--color-border-strong)] mx-auto"
+      style={{
+        width: '100%',
+        maxWidth: '380px',
+        aspectRatio: '9 / 19.5',
+        background: '#0d0d12',
+        borderRadius: '44px',
+        padding: '10px',
+        boxShadow:
+          '0 0 0 1px rgba(255,255,255,0.03) inset, 0 80px 120px -40px rgba(108, 123, 255, 0.25), 0 40px 80px -20px rgba(0,0,0,0.6)',
+      }}
     >
-      <div className="rounded-[36px] overflow-hidden border border-[var(--color-line-hairline)] bg-background">
-        <div className="h-6 flex items-center justify-center gap-1.5 text-[9.5px] font-mono text-ink-3">
-          <span className="tnum">9:41</span>
-        </div>
-        <div className="flex items-center gap-2.5 px-4 h-12 border-b border-[var(--color-line-hairline)]">
+      {/* Dynamic island notch */}
+      <div
+        aria-hidden
+        className="absolute left-1/2 -translate-x-1/2 z-10"
+        style={{
+          top: '22px',
+          width: '90px',
+          height: '24px',
+          background: '#000',
+          borderRadius: '999px',
+        }}
+      />
+
+      <div
+        className="overflow-hidden flex flex-col h-full relative"
+        style={{
+          borderRadius: '36px',
+          background: 'var(--color-bg-2)',
+        }}
+      >
+        {/* Status bar — eat the top padding so chat-header sits BELOW the notch */}
+        <div
+          className="flex items-center gap-2.5 pt-[54px] px-[18px] pb-[14px] border-b border-[var(--color-line-hairline)]"
+          style={{
+            background: 'rgba(11, 11, 16, 0.9)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}
+        >
           <div
-            className="h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-medium text-black"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-[13px] font-medium text-black shrink-0"
             style={{ background: 'linear-gradient(135deg, #ff9ec7, #ff6b9d)' }}
           >
             M
           </div>
-          <div className="flex-1">
-            <div className="text-[13px] font-medium">
+          <div className="flex-1 min-w-0">
+            <div className="text-[14px] font-medium tracking-[-0.01em]">
               mira<span className="text-ink-3">.init</span>
             </div>
-            <div className="text-[10.5px] text-ink-3">typing…</div>
+            <div className="text-[11px] font-mono text-ink-3">typing…</div>
           </div>
         </div>
-        {/* Hero's beating heart: a looping 4-beat performance of the
+        {/* Hero's beating heart: a looping 5-beat performance of the
             product pitch. Client component; reduced-motion users get the
             full conversation frozen at the final frame. */}
         <LiveDeviceChat />
-        <div className="px-4 py-3 border-t border-[var(--color-line-hairline)] flex items-center gap-2">
-          <span className="text-[12px] text-ink-3 font-mono">$</span>
-          <div className="flex-1 flex items-center justify-between bg-white/[0.04] border border-border rounded-full px-3 h-8 text-[12px] text-ink-3">
-            <span>Message…</span>
-            <ArrowIcon className="h-3 w-3" />
+
+        {/* Composer bar — reference uses a flat surface-2 pill + a small
+            36x36 rounded send-btn. Our old "$ sign + chat pill + arrow"
+            combo looked like a hybrid between a payment bar and a chat
+            bar; cleaner to separate concerns: typing is what happens
+            here, sending happens via a payment card in the stream. */}
+        <div className="flex gap-2 items-center px-3 pt-[10px] pb-[28px] border-t border-[var(--color-line-hairline)] mt-auto">
+          <div
+            className="flex-1 rounded-full text-[12px] text-ink-3 px-[14px] py-[10px] border"
+            style={{
+              background: 'rgba(255, 255, 255, 0.04)',
+              borderColor: 'var(--color-border)',
+            }}
+          >
+            Message…
           </div>
+          <button
+            type="button"
+            aria-label="Send message"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center border shrink-0 text-ink-2 hover:text-foreground transition"
+            style={{
+              background: 'rgba(255, 255, 255, 0.04)',
+              borderColor: 'var(--color-border-strong)',
+            }}
+          >
+            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+              <path d="M8 12V4M4 8l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

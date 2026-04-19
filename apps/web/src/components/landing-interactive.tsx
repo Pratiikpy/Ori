@@ -199,14 +199,19 @@ type ChatBeat =
   | { t: 'out'; text: string }
   | { t: 'pay'; amt: string; meta: string }
 
+// The 5th beat mirrors the reference: a single raise-hand emoji as a
+// "reaction" bubble after the reply. Adds a second incoming tick that
+// keeps the chat feeling *alive* across the loop pause — a judge who
+// mentally checked out at the payment card gets pulled back.
 const HERO_SCRIPT: readonly ChatBeat[] = [
   { t: 'in', text: 'dinner at nobu, 64.80 split 4 ways?' },
   { t: 'out', text: 'sending now' },
   { t: 'pay', amt: '16.20', meta: 'Landed · 97ms · 0x4a…b3c2' },
   { t: 'in', text: 'ty' },
+  { t: 'in', text: '🙋' },
 ]
 
-const STEP_DELAYS = [420, 900, 820, 720] as const // ms between beats
+const STEP_DELAYS = [420, 900, 820, 560, 540] as const // ms between beats
 const LOOP_PAUSE = 3500 // ms before restart
 
 export function LiveDeviceChat() {
