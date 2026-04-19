@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
+import { PageHeader, Serif } from '@/components/page-header'
 import { BadgeRow } from '@/components/badge-row'
 import { TrustScore } from '@/components/trust-score'
 import { QuestPanel } from '@/components/quest-panel'
@@ -50,15 +51,25 @@ export default function PortfolioPage() {
   if (!isConnected || !initiaAddress) {
     return (
       <AppShell title="Portfolio">
-        <div className="max-w-md mx-auto w-full px-4 py-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            Connect a wallet to see your portfolio.
-          </p>
+        <div className="max-w-md mx-auto w-full px-5 pt-10 pb-10">
+          <PageHeader
+            kicker="03 · Portfolio"
+            title={
+              <>
+                Your <Serif>whole</Serif> record.
+              </>
+            }
+            sub="Every payment, tip, gift, and badge on one surface. Connect a wallet to see yours."
+          />
           <button
             onClick={() => openConnect()}
-            className="mt-4 rounded-full px-4 py-2 bg-primary text-primary-foreground text-sm font-medium"
+            className="mt-8 w-full rounded-full h-11 px-5 text-[14px] font-medium inline-flex items-center justify-center gap-1.5 hover:-translate-y-[1px] transition will-change-transform"
+            style={{
+              backgroundColor: 'var(--color-foreground)',
+              color: 'var(--color-background)',
+            }}
           >
-            Connect
+            Connect wallet
           </button>
         </div>
       </AppShell>
@@ -67,15 +78,26 @@ export default function PortfolioPage() {
 
   return (
     <AppShell title="Portfolio">
-      <div className="max-w-md mx-auto w-full px-4 py-5 space-y-4">
-        <header>
-          <h1 className="text-xl font-bold truncate">{displayName}</h1>
-          {data?.stats.firstSeenAt && (
-            <p className="text-xs text-muted-foreground">
-              On Ori since {new Date(data.stats.firstSeenAt).toLocaleDateString()}
-            </p>
-          )}
-        </header>
+      <div className="max-w-md mx-auto w-full px-5 pt-8 pb-8 space-y-5">
+        <PageHeader
+          kicker="03 · Portfolio"
+          title={
+            data?.initName ? (
+              <>
+                <Serif>{data.initName}</Serif>
+              </>
+            ) : (
+              <>
+                Your <Serif>record</Serif>.
+              </>
+            )
+          }
+          sub={
+            data?.stats.firstSeenAt
+              ? `On Ori since ${new Date(data.stats.firstSeenAt).toLocaleDateString()}.`
+              : undefined
+          }
+        />
 
         {isLoading && (
           <div className="text-xs text-muted-foreground">
@@ -168,7 +190,7 @@ export default function PortfolioPage() {
 
         <button
           onClick={() => router.push(`/${encodeURIComponent(data?.initName ?? initiaAddress)}`)}
-          className="w-full rounded-2xl py-3 bg-muted border border-border text-sm"
+          className="w-full rounded-full h-11 px-5 text-[13.5px] font-medium text-ink-2 border border-[var(--color-border-strong)] hover:text-foreground hover:bg-white/[0.04] hover:border-[var(--color-border-emphasis)] transition inline-flex items-center justify-center gap-1.5"
         >
           Open public profile →
         </button>
@@ -188,14 +210,18 @@ function StatCard({
   value: string
   sub: string
 }) {
+  // Mono numeric values + mono-uppercase label = "data" feel, not "marketing".
+  // Reference pattern is: small font-mono eyebrow + big tnum number + tiny sub.
   return (
-    <div className="rounded-2xl border border-border bg-muted/30 p-3">
-      <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-2xl border border-[var(--color-border-strong)] bg-white/[0.022] p-3.5 panel-hover">
+      <div className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-ink-3 font-mono">
         <Icon className="w-3 h-3" />
         {label}
       </div>
-      <div className="mt-1 text-xl font-bold">{value}</div>
-      {sub && <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{sub}</div>}
+      <div className="mt-1.5 text-[22px] font-mono tnum tracking-[-0.02em] font-medium text-foreground">
+        {value}
+      </div>
+      {sub && <div className="text-[10.5px] text-ink-3 mt-0.5 truncate font-mono">{sub}</div>}
     </div>
   )
 }
