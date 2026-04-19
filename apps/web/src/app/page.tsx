@@ -421,6 +421,7 @@ export default function LandingPage() {
 
               <div className="mt-14 pt-6 border-t border-[var(--color-line-hairline)] flex flex-col md:flex-row gap-3 md:gap-6 items-start md:items-center justify-between text-[12px] text-ink-4 font-mono">
                 <span>© Ori — all quiet.</span>
+                <span className="text-center">Built on bridged INIT. No token launch.</span>
                 <span className="flex items-center gap-2">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
                   all systems green

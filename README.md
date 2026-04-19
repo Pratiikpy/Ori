@@ -18,22 +18,54 @@ Eighteen Move modules on the Initia MiniMove rollup. Built for humans and agents
 
 ---
 
+## Submission
+
+| | |
+|---|---|
+| **Project name** | Ori |
+| **Tagline** | Messages that move money. |
+| **Primary track** | AI |
+| **Secondary track** | Consumer |
+| **Testnet chain** | `ori-1` (MiniMove) · settles to `initiation-2` via OPinit |
+| **Contract address** | [`0x05dd0c60873d4d93658d5144fd0615bcfa43a53a`](https://scan.testnet.initia.xyz) |
+| **Live demo** | Deploy in progress — see [DEPLOY.md](./DEPLOY.md) |
+| **Submission manifest** | [`.initia/submission.json`](./.initia/submission.json) |
+
+### TL;DR
+
+Ori is a chat wallet. You can message a friend and pay them in the same window. An AI agent can do the same through a standard protocol, under a daily cap you set on-chain. Eighteen Move modules ship everything a consumer app needs: send, tip, gift, stream, predict, paywall, subscribe, wager, follow, squads. Fourteen of those actions are also MCP tools for Claude Desktop. Every tool is callable over A2A JSON-RPC, and the paywall speaks x402. **No token launch** — testnet uses the rollup's native denom, mainnet will use bridged INIT via Interwoven Bridge, same model as Base uses bridged ETH.
+
+### Hackathon requirement checklist
+
+| Requirement | Status | Evidence |
+|---|:---:|---|
+| Deployed on Initia rollup | ✅ | Live on `ori-1` MiniMove, contracts at `0x05dd...a53a` |
+| Uses `@initia/interwovenkit-react` | ✅ | Every send / tip / predict / gift goes through `requestTxBlock` |
+| At least one Initia-native feature | ✅ | **Auto-signing (session keys), Interwoven Bridge, OPinit settlement, Connect oracle** |
+| `.initia/submission.json` present | ✅ | [`.initia/submission.json`](./.initia/submission.json) — every count verified by a test |
+| README with overview + implementation + how-to-run | ✅ | Below, organized to the scoring dimensions |
+| Open source | ✅ | MIT, this repo |
+
+---
+
 ## Why Ori exists
 
-Crypto apps shout numbers. Messengers ignore money. Agents can reason but not pay.
-Ori does neither — it's a chat app where payment is a message, and the agent on the
-other side of your prompt can spend under limits you set on-chain.
-
-- **Everyone can pay** — send, tip, gift, stream, split, subscribe, unlock — all from the chat thread.
-- **Agents can pay too** — same eighteen actions as tools on an MCP server and an A2A JSON-RPC endpoint. A Move module called `agent_policy` caps what any single agent can spend per day.
-- **No token launch** — bridged INIT is the unit of account. Transparent on-chain fees, no tokenomics overhead.
+| Before | With Ori |
+|---|---|
+| Crypto apps shout numbers. Balances, gas fees, confirmations — in your face. | Chat first. The wallet lives inside the conversation. |
+| Messengers ignore money. You leave the chat, open a bank app, come back, paste a confirmation. | Tap an amount. The payment lands as a card both sides see at the same moment. |
+| AI agents can reason but can't pay. | Agents get the same fourteen actions as users, with a daily cap enforced on-chain. |
+| Creator tips, gifts, streams are all separate apps. | Eighteen Move modules, one thread, one name, one identity. |
+| Most wallets launch a token as a cash grab. | No token launch. Bridged INIT only. |
 
 ---
 
 ## What's on chain
 
-The contract address on `ori-1` is `0x05dd0c60873d4d93658d5144fd0615bcfa43a53a`
-(`init1qhwsccy884xexevd29z06ps4hnay8ff6szgkt2` in bech32). Every feature below is a real Move module under that address.
+Contract address on `ori-1`: `0x05dd0c60873d4d93658d5144fd0615bcfa43a53a`
+(`init1qhwsccy884xexevd29z06ps4hnay8ff6szgkt2` in bech32).
+
+Every feature below is a real Move module under that address.
 
 | Module | Purpose |
 |---|---|
@@ -54,9 +86,36 @@ The contract address on `ori-1` is `0x05dd0c60873d4d93658d5144fd0615bcfa43a53a`
 | `reputation` | Per-user activity counters |
 | `squads` | Group profiles with shared XP |
 | `merchant_registry` | On-chain merchant directory |
-| `agent_policy` | Daily spending caps + kill switch for AI agents |
+| `agent_policy` | **Daily spending caps + kill switch for AI agents** |
 
-Eighteen modules. All verified by on-chain tests in `scripts/wsl-onchain-user-flows.sh` and `scripts/wsl-test-tier2-modules.sh`.
+Every module is verified by real on-chain tests:
+[`scripts/wsl-onchain-user-flows.sh`](./scripts/wsl-onchain-user-flows.sh) and
+[`scripts/wsl-test-tier2-modules.sh`](./scripts/wsl-test-tier2-modules.sh).
+
+---
+
+## Economics — no token launch
+
+- **Testnet** (`ori-1`): the rollup's own native denom (`umin`, displayed as ORI). This is the test currency.
+- **Mainnet**: bridged INIT from `initiation-2` L1 via Interwoven Bridge. Same model as Base (bridged ETH from Ethereum) or Arbitrum (bridged ETH). No new token, no launch event, no tokenomics overhead.
+
+Transparent on-chain fees: `tip_jar` takes 1%, `paywall` takes 1%, everything else is 0%.
+
+---
+
+## Why Initia
+
+Ori depends on four Initia-native features. This isn't a product that happens to live on Initia — it's a product the design of Initia makes possible.
+
+| Initia feature | How Ori uses it |
+|---|---|
+| **MiniMove VM** | Eighteen Move modules give us strict resource semantics for balances, per-user state, and on-chain agent policy. A payment is a move of a `Coin<T>` object, not a number in a table. |
+| **Session keys (auto-signing)** | `InterwovenKit.enableAutoSign` grants 24h signing for `/initia.move.v1.MsgExecute`. That's what makes "zero wallet popups per send" possible. Without it, every tip would require a confirmation modal — the product is dead. |
+| **Interwoven Bridge** | Onboard from any Initia-ecosystem chain in one hop. Deposit flow in `apps/web/src/components/bridge-button.tsx`. |
+| **OPinit settlement** | `ori-1` settles to `initiation-2`. Users inherit L1's finality without paying L1 gas. |
+| **Connect oracle** | `prediction_pool` resolves markets against Connect price feeds (BTC/USD, ETH/USD, SOL/USD, and 60+ other pairs the rollup tracks). Parimutuel pools mean no liquidity provider, no counterparty risk. |
+| **Initia Usernames (`.init`)** | Every user is addressable by name across chat, payment, profile URL, and agent endpoint. One identity, four surfaces. |
+| **Social login (Privy)** | Email / Google / X sign-in via `initiaPrivyWalletConnector`. No seed phrase friction for first-time users. |
 
 ---
 
@@ -70,9 +129,11 @@ Three protocols so every kind of AI client can spend under your rules.
 | **A2A JSON-RPC 2.0** | HTTP | Any HTTP client, agent framework | `/a2a` on the API + [`/.well-known/agent.json`](./apps/api/src/routes/wellKnown.ts) |
 | **x402** | HTTP 402 | Agents hitting paywalled URLs | [`paywall.move`](./packages/contracts/sources/paywall.move) + MCP `ori.purchase_paywall` |
 
-The safety story is on-chain, not in the server. `agent_policy::set_policy` writes a daily cap per agent address. `agent_policy::pre_check_and_record` runs inside every spending tx. No policy, no spend — enforced by the Move VM, not by us.
+**The safety story is on-chain, not in the server.**
+`agent_policy::set_policy(agent, daily_cap_umin)` writes a per-agent cap. `agent_policy::pre_check_and_record` runs *inside* every spending tx. If the agent tries to exceed the cap, the Move VM aborts the tx — before any coin moves. The kill switch is a single `revoke_agent` tx the user can send from any device.
 
-Fourteen tools live today: `ori.send_payment`, `ori.send_tip`, `ori.create_link_gift`, `ori.get_balance`, `ori.get_profile`, `ori.resolve_init_name`, `ori.propose_wager`, `ori.list_top_creators`, `ori.purchase_paywall`, `ori.search_initia_docs`, `ori.fetch_initia_doc`, `ori.discover_x402`, `ori.schedule_action`, `ori.predict`.
+**14 MCP tools shipped today:**
+`ori.send_payment` · `ori.send_tip` · `ori.create_link_gift` · `ori.get_balance` · `ori.get_profile` · `ori.resolve_init_name` · `ori.propose_wager` · `ori.list_top_creators` · `ori.purchase_paywall` · `ori.search_initia_docs` · `ori.fetch_initia_doc` · `ori.discover_x402` · `ori.schedule_action` · `ori.predict`
 
 ---
 
@@ -82,11 +143,11 @@ Fourteen tools live today: `ori.send_payment`, `ori.send_tip`, `ori.create_link_
                     Browser / MCP client / A2A HTTP
                           │
                           ▼
-┌─────────────────────────────────────────┐
-│  Next.js 16 + Fastify 5 (on Vercel)     │  ◀── EIP-191 wallet auth
-│  ─ /api/[...path] wraps Fastify         │  ◀── idempotency, rate limit
-│  ─ realtime adapter (Supabase/Socket.IO)│      via Redis
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  Next.js 16 + Fastify 5 (on Vercel)          │  ◀── EIP-191 wallet auth
+│  ─ /api/[...path] wraps Fastify via inject() │  ◀── idempotency, rate limit
+│  ─ realtime adapter (Supabase / Socket.IO)   │       in Redis (Upstash)
+└──────────────────────────────────────────────┘
                           │
             ┌─────────────┼─────────────┐
             ▼             ▼             ▼
@@ -94,16 +155,17 @@ Fourteen tools live today: `ori.send_payment`, `ori.send_tip`, `ori.create_link_
 │ Supabase         │ │ Upstash  │ │ Initia rollup    │
 │ ─ Postgres 16    │ │ Redis    │ │ ─ ori-1 MiniMove │
 │ ─ Edge Functions │ └──────────┘ │ ─ 18 Move modules│
-│   (event-listener│               │ ─ OPinit to L1   │
+│   (event-listener│               │ ─ OPinit → L1    │
 │    + pg_cron)    │               │ ─ Connect oracle │
 │ ─ Realtime       │               └──────────────────┘
 └──────────────────┘                        ▲
         ▲                                   │
-        └──────── event decoder ────────────┘
+        └──────── event-decoder ────────────┘
                 (packages/event-decoder)
-                shared between Node + Deno
-                so the same logic runs in
-                both runtimes — no drift.
+                Pure TS shared by Node + Deno —
+                same decode logic runs in the
+                long-running Node listener AND the
+                Supabase Edge Function. No drift.
 ```
 
 Smart contracts hold all the money and state. The server only keeps off-chain things: encrypted messages, session tokens, and a Postgres cache of chain events for fast feeds.
@@ -177,7 +239,7 @@ bash scripts/wsl-start-rollup.sh
 # 6. Deploy contracts to that local rollup
 bash scripts/deploy-testnet.sh
 
-# 7. Run the API and web in two terminals
+# 7. Run API and web in two terminals
 pnpm --filter @ori/api dev        # http://localhost:3001
 pnpm --filter @ori/web dev        # http://localhost:3000
 ```
@@ -195,11 +257,9 @@ All three services have generous free tiers: **Vercel** (web + API as serverless
 
 ---
 
-## Testing
+## Testing — every number in this README is backed by a script
 
-Every test below is real — it signs a tx, decodes a block, or renders a page, and asserts the result.
-
-| Suite | Command | Scope |
+| Suite | Command | What it proves |
 |---|---|---|
 | Move unit tests | `bash scripts/wsl-move-test.sh` | Every entry function, every abort code |
 | On-chain user flows | `bash scripts/wsl-onchain-user-flows.sh` | 16 real signed tx flows |
@@ -209,6 +269,8 @@ Every test below is real — it signs a tx, decodes a block, or renders a page, 
 | MCP stdio | `bash scripts/wsl-test-mcp-stdio.sh` | 14 tools list + invoke |
 | Frontend renders | `bash scripts/wsl-test-frontend-renders.sh` | 15 real page renders |
 | Event-decoder parity | `pnpm --filter @ori/event-decoder test` | 7 cases, same code runs in Node + Deno |
+
+Run against a live rollup. If you claim it, a script proves it.
 
 ---
 
@@ -233,15 +295,9 @@ Add this to your `mcp.json`:
 }
 ```
 
-First, go to `/settings` in the web app and set a daily cap on-chain for this agent address. The agent can never spend more than what you allow — enforced by Move, not by our server.
+First, go to `/settings` in the web app and set a daily cap on-chain for this agent address. The agent can never spend more than what you allow — enforced by Move, not by the server.
 
 A sample config lives at [`.mcp.json.sample`](./.mcp.json.sample).
-
----
-
-## Submission
-
-The formal submission manifest is at [`.initia/submission.json`](./.initia/submission.json). Every number in that file (18 modules, 14 MCP tools, 21 Tier-2 on-chain tests, and so on) is backed by a test script that runs against a live rollup.
 
 ---
 
