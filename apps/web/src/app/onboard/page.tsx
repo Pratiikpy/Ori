@@ -367,13 +367,14 @@ export default function OnboardPage() {
 }
 
 /**
- * Canonical primary-pill CTA — matches the landing's Hero "Open Ori" and the
- * header "Sign in" buttons. Full-width inside the onboard column (w-full)
- * but keeps the h-11/rounded-full so the pill geometry is identical at any
- * width. Do not let this divergence sneak back in.
+ * Canonical primary-pill CTA — reference-faithful: white pill + dark ink.
+ * Matches the landing's `HeroPrimaryCta` exactly. Uses named theme tokens
+ * (`bg-foreground text-background`), not arbitrary `bg-[var(...)]` syntax,
+ * because the arbitrary form failed to compile under Tailwind v4 on some
+ * builds and buttons rendered as plain text with no pill at all.
  */
 const primaryPillClass =
-  'w-full rounded-full h-11 px-5 inline-flex items-center justify-center gap-1.5 text-[14px] font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-bright)] transition'
+  'w-full rounded-full h-11 px-5 inline-flex items-center justify-center gap-1.5 text-[14px] font-medium bg-foreground text-background hover:-translate-y-[1px] transition will-change-transform disabled:translate-y-0'
 
 function ClaimInitCard({
   hasInitName,

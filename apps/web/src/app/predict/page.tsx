@@ -349,7 +349,7 @@ export default function PredictPage() {
                     'rounded-xl h-11 text-sm font-medium transition border ' +
                     (active
                       ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-background text-foreground hover:bg-muted')
+                      : 'border-border bg-muted/40 text-foreground hover:bg-muted/80')
                   }
                 >
                   {label}
@@ -375,7 +375,7 @@ export default function PredictPage() {
                     'rounded-xl h-11 text-sm font-mono font-medium transition border ' +
                     (active
                       ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-background text-foreground hover:bg-muted')
+                      : 'border-border bg-muted/40 text-foreground hover:bg-muted/80')
                   }
                 >
                   {preset}
@@ -391,7 +391,7 @@ export default function PredictPage() {
             onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
             placeholder="custom amount"
             aria-label="Custom stake amount in INIT"
-            className="w-full rounded-xl border border-border bg-background px-3 h-11 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full rounded-xl border border-border bg-muted/40 px-3 h-11 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-muted/60 transition-colors"
           />
         </section>
 
