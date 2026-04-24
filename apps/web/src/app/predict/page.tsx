@@ -5,6 +5,7 @@ import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { TrendingUp, TrendingDown, Loader2, Info } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
 import { PageHeader, Serif } from '@/components/page-header'
+import { Card, Chip } from '@/components/ui'
 import { ORI_CHAIN_ID, GAS_LIMITS, POLL_INTERVALS } from '@/lib/chain-config'
 import { getOraclePrice, type OraclePrice } from '@/lib/api'
 import {
@@ -286,76 +287,65 @@ export default function PredictPage() {
 
         {/* Token picker */}
         <section>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xs uppercase tracking-widest text-muted-foreground">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
               Token
-            </h2>
-            <span className="text-[10px] text-muted-foreground font-mono">
+            </div>
+            <span className="text-[10px] text-ink-4 font-mono tabular-nums">
               {livePrice?.decimals ?? 0} dp · nonce {livePrice?.nonce ?? '—'}
             </span>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {TOKENS.map((t) => {
-              const active = t === selectedToken
-              return (
-                <button
-                  key={t}
-                  onClick={() => setSelectedToken(t)}
-                  className={
-                    'shrink-0 rounded-full px-4 h-9 text-sm font-semibold transition ' +
-                    (active
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-foreground hover:bg-border')
-                  }
-                >
-                  {t}
-                </button>
-              )
-            })}
+            {TOKENS.map((t) => (
+              <Chip
+                key={t}
+                selected={t === selectedToken}
+                onClick={() => setSelectedToken(t)}
+                className="shrink-0"
+              >
+                {t}
+              </Chip>
+            ))}
           </div>
         </section>
 
         {/* Live price card */}
-        <section className="rounded-2xl border border-border bg-muted/30 px-5 py-6 text-center">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">
+        <Card className="px-5 py-6 text-center">
+          <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
             {pair}
           </div>
-          <div className="mt-2 text-5xl font-mono font-semibold tabular-nums">
+          <div className="mt-2 text-[48px] font-mono font-medium tabular-nums leading-none tracking-[-0.02em]">
             {displayPrice}
           </div>
-          <div className="mt-3 text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+          <div className="mt-3 text-[12px] text-ink-3 flex items-center justify-center gap-1.5">
             {priceLoading && <Loader2 className="w-3 h-3 animate-spin" />}
             {priceError ? (
-              <span className="text-danger">oracle error: {priceError}</span>
+              <span className="text-[var(--color-danger)]">oracle error: {priceError}</span>
             ) : (
-              <span>Connect oracle · live · polled 2s</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
+                Connect oracle · live · polled 2s
+              </span>
             )}
           </div>
-        </section>
+        </Card>
 
         {/* Duration selector */}
         <section>
-          <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+          <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3 mb-2.5">
             Resolves in
-          </h2>
+          </div>
           <div className="grid grid-cols-4 gap-2">
-            {DURATIONS.map(({ label, seconds }) => {
-              const active = seconds === duration
-              return (
-                <button
-                  key={seconds}
-                  onClick={() => setDuration(seconds)}
-                  className={
-                    'rounded-xl h-11 text-sm font-medium transition border ' +
-                    (active
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-muted/40 text-foreground hover:bg-muted/80')
-                  }
-                >
-                  {label}
-                </button>
-              )
-            })}
+            {DURATIONS.map(({ label, seconds }) => (
+              <Chip
+                key={seconds}
+                selected={seconds === duration}
+                onClick={() => setDuration(seconds)}
+                className="h-11"
+              >
+                {label}
+              </Chip>
+            ))}
           </div>
         </section>
 

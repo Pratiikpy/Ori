@@ -12,6 +12,7 @@ import { PageHeader, Serif } from '@/components/page-header'
 import { BigNumberKeypad } from '@/components/big-number-keypad'
 import { FirstPaymentOverlay } from '@/components/first-payment-overlay'
 import { QrModal } from '@/components/qr-modal'
+import { Button, Card, Field, Input } from '@/components/ui'
 import { useResolve } from '@/hooks/use-resolve'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import { ORI_CHAIN_ID, ORI_DECIMALS, ORI_DENOM, ORI_SYMBOL } from '@/lib/chain-config'
@@ -112,62 +113,63 @@ export default function SendPage() {
         />
 
         <div className="grid grid-cols-3 gap-2">
-          <Link
-            href="/send/bulk"
-            className="panel-hover rounded-xl bg-white/[0.02] border border-border py-3 inline-flex items-center justify-center gap-1.5 text-xs"
-          >
-            <Users className="w-4 h-4" />
+          <Button href="/send/bulk" variant="secondary" size="sm" leftIcon={<Users className="w-3.5 h-3.5" />}>
             Bulk
-          </Link>
-          <Link
-            href="/gift/new"
-            className="panel-hover rounded-xl bg-white/[0.02] border border-border py-3 inline-flex items-center justify-center gap-1.5 text-xs"
-          >
-            <LinkIcon className="w-4 h-4" />
+          </Button>
+          <Button href="/gift/new" variant="secondary" size="sm" leftIcon={<LinkIcon className="w-3.5 h-3.5" />}>
             Via link
-          </Link>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setReceiveOpen(true)}
             disabled={!initiaAddress}
-            className="rounded-xl bg-muted border border-border py-3 inline-flex items-center justify-center gap-1.5 text-xs disabled:opacity-40 hover:border-primary/50 transition"
+            leftIcon={<QrCode className="w-3.5 h-3.5" />}
           >
-            <QrCode className="w-4 h-4" />
             Receive
-          </button>
+          </Button>
         </div>
 
-        <label className="block">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">To</span>
-          <input
+        <Field
+          label="To"
+          hint={
+            resolving
+              ? 'Resolving…'
+              : resolved
+                ? undefined
+                : !resolving && to
+                  ? undefined
+                  : undefined
+          }
+          error={
+            !resolving && !resolved && to ? 'Could not resolve' : undefined
+          }
+        >
+          <Input
             value={to}
             onChange={(e) => setTo(e.target.value)}
             placeholder="alice.init or init1…"
-            className="mt-1 w-full rounded-xl bg-muted border border-border px-3 py-3 font-mono focus:outline-none focus:border-primary"
+            className="font-mono"
           />
-          {resolving && (
-            <div className="mt-1 text-xs text-muted-foreground">Resolving…</div>
-          )}
           {resolved && (
-            <div className="mt-1 text-xs text-success">
+            <div className="mt-1.5 text-[12px] text-[var(--color-success)]">
               Resolved → {shortenAddress(resolved.initiaAddress)}
             </div>
           )}
-          {!resolving && !resolved && to && (
-            <div className="mt-1 text-xs text-danger">Could not resolve</div>
-          )}
-        </label>
+        </Field>
 
         <div>
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">Amount</span>
-          <div className="mt-2 rounded-2xl bg-muted/40 border border-border px-4 py-6 text-center">
-            <div className="text-5xl font-bold tracking-tight tabular-nums">
+          <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3 mb-2">
+            Amount
+          </div>
+          <Card className="px-4 py-6 text-center">
+            <div className="text-[56px] font-medium leading-none tracking-[-0.03em] tabular-nums">
               {amount || '0'}
-              <span className="ml-2 text-base text-muted-foreground font-normal align-middle">
+              <span className="ml-2 text-[18px] text-ink-3 font-normal align-middle font-mono">
                 {ORI_SYMBOL}
               </span>
             </div>
-          </div>
+          </Card>
           <BigNumberKeypad
             className="mt-3"
             value={amount}
@@ -176,25 +178,24 @@ export default function SendPage() {
           />
         </div>
 
-        <label className="block">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">Memo (optional)</span>
-          <input
+        <Field label="Memo (optional)">
+          <Input
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
             maxLength={140}
-            className="mt-1 w-full rounded-xl bg-muted border border-border px-3 py-3 focus:outline-none focus:border-primary"
           />
-        </label>
+        </Field>
 
-        <button
+        <Button
           onClick={() => void handleSend()}
           disabled={busy || !resolved}
-          className="w-full rounded-2xl py-4 bg-primary text-primary-foreground font-medium disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          loading={busy}
+          size="lg"
+          className="w-full"
+          rightIcon={<ArrowRight className="w-4 h-4" />}
         >
-          {busy && <Loader2 className="w-4 h-4 animate-spin" />}
           {busy ? 'Sending…' : `Send${autoSign ? ' · 1-tap' : ''}`}
-          <ArrowRight className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       <FirstPaymentOverlay />

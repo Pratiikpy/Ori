@@ -9,16 +9,19 @@ import { toast } from 'sonner'
 
 import { AppShell } from '@/components/app-shell'
 import { AgentPolicySection } from '@/components/agent-policy-section'
+import { MerchantSection } from '@/components/merchant-section'
 import { PageHeader, Serif } from '@/components/page-header'
 import { useSession } from '@/hooks/use-session'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import { ORI_CHAIN_ID } from '@/lib/chain-config'
 import { getProfile, type ProfileData } from '@/lib/api'
 import {
+  msgSetSlug,
   msgUpdateAvatar,
   msgUpdateBio,
   msgUpdateLinks,
   msgUpdatePrivacy,
+  msgUpdateTheme,
 } from '@/lib/contracts'
 import { buildAutoSignFee, sendTx } from '@/lib/tx'
 
@@ -47,6 +50,8 @@ export default function SettingsPage() {
   const [hideBalance, setHideBalance] = useState(false)
   const [hideActivity, setHideActivity] = useState(false)
   const [whitelistOnly, setWhitelistOnly] = useState(false)
+  const [slug, setSlug] = useState('')
+  const [accentColor, setAccentColor] = useState('#6c7bff')
 
   const [busySection, setBusySection] = useState<string | null>(null)
 
@@ -119,6 +124,31 @@ export default function SettingsPage() {
       sendTx(kit, {
         chainId: ORI_CHAIN_ID,
         messages: [msgUpdatePrivacy(initiaAddress, hideBalance, hideActivity, whitelistOnly)],
+        autoSign,
+        fee: autoSign ? buildAutoSignFee(300_000) : undefined,
+      }),
+    )
+
+  const saveSlug = () =>
+    fire('slug', () =>
+      sendTx(kit, {
+        chainId: ORI_CHAIN_ID,
+        messages: [msgSetSlug(initiaAddress, slug.trim().toLowerCase())],
+        autoSign,
+        fee: autoSign ? buildAutoSignFee(300_000) : undefined,
+      }),
+    )
+
+  const saveTheme = () =>
+    fire('theme', () =>
+      sendTx(kit, {
+        chainId: ORI_CHAIN_ID,
+        messages: [
+          msgUpdateTheme(
+            initiaAddress,
+            JSON.stringify({ accent: accentColor }),
+          ),
+        ],
         autoSign,
         fee: autoSign ? buildAutoSignFee(300_000) : undefined,
       }),
@@ -231,6 +261,43 @@ export default function SettingsPage() {
             onChange={setWhitelistOnly}
           />
         </Section>
+
+        <Section title="Slug" busy={busySection === 'slug'} onSave={saveSlug}>
+          <input
+            value={slug}
+            onChange={(e) =>
+              setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+            }
+            placeholder="custom-short-link"
+            maxLength={32}
+            className="w-full rounded-xl bg-muted border border-border px-3 py-2 font-mono focus:outline-none focus:border-primary"
+          />
+          <div className="mt-1.5 text-[11px] text-ink-3">
+            Your profile will also be reachable at /{slug || 'your-slug'}
+          </div>
+        </Section>
+
+        <Section title="Accent color" busy={busySection === 'theme'} onSave={saveTheme}>
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={accentColor}
+              onChange={(e) => setAccentColor(e.target.value)}
+              className="w-12 h-12 rounded-lg cursor-pointer bg-transparent border border-border"
+              aria-label="Pick accent color"
+            />
+            <input
+              value={accentColor}
+              onChange={(e) => setAccentColor(e.target.value)}
+              className="flex-1 rounded-xl bg-muted border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-primary"
+            />
+          </div>
+          <div className="mt-2 text-[11px] text-ink-3">
+            Shown on your public profile header.
+          </div>
+        </Section>
+
+        <MerchantSection />
 
         <div className="pt-2">
           <button

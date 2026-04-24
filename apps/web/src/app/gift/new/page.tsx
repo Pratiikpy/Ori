@@ -10,13 +10,17 @@ import { AppShell } from '@/components/app-shell'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import { useResolve } from '@/hooks/use-resolve'
 import { ORI_CHAIN_ID, ORI_DECIMALS, ORI_DENOM, ORI_SYMBOL, APP_URL } from '@/lib/chain-config'
-import { msgCreateDirectedGift, msgCreateLinkGift } from '@/lib/contracts'
+import {
+  msgCreateDirectedGift,
+  msgCreateGroupGift,
+  msgCreateLinkGift,
+} from '@/lib/contracts'
 import { randomBytes, sha256, toBase64, toHex } from '@/lib/crypto'
 import { createPaymentLink } from '@/lib/api'
 import { GIFT_THEME, type GiftTheme } from '@ori/shared-types'
 import { buildAutoSignFee, extractMoveEventData, sendTx } from '@/lib/tx'
 
-type Mode = 'directed' | 'link'
+type Mode = 'directed' | 'link' | 'group'
 
 const THEMES: Array<{ id: GiftTheme; label: string; emoji: string }> = [
   { id: GIFT_THEME.GENERIC, label: 'Generic', emoji: '✨' },
@@ -40,8 +44,11 @@ export default function NewGiftPage() {
   const [amount, setAmount] = useState('')
   const [message, setMessage] = useState('')
   const [theme, setTheme] = useState<GiftTheme>(GIFT_THEME.GENERIC)
+  const [slots, setSlots] = useState(5)
   const [busy, setBusy] = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [groupSecrets, setGroupSecrets] = useState<string[] | null>(null)
+  const [groupGiftId, setGroupGiftId] = useState<string | null>(null)
 
   const { data: resolved, isFetching: resolving } = useResolve(
     mode === 'directed' ? recipient : null,
@@ -63,8 +70,45 @@ export default function NewGiftPage() {
 
     setBusy(true)
     setShareUrl(null)
+    setGroupSecrets(null)
+    setGroupGiftId(null)
     try {
-      if (mode === 'directed') {
+      if (mode === 'group') {
+        if (slots < 2) {
+          toast.error('Group gifts need at least 2 slots')
+          return
+        }
+        const secrets: Uint8Array[] = []
+        const hashes: Uint8Array[] = []
+        const b64Secrets: string[] = []
+        for (let i = 0; i < slots; i++) {
+          const s = await randomBytes(32)
+          const h = await sha256(s)
+          secrets.push(s)
+          hashes.push(h)
+          b64Secrets.push(toBase64(s))
+        }
+        const msg = msgCreateGroupGift({
+          sender: initiaAddress,
+          totalAmount: base,
+          slotCount: BigInt(slots),
+          theme,
+          message,
+          secretHashes: hashes,
+          denom: ORI_DENOM,
+        })
+        const tx = await sendTx(kit, {
+          chainId: ORI_CHAIN_ID,
+          messages: [msg],
+          autoSign,
+          fee: autoSign ? buildAutoSignFee(800_000) : undefined,
+        })
+        const ev = extractMoveEventData(tx.rawResponse, '::gift_group::GroupGiftCreated')
+        const giftId = ev && ev.id != null ? String(ev.id) : Date.now().toString()
+        setGroupGiftId(giftId)
+        setGroupSecrets(b64Secrets)
+        toast.success(`Group gift live · ${slots} slots`)
+      } else if (mode === 'directed') {
         if (!resolved?.initiaAddress) {
           toast.error('Resolve recipient first')
           return
@@ -138,7 +182,7 @@ export default function NewGiftPage() {
           Gift-wrap a payment
         </h1>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => setMode('directed')}
             className={
@@ -153,16 +197,49 @@ export default function NewGiftPage() {
           <button
             onClick={() => setMode('link')}
             className={
-              'rounded-xl border py-2 text-sm inline-flex items-center justify-center gap-1.5 ' +
+              'rounded-xl border py-2 text-sm inline-flex items-center justify-center gap-1 ' +
               (mode === 'link'
                 ? 'border-primary bg-primary/10 text-primary'
                 : 'border-border bg-muted text-muted-foreground')
             }
           >
-            <LinkIcon className="w-4 h-4" />
-            Shareable link
+            <LinkIcon className="w-3.5 h-3.5" />
+            Link
+          </button>
+          <button
+            onClick={() => setMode('group')}
+            className={
+              'rounded-xl border py-2 text-sm ' +
+              (mode === 'group'
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-muted text-muted-foreground')
+            }
+          >
+            Group
           </button>
         </div>
+
+        {mode === 'group' && (
+          <label className="block">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              Slots
+            </span>
+            <div className="mt-1 flex items-center gap-3">
+              <input
+                type="range"
+                min={2}
+                max={25}
+                value={slots}
+                onChange={(e) => setSlots(Number(e.target.value))}
+                className="flex-1 accent-primary"
+              />
+              <span className="font-mono text-foreground w-10 text-right">{slots}</span>
+            </div>
+            <div className="mt-1.5 text-[11px] text-ink-3">
+              One pot, {slots} recipients — each takes an equal share using their own secret link.
+            </div>
+          </label>
+        )}
 
         {mode === 'directed' && (
           <label className="block">
@@ -238,8 +315,50 @@ export default function NewGiftPage() {
             ? 'Sending…'
             : mode === 'directed'
               ? `Send gift${autoSign ? ' · 1-tap' : ''}`
-              : `Create link${autoSign ? ' · 1-tap' : ''}`}
+              : mode === 'group'
+                ? `Create ${slots}-slot group gift${autoSign ? ' · 1-tap' : ''}`
+                : `Create link${autoSign ? ' · 1-tap' : ''}`}
         </button>
+
+        {groupGiftId && groupSecrets && (
+          <div className="rounded-2xl border border-[var(--color-border-strong)] bg-white/[0.03] p-4 space-y-3">
+            <div className="flex items-center gap-2 text-primary-bright font-medium">
+              <Gift className="w-4 h-4" />
+              Group gift #{groupGiftId} — {groupSecrets.length} slot links
+            </div>
+            <p className="text-[12px] text-ink-3">
+              Share one link with each person. Each slot is claimable exactly once.
+            </p>
+            <div className="space-y-2 max-h-64 overflow-auto">
+              {groupSecrets.map((s, i) => {
+                const url = `${APP_URL}/claim/group/${groupGiftId}/${i}#${encodeURIComponent(s)}`
+                return (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-[var(--color-border)] bg-white/[0.02] p-2.5"
+                  >
+                    <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-ink-3">
+                      slot {i + 1}
+                    </div>
+                    <div className="mt-1 text-[11px] font-mono text-ink-2 break-all">
+                      {url}
+                    </div>
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard.writeText(url)
+                        toast.success(`Slot ${i + 1} copied`)
+                      }}
+                      className="mt-1.5 text-[11px] text-primary-bright inline-flex items-center gap-1 hover:underline"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copy
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {shareUrl && (
           <div className="rounded-2xl border border-success/40 bg-success/10 p-4">

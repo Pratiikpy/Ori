@@ -17,6 +17,7 @@ import { FollowStats } from '@/components/follow-stats'
 import { TipLeaderboard } from '@/components/tip-leaderboard'
 import { TrustScore } from '@/components/trust-score'
 import { ActivityFeed } from '@/components/activity-feed'
+import { ReputationPanel } from '@/components/reputation-panel'
 import { useResolve } from '@/hooks/use-resolve'
 import { getProfile, type ProfileData } from '@/lib/api'
 
@@ -169,6 +170,32 @@ export default function ProfilePage() {
                 <TipJar
                   creatorAddress={resolved.initiaAddress}
                   creatorDisplayName={resolved.initName ?? 'this creator'}
+                />
+              </div>
+            )}
+
+            {!isSelf && (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Link
+                  href={`/subscriptions?creator=${encodeURIComponent(resolved.initiaAddress)}`}
+                  className="rounded-xl border border-[var(--color-border-strong)] bg-white/[0.022] px-4 py-3 text-center text-xs hover:border-primary/40 transition"
+                >
+                  Subscribe →
+                </Link>
+                <Link
+                  href={`/streams?to=${encodeURIComponent(resolved.initiaAddress)}`}
+                  className="rounded-xl border border-[var(--color-border-strong)] bg-white/[0.022] px-4 py-3 text-center text-xs hover:border-primary/40 transition"
+                >
+                  Open a stream →
+                </Link>
+              </div>
+            )}
+
+            {!isSelf && (
+              <div className="mt-4">
+                <ReputationPanel
+                  target={resolved.initiaAddress}
+                  targetDisplayName={displayName}
                 />
               </div>
             )}

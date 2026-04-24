@@ -21,11 +21,18 @@ export function BottomNav() {
     { href: '/ask', label: 'Ask', icon: Bot, match: (p: string) => p.startsWith('/ask') },
     { href: '/predict', label: 'Predict', icon: TrendingUp, match: (p: string) => p.startsWith('/predict') },
     {
-      href: '/send',
+      href: '/create',
       label: 'Create',
       icon: PlusCircle,
       match: (p: string) =>
-        p.startsWith('/send') || p.startsWith('/gift') || p.startsWith('/paywall/new'),
+        p.startsWith('/create') ||
+        p.startsWith('/send') ||
+        p.startsWith('/gift') ||
+        p.startsWith('/paywall') ||
+        p.startsWith('/streams') ||
+        p.startsWith('/subscriptions') ||
+        p.startsWith('/squads') ||
+        p.startsWith('/lucky'),
     },
     {
       href: '/chats',
