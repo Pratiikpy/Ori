@@ -2,6 +2,9 @@
 node_modules/
 .pnpm-store/
 
+# Local design-handoff reference (zip extract, not for repo)
+design_ref/
+
 # Build
 dist/
 build/
