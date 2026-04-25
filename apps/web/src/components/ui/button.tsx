@@ -1,110 +1,96 @@
 'use client'
 
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
-import Link from 'next/link'
-import { Loader2 } from 'lucide-react'
-import { cn } from '@/lib/cn'
+/**
+ * Button — the canonical pill button.
+ *
+ * Three variants, one shape (rounded-full), one height system (sm = h-9,
+ * md = h-12, lg = h-14). Every CTA in the app uses this — never raw
+ * `<button class="bg-...">`. That uniformity is what carries the design.
+ *
+ * Variants:
+ *   primary    — black (#1D1D1F) on light. The Apple-style hero CTA.
+ *   secondary  — black/5 wash with ink text. Default action.
+ *   ghost      — text-only, no surface. For tertiary "link" actions.
+ *   accent     — Apple-blue (#007AFF). For active state / confirmation
+ *                / destructive-alternative actions.
+ *   danger     — muted red on white. Reserved for destructive ops.
+ *
+ * Active-press scale is 0.97 (subtle, iOS-native feel). Hover lifts -1px
+ * for desktop pointer; mobile gets the active-scale only.
+ */
+import * as React from 'react'
+import { Icon, type IconName } from './icon'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
-interface Common {
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
   size?: Size
   loading?: boolean
-  leftIcon?: ReactNode
-  rightIcon?: ReactNode
-  className?: string
-  children?: ReactNode
+  leadingIcon?: IconName
+  trailingIcon?: IconName
+  fullWidth?: boolean
 }
 
-type ButtonProps = Common &
-  ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined }
-
-type LinkProps = Common & {
-  href: string
-  target?: string
-  rel?: string
-  type?: undefined
-  disabled?: boolean
-  onClick?: undefined
-}
-
-export type UiButtonProps = ButtonProps | LinkProps
-
-const base =
-  'inline-flex items-center justify-center gap-2 font-medium rounded-full ' +
-  'transition-all duration-200 ease-[cubic-bezier(0.2,0.7,0.2,1)] ' +
-  'disabled:opacity-50 disabled:pointer-events-none select-none ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-bright/60 focus-visible:ring-offset-0'
-
-const variants: Record<Variant, string> = {
+const VARIANT_STYLES: Record<Variant, string> = {
   primary:
-    'bg-primary text-primary-foreground hover:bg-accent-2 hover:-translate-y-px shadow-[0_6px_30px_-10px_rgba(108,123,255,0.55)]',
+    'bg-[#1D1D1F] text-white hover:bg-black active:bg-black active:scale-[0.97]',
   secondary:
-    'bg-transparent text-foreground border border-[var(--color-border-emphasis)] hover:bg-white/[0.035] hover:border-ink-3',
+    'bg-black/5 text-ink hover:bg-black/10 active:bg-black/15 active:scale-[0.97]',
   ghost:
-    'bg-transparent text-ink-2 hover:text-foreground hover:bg-white/[0.03]',
+    'bg-transparent text-ink-2 hover:text-ink hover:bg-black/5 active:scale-[0.97]',
+  accent:
+    'bg-[#007AFF] text-white hover:bg-[#0066CC] active:scale-[0.97]',
   danger:
-    'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/30 hover:bg-[var(--color-danger)]/20',
+    'bg-[#B91C1C] text-white hover:bg-[#991818] active:scale-[0.97]',
 }
 
-const sizes: Record<Size, string> = {
-  sm: 'text-[12.5px] h-8 px-3.5',
-  md: 'text-[13.5px] h-10 px-5',
-  lg: 'text-[14.5px] h-12 px-7',
+const SIZE_STYLES: Record<Size, string> = {
+  sm: 'h-9  px-4 text-[13px] gap-1.5',
+  md: 'h-12 px-6 text-[14px] gap-2',
+  lg: 'h-14 px-7 text-[15px] gap-2.5',
 }
 
-export const Button = forwardRef<HTMLButtonElement, UiButtonProps>(function Button(
-  props,
-  ref
-) {
-  const {
-    variant = 'primary',
-    size = 'md',
-    loading,
-    leftIcon,
-    rightIcon,
-    className,
-    children,
-    ...rest
-  } = props as Common & Record<string, unknown>
-
-  const classes = cn(base, variants[variant], sizes[size], className)
-  const content = (
-    <>
-      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : leftIcon}
-      {children}
-      {!loading && rightIcon}
-    </>
-  )
-
-  if ('href' in rest && typeof rest.href === 'string') {
-    const linkRest = rest as unknown as LinkProps
-    const { href, target, rel, disabled } = linkRest
-    if (disabled) {
-      return (
-        <span className={cn(classes, 'pointer-events-none opacity-50')} aria-disabled>
-          {content}
-        </span>
-      )
-    }
-    return (
-      <Link href={href} target={target} rel={rel} className={classes}>
-        {content}
-      </Link>
-    )
-  }
-
-  const buttonRest = rest as unknown as ButtonHTMLAttributes<HTMLButtonElement>
+export function Button({
+  variant = 'primary',
+  size = 'md',
+  loading,
+  leadingIcon,
+  trailingIcon,
+  fullWidth,
+  disabled,
+  className = '',
+  children,
+  ...rest
+}: ButtonProps) {
+  const isDisabled = disabled || loading
   return (
     <button
-      ref={ref}
-      className={classes}
-      disabled={loading || buttonRest.disabled}
-      {...buttonRest}
+      type="button"
+      disabled={isDisabled}
+      className={[
+        'inline-flex items-center justify-center rounded-full font-medium',
+        'transition-[background-color,transform,opacity] duration-150',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
+        'will-change-transform',
+        VARIANT_STYLES[variant],
+        SIZE_STYLES[size],
+        fullWidth ? 'w-full' : '',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      {...rest}
     >
-      {content}
+      {loading ? (
+        <Icon name="spinner" size={16} className="animate-spin" />
+      ) : leadingIcon ? (
+        <Icon name={leadingIcon} size={16} />
+      ) : null}
+      <span>{children}</span>
+      {!loading && trailingIcon ? <Icon name={trailingIcon} size={16} /> : null}
     </button>
   )
-})
+}

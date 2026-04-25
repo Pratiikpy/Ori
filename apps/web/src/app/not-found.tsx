@@ -1,38 +1,39 @@
-'use client'
-
 import Link from 'next/link'
-import { Compass } from 'lucide-react'
+import { LandingShell } from '@/components/layout/landing-shell'
+import { GlassCard, Icon } from '@/components/ui'
 
 export default function NotFound() {
   return (
-    <main className="min-h-dvh flex items-center justify-center px-6 py-8">
-      <div className="max-w-md w-full text-center space-y-6">
-        <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/15 text-primary flex items-center justify-center">
-          <Compass className="w-8 h-8" />
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Off the grid.</h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            That URL doesn't point at anything on Ori. Maybe the link is
-            old, or the <span className="font-mono">.init</span> name hasn't
-            been registered yet.
+    <LandingShell>
+      <section className="mx-auto w-full max-w-md px-5 py-20 text-center">
+        <GlassCard padding="lg">
+          <div className="mx-auto w-14 h-14 rounded-full bg-white/80 border border-black/5 inline-flex items-center justify-center mb-5">
+            <Icon name="info" size={24} className="text-ink-3" />
+          </div>
+          <h1 className="text-[32px] font-display font-medium text-ink leading-tight tracking-[-0.02em]">
+            Off the grid.
+          </h1>
+          <p className="mt-3 text-[14px] text-ink-2 leading-[1.55]">
+            That URL doesn't point at anything on Ori. Maybe the link is old,
+            or the <span className="font-mono">.init</span> name hasn't been
+            registered yet.
           </p>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Link
-            href="/today"
-            className="inline-flex justify-center rounded-2xl py-3 bg-primary text-primary-foreground font-medium hover:opacity-90 transition"
-          >
-            Back to Today
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex justify-center rounded-2xl py-3 bg-muted text-foreground font-medium hover:bg-border transition"
-          >
-            Go to landing
-          </Link>
-        </div>
-      </div>
-    </main>
+          <div className="mt-6 flex flex-col gap-2.5">
+            <Link
+              href="/today"
+              className="rounded-full h-12 px-6 bg-[#1D1D1F] text-white text-[14px] font-medium inline-flex items-center justify-center hover:bg-black active:scale-[0.97] transition"
+            >
+              Back to Today
+            </Link>
+            <Link
+              href="/"
+              className="rounded-full h-12 px-6 bg-black/5 text-ink text-[14px] font-medium inline-flex items-center justify-center hover:bg-black/10 active:scale-[0.97] transition"
+            >
+              Go to landing
+            </Link>
+          </div>
+        </GlassCard>
+      </section>
+    </LandingShell>
   )
 }

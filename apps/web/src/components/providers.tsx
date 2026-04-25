@@ -15,6 +15,7 @@ import InterwovenKitStyles from '@initia/interwovenkit-react/styles.js'
 import { Toaster } from 'sonner'
 
 import { ORI_CHAIN_ID, ORI_RPC_URL, oriChain } from '@/lib/chain-config'
+import { SessionBoot } from './session-boot'
 
 // Inject InterwovenKit drawer/modal styles once on client.
 if (typeof document !== 'undefined') {
@@ -74,8 +75,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
             [ORI_CHAIN_ID]: ['/initia.move.v1.MsgExecute'],
           }}
         >
+          <SessionBoot />
           {children}
-          <Toaster position="top-center" theme="dark" richColors />
+          <Toaster
+            position="top-center"
+            theme="light"
+            richColors
+            toastOptions={{
+              style: {
+                borderRadius: '14px',
+                background: 'rgba(255, 255, 255, 0.85)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                color: '#1D1D1F',
+              },
+            }}
+          />
         </InterwovenKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

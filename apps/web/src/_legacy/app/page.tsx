@@ -1,0 +1,156 @@
+/**
+ * Ori — landing page.
+ *
+ * Server component. The page is composition: every section is its own
+ * primitive in `@/components/landing/*`. Client interactivity (scroll
+ * reveal, wallet pill, parallax tilt) is isolated to `landing-interactive`
+ * and `marketing-chrome`. Copy is verbatim from `design-refs/CONTENT.md`;
+ * route order matches `design-refs/IA.md`.
+ */
+import type { ReactNode } from 'react'
+import { ScrollReveal } from '@/components/landing-interactive'
+import {
+  MarketingTopbar,
+  MarketingFooter,
+} from '@/components/marketing-chrome'
+import { Hero } from '@/components/landing/Hero'
+import { StatsRibbon } from '@/components/landing/StatsRibbon'
+import { CapabilitiesGrid } from '@/components/landing/CapabilitiesGrid'
+import { FlowStage } from '@/components/landing/FlowStage'
+import { CreatorProfile } from '@/components/landing/CreatorProfile'
+import { Philosophy } from '@/components/landing/Philosophy'
+import { SystemGrid } from '@/components/landing/SystemGrid'
+
+/**
+ * Italic-serif accent word. Mirrors the `<span class="serif">…</span>`
+ * pattern from the reference HTML — we keep accent words as inline
+ * elements so they compose into headlines without extra layout cost.
+ */
+function Serif({ children }: { children: ReactNode }) {
+  return <span className="font-serif italic">{children}</span>
+}
+
+/**
+ * Section header used by every numbered slab below the hero. Eyebrow is
+ * mono uppercase; title is the marketing display face with optional
+ * inline `<Serif>` accent; sub is muted body text.
+ */
+function SectionHead({
+  eyebrow,
+  title,
+  sub,
+}: {
+  eyebrow: string
+  title: ReactNode
+  sub: string
+}) {
+  return (
+    <header className="reveal max-w-4xl mx-auto text-center flex flex-col items-center">
+      <div className="font-mono uppercase text-[13px] tracking-[0.2em] text-[#007aff] bg-[#007aff]/10 px-5 py-1.5 rounded-full backdrop-blur-md border border-[#007aff]/20 mb-2 shadow-lg shadow-blue-500/10">
+        {eyebrow}
+      </div>
+      <h2 className="mt-6 text-[clamp(40px,6vw,72px)] leading-[1.05] tracking-[-0.03em] font-medium text-foreground">
+        {title}
+      </h2>
+      <p className="mt-6 text-[18px] md:text-[20px] leading-[1.6] text-white/60 max-w-2xl">{sub}</p>
+    </header>
+  )
+}
+
+export default function LandingPage() {
+  return (
+    <ScrollReveal>
+      <main id="main-content" className="relative min-h-dvh backdrop-stars overflow-x-hidden">
+        <MarketingTopbar active="/" />
+
+        <div className="relative z-10">
+          {/* Section 01 — Hero (no eyebrow, full-bleed) */}
+          <section className="shell pt-[clamp(48px,10vw,140px)] pb-[clamp(48px,8vw,100px)]">
+            <Hero />
+          </section>
+
+          {/* Stats ribbon — right under hero, no eyebrow */}
+          <section className="shell">
+            <StatsRibbon />
+          </section>
+
+          {/* 01 · Capabilities */}
+          <section
+            id="capabilities"
+            className="shell pt-[clamp(120px,18vw,240px)] pb-[clamp(100px,15vw,200px)]"
+          >
+            <SectionHead
+              eyebrow="01 · Capabilities"
+              title={
+                <>
+                  Payments, messages, and agents{' '}
+                  <Serif>on the same surface</Serif>.
+                </>
+              }
+              sub="Eight primitives. No feature menu. Everything Ori does, it does from a single conversation."
+            />
+            <div className="mt-20">
+              <CapabilitiesGrid />
+            </div>
+          </section>
+
+          {/* 02 · Flow */}
+          <section
+            id="flow"
+            className="shell pb-[clamp(120px,18vw,240px)]"
+          >
+            <SectionHead
+              eyebrow="02 · Flow"
+              title={
+                <>
+                  A single gesture from <Serif>conversation</Serif> to settled.
+                </>
+              }
+              sub="Three surfaces. One continuous thought."
+            />
+            <div className="mt-20">
+              <FlowStage />
+            </div>
+          </section>
+
+          {/* 03 · Creators */}
+          <section
+            id="agents"
+            className="shell pb-[clamp(120px,18vw,240px)]"
+          >
+            <SectionHead
+              eyebrow="03 · Creators"
+              title={
+                <>
+                  A profile, a tip jar, <Serif>and a stage</Serif>.
+                </>
+              }
+              sub="Linktree, Patreon, and Stripe in one page that lives on the chain."
+            />
+            <div className="mt-20 max-w-2xl mx-auto">
+              <CreatorProfile />
+            </div>
+          </section>
+
+          {/* 04 · Philosophy */}
+          <section
+            id="philosophy"
+            className="shell pb-[clamp(120px,18vw,240px)] flex flex-col items-center text-center"
+          >
+            <Philosophy />
+          </section>
+
+          {/* 05 · System */}
+          <section
+            id="system"
+            className="shell pb-[clamp(120px,18vw,240px)] flex flex-col items-center"
+          >
+            <SystemGrid />
+          </section>
+        </div>
+
+        <MarketingFooter />
+      </main>
+    </ScrollReveal>
+  )
+}

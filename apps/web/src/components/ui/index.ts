@@ -1,14 +1,13 @@
-export { Button } from './button'
-export type { UiButtonProps } from './button'
-export { Pill } from './pill'
-export { Chip } from './chip'
-export { Card, CardHeader, CardBody, CardFooter } from './card'
-export { OSWindow } from './os-window'
+/**
+ * Barrel export for all UI primitives.
+ * Pages should import from `@/components/ui`, never from individual files —
+ * keeps refactors centered here.
+ */
 export { Avatar } from './avatar'
-export { VerifiedBadge } from './verified-badge'
-export { SectionHead, Serif } from './section-head'
-export { Reveal } from './reveal'
+export { Button, type ButtonProps } from './button'
+export { EmptyState, type EmptyStateProps } from './empty-state'
 export { Eyebrow } from './eyebrow'
-export { Field, Input, Textarea } from './field'
-export { EmptyState } from './empty-state'
-export { Stat, StatRibbon } from './stat'
+export { GlassCard, type GlassCardProps } from './glass-card'
+export { Icon, type IconName, type IconRef } from './icon'
+export { Input, type InputProps } from './input'
+export { PageHeader, type PageHeaderProps } from './page-header'

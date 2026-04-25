@@ -1,296 +1,223 @@
 @import 'tailwindcss';
 
 /* ──────────────────────────────────────────────────────────────────────────
-   ORI DESIGN SYSTEM
-   Dark-native, Linear-aligned palette. Existing Tailwind token names
-   (background/foreground/muted/border/primary) are preserved so every inner
-   page auto-upgrades. New tokens (surface-1/2/3, ink-2/3/4, primary-bright,
-   border-strong, serif) sit alongside for the landing + refined chrome.
+   ORI DESIGN SYSTEM — Apple-style premium fintech, light-only.
+
+   Calibrated against the blank-ui-ref aesthetic: #F5F5F7 canvas,
+   #1D1D1F ink, glassmorphic cards (rgba(255,255,255,0.6) + 40px blur),
+   Apple-blue #007AFF accent used sparingly. No dark theme this iteration —
+   single visual language end-to-end is the entire point of the rebuild.
+
+   Why these particular tokens:
+     • Background #F5F5F7 — Apple's macOS / iOS canvas color exactly. Reads
+       as "premium content surface" rather than the off-white you'd get from
+       e.g. #FAFAFA (too clinical) or #FFFFFF (too sterile).
+     • Ink #1D1D1F — Apple's text-primary. 1.5 percentage points off pure
+       black; reduces glare without losing AAA contrast (16.8:1 on canvas).
+     • Accent #007AFF — Apple's "system blue". Used ONLY for active states
+       and links, never for hero CTAs (which use ink itself, black-on-light).
+     • Card opacity 0.6 over a soft gradient — gives the frosted-glass
+       lensing effect the reference relies on. Backdrop-blur-3xl (40px) is
+       what makes it actually feel like glass and not just a tinted div.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
-  /* =================================================================
-     TOKENS: direct port from the Ori-handoff reference
-     (C:/Users/prate/Downloads/Ori-handoff/ori/project/Ori.html).
-     Nothing here is original — this is aesthetic parity with the
-     reference so the app inherits its publication-grade calibration.
-     ================================================================= */
+  /* Canvas + surfaces — semantic names instead of generic gray-100, so when
+     we map them to Tailwind utilities (bg-bg, bg-surface) the intent is
+     legible at the call site. */
+  --color-bg:               #F5F5F7;
+  --color-bg-elevated:      #FFFFFF;
+  --color-surface:          rgba(255, 255, 255, 0.6);
+  --color-surface-solid:    #FFFFFF;
+  --color-surface-hover:    rgba(255, 255, 255, 0.8);
+  --color-surface-pressed:  rgba(0, 0, 0, 0.04);
 
-  /* Canvas + elevated bg (device screen, window interior) */
-  --color-background:       #000000;     /* True Apple Black */
-  --color-bg-2:             rgba(255, 255, 255, 0.02);
-  --color-surface-1:        rgba(255, 255, 255, 0.04);
-  --color-surface-2:        rgba(255, 255, 255, 0.08);
-  --color-surface-3:        rgba(255, 255, 255, 0.12);
+  /* Ink (text + iconography) — 5-stop ladder. Anything past `ink-3` is
+     borderline AAA on glass cards; reserved for tertiary chrome. */
+  --color-ink:              #1D1D1F;
+  --color-ink-2:            rgba(29, 29, 31, 0.72);
+  --color-ink-3:            rgba(29, 29, 31, 0.55);
+  --color-ink-4:            rgba(29, 29, 31, 0.40);
+  --color-ink-5:            rgba(29, 29, 31, 0.25);
 
-  --color-muted:            rgba(255, 255, 255, 0.08);
+  /* Borders — these are deliberately darker than ink-5 so they read as
+     "structural" rather than "tertiary text". On glass cards a too-faint
+     border just looks broken at common monitor gammas. */
+  --color-line:             rgba(0, 0, 0, 0.06);
+  --color-line-strong:      rgba(0, 0, 0, 0.10);
+  --color-line-emphasis:    rgba(0, 0, 0, 0.18);
 
-  /* Deep white for spatial contrast */
-  --color-foreground:       #ffffff;
-  --color-ink-2:            rgba(255, 255, 255, 0.70);
-  --color-ink-3:            rgba(255, 255, 255, 0.50);
-  --color-ink-4:            rgba(255, 255, 255, 0.30);
-  --color-muted-foreground: rgba(255, 255, 255, 0.50);
+  /* Accent — Apple system blue. Used sparingly: active sidebar item,
+     selected state, links, focus rings. NEVER on a hero CTA (those use
+     ink black-on-light, the Apple way). */
+  --color-accent:           #007AFF;
+  --color-accent-hover:     #0066CC;
+  --color-accent-soft:      rgba(0, 122, 255, 0.10);
 
-  /* Accent — Minimalist Apple tint colors */
-  --color-primary:            #007aff;     /* Spatial Blue */
-  --color-primary-foreground: #ffffff;
-  --color-primary-bright:     #3395ff;
-  --color-primary-hover:      #0062cc;
-  --color-accent:             #007aff;
-  --color-accent-2:           #3395ff;
-  --color-accent-ink:         #ffffff;
+  /* Semantic — sparingly used. Money-success is intentionally not the
+     full saturated #34C759 (Apple's iOS green) because that color in
+     finance UIs reads as "gambling app". A muted emerald is more grown-up. */
+  --color-success:          #058A4D;
+  --color-success-soft:     rgba(5, 138, 77, 0.10);
+  --color-warning:          #B45309;
+  --color-warning-soft:     rgba(180, 83, 9, 0.10);
+  --color-danger:           #B91C1C;
+  --color-danger-soft:      rgba(185, 28, 28, 0.10);
 
-  /* Borders — ultra thin spatial borders */
-  --color-border:            rgba(255, 255, 255, 0.08);
-  --color-border-strong:     rgba(255, 255, 255, 0.12);
-  --color-border-emphasis:   rgba(255, 255, 255, 0.18);
-  --color-line-hairline:     rgba(255, 255, 255, 0.05);
+  /* Type / fonts — the next/font CSS vars come from layout.tsx. */
+  --font-display: var(--font-display);
+  --font-body:    var(--font-body);
+  --font-mono:    var(--font-mono);
 
-  /* Semantic */
-  --color-success:            #30d158;
-  --color-success-foreground: #000000;
-  --color-warning:            #ff9f0a;
-  --color-warning-foreground: #000000;
-  --color-danger:             #ff453a;
-  --color-danger-foreground:  #ffffff;
+  /* Radii — Apple uses dramatic corner radii on cards (32px / 2rem) and
+     pills (full). The two-tier system mirrors that: small for inline
+     surfaces, large for content cards. No micro-radii (4px is illegal). */
+  --radius-xs:  6px;
+  --radius-sm:  10px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+  --radius-2xl: 32px;   /* Apple's signature card radius */
+  --radius-full: 9999px;
 
-  /* Fonts */
-  --font-sans:  var(--font-sans);
-  --font-mono:  var(--font-mono);
-  --font-serif: var(--font-serif);
+  /* Motion — `--ease-apple` is Apple's iOS spring curve. Use it for any
+     "lifts on hover" or "page slides in" interaction so motion feels
+     consistent across surfaces. */
+  --ease-apple:    cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Radii -- Massive rounding for fluidity */
-  --radius-sm:  8px;
-  --radius-md:  12px;
-  --radius-lg:  18px;
-  --radius-xl:  24px;
-  --radius-2xl: 32px;
-  --radius-3xl: 48px;
-
-  /* Motion - Organic spring physics */
-  --ease:        cubic-bezier(0.25, 1.0, 0.25, 1.0); /* Softer spring */
-  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Shadows — light-theme cards need real shadow to lift off the canvas.
+     Apple uses a single 8px-offset, 32px-blur, low-opacity drop. */
+  --shadow-card:   0 8px 32px rgba(0, 0, 0, 0.04);
+  --shadow-lift:   0 16px 48px rgba(0, 0, 0, 0.08);
+  --shadow-popup:  0 24px 64px rgba(0, 0, 0, 0.12);
 }
 
 html {
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color-scheme: dark;
-  font-feature-settings: 'ss01', 'ss02', 'cv11';
+  color-scheme: light;
+  font-family: var(--font-body), ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-feature-settings: 'cv11';
   text-rendering: optimizeLegibility;
 }
 
 body {
+  background: var(--color-bg);
+  color: var(--color-ink);
   overscroll-behavior-y: none;
-  background: var(--color-background);
-  color: var(--color-foreground);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* All headings get the display face — Outfit. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   AMBIENT BACKGROUND — CSS-only abstract gradient.
+
+   Three soft radial color fields stacked behind a low-noise overlay. No
+   external image dep, scales infinitely, never breaks at any viewport.
+   The cool-to-warm rotation echoes the frosted-glass plate effect from
+   the reference without paying for image bytes.
+
+   Pinned `position: fixed` so glass cards always have something to refract
+   against; pointer-events: none so it never intercepts clicks.
+   ────────────────────────────────────────────────────────────────────────── */
+.bg-ambient::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 1200px 900px at 8% 10%,  rgba(0, 122, 255, 0.10), transparent 60%),
+    radial-gradient(ellipse 1100px 800px at 95% 25%, rgba(255, 107, 157, 0.07), transparent 60%),
+    radial-gradient(ellipse 1300px 1000px at 50% 95%, rgba(106, 167, 255, 0.10), transparent 65%);
+}
+.bg-ambient::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 25% 35%, rgba(0,0,0,0.018) 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 70%, rgba(0,0,0,0.014) 1px, transparent 1.5px);
+  background-size: 240px 240px, 320px 320px;
+  opacity: 0.6;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   GLASS CARD — Apple-style frosted surface.
+
+   Why a class and not just Tailwind utilities: the `backdrop-filter` chain
+   needs `-webkit-` prefix for Safari iOS, and Tailwind v4's arbitrary value
+   syntax doesn't compile cleanly with vendor-prefixed compound filters.
+   So we author the canonical surface here once, use `.glass-card` site-wide.
+   ────────────────────────────────────────────────────────────────────────── */
+.glass-card {
+  background: var(--color-surface);
+  backdrop-filter: blur(40px) saturate(1.4);
+  -webkit-backdrop-filter: blur(40px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+}
+
+/* Slimmer inner card for nested compositions (e.g. stat cards inside a
+   bento panel). Solid white at 50% so the parent's blur can come through. */
+.glass-inner {
+  background: rgba(255, 255, 255, 0.50);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius-lg);
+}
+
+/* Sidebar surface — heavier blur, slightly more transparent so the ambient
+   color shifts behind it stay visible at a glance. */
+.glass-sidebar {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(60px) saturate(1.6);
+  -webkit-backdrop-filter: blur(60px) saturate(1.6);
+  border-right: 1px solid rgba(255, 255, 255, 0.7);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
    TYPOGRAPHY HELPERS
-   - .font-serif  → Instrument Serif for single-word editorial accents
-                    inside sans headlines ("messages that *move* money")
-   - .tnum        → tabular figures for money, metrics, monospace alignment
-   - .tracked-tight → Linear's aggressive display tracking (-1.584px at 72px
-                     scales linearly to smaller sizes)
    ────────────────────────────────────────────────────────────────────────── */
-.font-serif {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-}
-
 .tnum {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum', 'cv11';
+  font-feature-settings: 'tnum';
 }
 
-.tracked-tight {
-  letter-spacing: -0.022em;
+.font-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
 }
 
-.tracked-tighter {
-  letter-spacing: -0.033em;
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
-/* Hero live-dot pulse — reference uses an expanding ok-colored ring pulse
-   instead of the generic animate-ping halo. 2.4s ease-in-out breathing. */
-@keyframes ori-hero-pulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(107, 208, 163, 0.15); }
-  50%      { box-shadow: 0 0 0 8px rgba(107, 208, 163, 0.06); }
-}
-
-/* SystemGrid Motion card — slides a 20%-wide accent bar L→R→L. Curve uses
-   --ease (0.2,0.7,0.2,1) so the demo IS the curve. */
-@keyframes ori-motion-slide {
-  0%   { transform: translateX(0%);  width: 20%; }
-  50%  { transform: translateX(250%); width: 20%; }
-  100% { transform: translateX(0%);  width: 20%; }
-}
-
-/* Avatar ring-pulse — used on `.avatar.ring` (active chat indicator).
-   Reference lines ~309–313. */
-@keyframes ori-ring-pulse {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50%      { opacity: 0.9; transform: scale(1.04); }
-}
-
-/* Keypad blinking cursor — 1s cycle, 50% off, 50% on.
-   Reference lines ~1014. */
-@keyframes ori-blink {
-  50% { opacity: 0; }
-}
-
-/* Pay-card spring entry — used inline by LiveDeviceChat (Framer-driven)
-   but we ship the CSS keyframe too so any non-FM use falls back cleanly.
-   Reference lines ~358–361. */
-@keyframes ori-card-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
-}
-
-/* StreamProgress bar fill — runs once on view. Reference lines ~995–998. */
-@keyframes ori-fill-up {
-  from { width: 10%; }
-  to   { width: 68%; }
-}
-
-/* Helpers so primitives can opt in via simple class names. */
-.anim-ring-pulse { animation: ori-ring-pulse 1.8s ease-in-out infinite; }
-.anim-blink      { animation: ori-blink 1s steps(2) infinite; }
-.anim-card-in    { animation: ori-card-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.anim-fill-up    { animation: ori-fill-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.anim-motion-slide { animation: ori-motion-slide 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite; }
-
-/* ──────────────────────────────────────────────────────────────────────────
-   AMBIENT BACKDROP - Spatial Aura
-   Replaced stars with massive, elegant, slow-moving blurred orbs of color
-   to create a glassmorphic background that feels like VisionOS.
-   ────────────────────────────────────────────────────────────────────────── */
-.backdrop-stars::before,
-.backdrop-stars::after,
-.backdrop-stars-quiet::before,
-.backdrop-stars-quiet::after {
-  content: '';
-  position: fixed;
-  inset: -200px; /* Oversized to allow smooth bleeding edges */
-  pointer-events: none;
-  z-index: 0;
-}
-
-.backdrop-stars::before {
-  background:
-    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(0, 122, 255, 0.15), transparent 70%),
-    radial-gradient(ellipse 60% 80% at 90% 40%, rgba(88, 86, 214, 0.15), transparent 70%),
-    radial-gradient(ellipse 70% 70% at 10% 80%, rgba(52, 199, 89, 0.08), transparent 70%);
-  filter: blur(140px);
-}
-.backdrop-stars::after {
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(100px);
-}
-
-.backdrop-stars-quiet::before {
-  background:
-    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(0, 122, 255, 0.08), transparent 60%),
-    radial-gradient(ellipse 60% 80% at 95% 20%, rgba(88, 86, 214, 0.06), transparent 60%);
-  filter: blur(100px);
-}
-.backdrop-stars-quiet::after {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(120px);
+/* Eyebrow utility — small, mono, uppercase, tracked. Sits above section
+   titles. Used by `<Eyebrow>` primitive. */
+.eyebrow {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   REVEAL ANIMATION
-   Landing uses `IntersectionObserver` to add `.in` on scroll; transform +
-   opacity transition below is what actually animates. Kept in global CSS
-   so React component stays clean.
+   FOCUS, A11Y, SCROLLBAR
    ────────────────────────────────────────────────────────────────────────── */
-/* Reveal — reference uses 0.9s + 20px translateY for a slower, more
-   cinematic entrance. We were at 0.6s/14px (Linear's default). The
-   slower curve matches the reference's "publication-grade" feel. */
-.reveal {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.9s var(--ease-out), transform 0.9s var(--ease-out);
-  will-change: opacity, transform;
-}
-.reveal.in {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* If JS is disabled or the IntersectionObserver never fires, every
-   `.reveal` element would stay invisible and the LCP would never
-   complete. Force visibility for no-script users + as a safety net.
-   Per Phase 6 critique perf P0-2 / A2. */
-@media (scripting: none) {
-  .reveal { opacity: 1 !important; transform: none !important; }
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   CARD PANEL — Spatial Flat Look
-   A frosted glass effect with absolute minimal borders, perfect for MacOS.
-   ────────────────────────────────────────────────────────────────────────── */
-.card-panel {
-  background-color: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-2xl);
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.3);
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   PANEL HOVER — Spatial Lift
-   Beautiful smooth shadow elevation, very slight scale.
-   ────────────────────────────────────────────────────────────────────────── */
-.panel-hover {
-  transition:
-    background-color 0.4s cubic-bezier(0.25, 1.0, 0.25, 1.0),
-    border-color 0.4s cubic-bezier(0.25, 1.0, 0.25, 1.0),
-    box-shadow 0.4s cubic-bezier(0.25, 1.0, 0.25, 1.0),
-    transform 0.4s cubic-bezier(0.25, 1.0, 0.25, 1.0);
-}
-.panel-hover:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 12px 40px -12px rgba(0, 0, 0, 0.5);
-  transform: translateY(-2px);
-}
-/* Active/pressed state — push in deeply */
-.panel-hover:active {
-  transform: translateY(2px) scale(0.98);
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   SHELL + LAYOUT UTILITIES
-   `.shell` = the canonical 1200px content column.
-   ────────────────────────────────────────────────────────────────────────── */
-.shell {
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: clamp(20px, 4vw, 40px);
-  padding-right: clamp(20px, 4vw, 40px);
-}
-
-/* Safe area insets for mobile PWA (unchanged) */
-@supports (padding: max(0px)) {
-  .safe-area-top    { padding-top: max(1rem, env(safe-area-inset-top)); }
-  .safe-area-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
-}
-
-/* Keyboard-accessible focus ring */
 :focus-visible {
-  outline: 2px solid var(--color-primary-bright);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -300,36 +227,44 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 [role='button']:focus-visible {
-  outline: 2px solid var(--color-primary-bright);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
 .skip-to-content {
   position: absolute;
   top: -100px;
-  left: 0;
+  left: 16px;
   z-index: 100;
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
+  background: var(--color-ink);
+  color: #fff;
   padding: 0.5rem 1rem;
   text-decoration: none;
-  border-radius: 0 0 0.5rem 0;
+  border-radius: var(--radius-md);
+  font-weight: 500;
 }
-.skip-to-content:focus { top: 0; }
+.skip-to-content:focus {
+  top: 16px;
+}
 
-/* Dark-theme scrollbar */
 @media (pointer: fine) {
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(29, 29, 31, 0.18);
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: rgba(29, 29, 31, 0.32);
   }
 }
 
+/* Reduced-motion users get static reveals + no transforms. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -339,24 +274,16 @@ select:focus-visible,
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .reveal { opacity: 1; transform: none; }
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   PRINT — minimal but coherent.
-   - Drop the ambient backdrop layers (no point on paper)
-   - Force black ink + white background for body copy
-   - Hide chrome that doesn't belong in print: nav, footer status pulse,
-     auto-sign toggle, bottom tab bar
-   - Allow link URLs to be inferred via [href] inline expansion
-   ────────────────────────────────────────────────────────────────────────── */
-@media print {
-  body { background: #fff !important; color: #111 !important; }
-  body::before, body::after { display: none !important; }
-  .backdrop-stars::before, .backdrop-stars::after,
-  .backdrop-stars-quiet::before, .backdrop-stars-quiet::after { display: none !important; }
-  nav, .topbar, footer, [data-print-hide] { display: none !important; }
-  a[href]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #555; }
-  a[href^="#"]::after, a[href^="javascript:"]::after { content: ''; }
-  .reveal { opacity: 1 !important; transform: none !important; }
+/* Safe-area insets for mobile (iOS PWA installs). */
+@supports (padding: max(0px)) {
+  .safe-area-top    { padding-top: max(1rem, env(safe-area-inset-top)); }
+  .safe-area-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+}
+
+/* Selection — colored selection feels intentional, not default-blue. */
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
 }

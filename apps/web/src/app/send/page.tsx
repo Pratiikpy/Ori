@@ -1,21 +1,33 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+/**
+ * /send — single-screen payment composer.
+ *
+ * Recipient + amount + optional memo. Resolves .init names automatically
+ * via the `useResolve` hook; once resolved, the green confirm strip
+ * unlocks the Send button. Auto-sign + InterwovenKit handle the on-chain
+ * tx itself; we just compose `msgSendPayment` and hand it off.
+ */
+import * as React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
-import { ArrowRight, LinkIcon, Loader2, QrCode, Users } from 'lucide-react'
-
-import { AppShell } from '@/components/app-shell'
-import { PageHeader, Serif } from '@/components/page-header'
-import { BigNumberKeypad } from '@/components/big-number-keypad'
-import { FirstPaymentOverlay } from '@/components/first-payment-overlay'
-import { QrModal } from '@/components/qr-modal'
-import { Button, Card, Field, Input } from '@/components/ui'
+import { AppShell } from '@/components/layout/app-shell'
+import {
+  Button,
+  GlassCard,
+  Icon,
+  Input,
+  PageHeader,
+} from '@/components/ui'
 import { useResolve } from '@/hooks/use-resolve'
 import { useAutoSign } from '@/hooks/use-auto-sign'
-import { ORI_CHAIN_ID, ORI_DECIMALS, ORI_DENOM, ORI_SYMBOL } from '@/lib/chain-config'
+import {
+  ORI_CHAIN_ID,
+  ORI_DECIMALS,
+  ORI_DENOM,
+  ORI_SYMBOL,
+} from '@/lib/chain-config'
 import { msgSendPayment } from '@/lib/contracts'
 import { deriveChatId } from '@/lib/crypto'
 import { buildAutoSignFee, sendTx } from '@/lib/tx'
@@ -23,63 +35,45 @@ import { buildAutoSignFee, sendTx } from '@/lib/tx'
 export default function SendPage() {
   const router = useRouter()
   const params = useSearchParams()
-  const toParam = params.get('to') ?? ''
-  const amountParam = params.get('amount') ?? ''
-  const memoParam = params.get('memo') ?? ''
-
   const kit = useInterwovenKit()
   const { initiaAddress, isConnected, openConnect } = kit
   const { isEnabled: autoSign } = useAutoSign()
 
-  const [to, setTo] = useState(toParam)
-  const [amount, setAmount] = useState(amountParam)
-  const [memo, setMemo] = useState(memoParam)
-  const [busy, setBusy] = useState(false)
-  const [receiveOpen, setReceiveOpen] = useState(false)
-
-  const receiveUrl = useMemo(() => {
-    if (typeof window === 'undefined' || !initiaAddress) return ''
-    const base = `${window.location.origin}/send?to=${encodeURIComponent(initiaAddress)}`
-    const n = Number(amount)
-    const amt = Number.isFinite(n) && n > 0 ? `&amount=${encodeURIComponent(amount)}` : ''
-    const m = memo ? `&memo=${encodeURIComponent(memo)}` : ''
-    return `${base}${amt}${m}`
-  }, [initiaAddress, amount, memo])
+  const [to, setTo] = React.useState(params.get('to') ?? '')
+  const [amount, setAmount] = React.useState(params.get('amount') ?? '')
+  const [memo, setMemo] = React.useState(params.get('memo') ?? '')
+  const [busy, setBusy] = React.useState(false)
 
   const { data: resolved, isFetching: resolving } = useResolve(to || null)
 
-  useEffect(() => {
-    setTo(toParam)
-  }, [toParam])
+  const baseUnits = React.useMemo(() => {
+    return parseAmountToBase(amount, ORI_DECIMALS)
+  }, [amount])
 
-  const displayTo = useMemo(() => {
-    if (!resolved) return to
-    return resolved.initName ?? shortenAddress(resolved.initiaAddress)
-  }, [resolved, to])
+  const canSend = Boolean(
+    isConnected && initiaAddress && resolved?.initiaAddress && baseUnits > 0n,
+  )
 
   const handleSend = async () => {
     if (!isConnected) {
-      openConnect()
+      void openConnect()
       return
     }
-    if (!initiaAddress) return
-    if (!resolved?.initiaAddress) {
+    if (!initiaAddress || !resolved?.initiaAddress) {
       toast.error('Recipient not resolved')
       return
     }
-    const base = toBaseUnits(amount, ORI_DECIMALS)
-    if (base <= 0n) {
+    if (baseUnits <= 0n) {
       toast.error('Enter an amount')
       return
     }
-
     setBusy(true)
     try {
       const chatId = await deriveChatId(initiaAddress, resolved.initiaAddress)
       const msg = msgSendPayment({
         sender: initiaAddress,
         recipient: resolved.initiaAddress,
-        amount: base,
+        amount: baseUnits,
         memo,
         chatId,
         denom: ORI_DENOM,
@@ -90,8 +84,10 @@ export default function SendPage() {
         autoSign,
         fee: autoSign ? buildAutoSignFee(500_000) : undefined,
       })
-      toast.success(`Sent ${amount} ${ORI_SYMBOL} to ${displayTo}`)
-      router.push(`/chat/${encodeURIComponent(resolved.initName ?? resolved.initiaAddress)}`)
+      toast.success(`Sent ${amount} ${ORI_SYMBOL} to ${displayName(resolved)}`)
+      router.push(
+        `/chat/${encodeURIComponent(resolved.initName ?? resolved.initiaAddress)}`,
+      )
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Send failed')
     } finally {
@@ -100,128 +96,137 @@ export default function SendPage() {
   }
 
   return (
-    <AppShell title="Send">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <PageHeader
-          kicker="04 · Create"
-          title={
-            <>
-              <Serif>Send</Serif> {ORI_SYMBOL}.
-            </>
-          }
-          sub="Tap an amount, pick a recipient, confirm. The money lands inside the conversation as a card both sides see at the same moment."
+    <AppShell>
+      <PageHeader
+        title="Send"
+        description="Pick a name, set an amount. Both sides see the payment card the moment it lands."
+      />
+
+      <GlassCard padding="lg" className="mt-10">
+        {/* Recipient */}
+        <Input
+          label="To"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          placeholder="alice.init or init1…"
+          mono
+          autoComplete="off"
+          autoCapitalize="off"
         />
 
-        <div className="grid grid-cols-3 gap-2">
-          <Button href="/send/bulk" variant="secondary" size="sm" leftIcon={<Users className="w-3.5 h-3.5" />}>
-            Bulk
-          </Button>
-          <Button href="/gift/new" variant="secondary" size="sm" leftIcon={<LinkIcon className="w-3.5 h-3.5" />}>
-            Via link
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setReceiveOpen(true)}
-            disabled={!initiaAddress}
-            leftIcon={<QrCode className="w-3.5 h-3.5" />}
-          >
-            Receive
-          </Button>
-        </div>
-
-        <Field
-          label="To"
-          hint={
-            resolving
-              ? 'Resolving…'
-              : resolved
-                ? undefined
-                : !resolving && to
-                  ? undefined
-                  : undefined
-          }
-          error={
-            !resolving && !resolved && to ? 'Could not resolve' : undefined
-          }
-        >
-          <Input
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            placeholder="alice.init or init1…"
-            className="font-mono"
-          />
-          {resolved && (
-            <div className="mt-1.5 text-[12px] text-[var(--color-success)]">
-              Resolved → {shortenAddress(resolved.initiaAddress)}
-            </div>
-          )}
-        </Field>
-
-        <div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3 mb-2">
-            Amount
-          </div>
-          <Card className="px-4 py-6 text-center">
-            <div className="text-[56px] font-medium leading-none tracking-[-0.03em] tabular-nums">
-              {amount || '0'}
-              <span className="ml-2 text-[18px] text-ink-3 font-normal align-middle font-mono">
-                {ORI_SYMBOL}
+        {/* Resolution status */}
+        <div className="mt-2 min-h-[20px] text-[12.5px]">
+          {resolving && <span className="text-ink-3">Resolving…</span>}
+          {!resolving && resolved && (
+            <span className="text-[#058A4D] inline-flex items-center gap-1.5">
+              <Icon name="check-circle" size={14} weight="fill" />
+              {displayName(resolved)} ·{' '}
+              <span className="font-mono">
+                {resolved.initiaAddress.slice(0, 12)}…
               </span>
-            </div>
-          </Card>
-          <BigNumberKeypad
-            className="mt-3"
-            value={amount}
-            onChange={setAmount}
-            maxDecimals={ORI_DECIMALS}
-          />
+            </span>
+          )}
+          {!resolving && to && !resolved && (
+            <span className="text-[#B91C1C]">
+              Could not resolve — check the .init name or address.
+            </span>
+          )}
         </div>
 
-        <Field label="Memo (optional)">
+        {/* Amount — large numeric input */}
+        <div className="mt-6">
+          <label className="block text-[13px] font-medium text-ink-2 mb-2">
+            Amount
+          </label>
+          <div className="rounded-2xl bg-white/60 border border-black/5 px-6 py-7 text-center">
+            <div className="font-mono tnum text-ink leading-none flex items-baseline justify-center gap-2">
+              <span className="text-ink-3 text-[24px]">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(sanitize(e.target.value))}
+                placeholder="0"
+                className="bg-transparent outline-none placeholder:text-ink-4 text-center font-mono w-full max-w-[280px]"
+                style={{ fontSize: 'clamp(40px, 8vw, 56px)', fontWeight: 500 }}
+              />
+            </div>
+            <div className="mt-2 text-[12px] font-mono text-ink-3 uppercase tracking-[0.1em]">
+              {ORI_SYMBOL}
+            </div>
+          </div>
+          {/* Quick amount chips */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {['1', '5', '10', '25'].map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setAmount(v)}
+                className="rounded-full px-3.5 h-8 bg-white/60 border border-black/5 hover:bg-white/80 active:scale-95 transition text-[12.5px] font-medium text-ink-2 hover:text-ink"
+              >
+                {v} {ORI_SYMBOL}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Optional memo */}
+        <div className="mt-6">
           <Input
+            label="Memo (optional)"
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
-            maxLength={140}
+            placeholder="thanks for the coffee"
+            maxLength={120}
           />
-        </Field>
+        </div>
 
-        <Button
-          onClick={() => void handleSend()}
-          disabled={busy || !resolved}
-          loading={busy}
-          size="lg"
-          className="w-full"
-          rightIcon={<ArrowRight className="w-4 h-4" />}
-        >
-          {busy ? 'Sending…' : `Send${autoSign ? ' · 1-tap' : ''}`}
-        </Button>
-      </div>
-
-      <FirstPaymentOverlay />
-
-      <QrModal
-        open={receiveOpen && Boolean(initiaAddress)}
-        onClose={() => setReceiveOpen(false)}
-        title="Receive"
-        subtitle={
-          Number(amount) > 0
-            ? `Request ${amount} ${ORI_SYMBOL}`
-            : 'Anyone with a camera can scan this'
-        }
-        url={receiveUrl}
-      />
+        {/* Send */}
+        <div className="mt-8">
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            trailingIcon="arrow-right"
+            disabled={!canSend}
+            loading={busy}
+            onClick={handleSend}
+          >
+            {canSend && amount
+              ? `Send ${amount} ${ORI_SYMBOL}`
+              : 'Send'}
+          </Button>
+          <p className="mt-3 text-[12px] text-ink-3 text-center">
+            {autoSign ? (
+              <>Auto-sign on — no popup.</>
+            ) : (
+              <>Wallet will ask once.</>
+            )}
+          </p>
+        </div>
+      </GlassCard>
     </AppShell>
   )
 }
 
-function toBaseUnits(human: string, decimals: number): bigint {
-  if (!human) return 0n
-  const [whole, fracRaw = ''] = human.split('.') as [string, string?]
-  const frac = (fracRaw + '0'.repeat(decimals)).slice(0, decimals)
-  return BigInt(whole || '0') * 10n ** BigInt(decimals) + BigInt(frac || '0')
+function displayName(r: { initName?: string | null; initiaAddress: string }): string {
+  return r.initName ?? `${r.initiaAddress.slice(0, 8)}…${r.initiaAddress.slice(-4)}`
 }
 
-function shortenAddress(a: string): string {
-  return `${a.slice(0, 10)}…${a.slice(-4)}`
+/** Strip non-numeric, allow one decimal point, cap to 6 places. */
+function sanitize(raw: string): string {
+  const cleaned = raw.replace(/[^0-9.]/g, '')
+  const parts = cleaned.split('.')
+  if (parts.length <= 1) return cleaned
+  return parts[0] + '.' + parts.slice(1).join('').slice(0, 6)
+}
+
+/** "1.5" + 6 decimals → 1500000n. */
+function parseAmountToBase(s: string, decimals: number): bigint {
+  if (!s) return 0n
+  const [whole, fracRaw = ''] = s.split('.')
+  const frac = (fracRaw + '0'.repeat(decimals)).slice(0, decimals)
+  const wholeBig = BigInt(whole || '0')
+  const fracBig = BigInt(frac || '0')
+  return wholeBig * 10n ** BigInt(decimals) + fracBig
 }

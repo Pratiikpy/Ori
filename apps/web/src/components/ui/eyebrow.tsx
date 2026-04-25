@@ -1,23 +1,18 @@
-import type { ReactNode } from 'react'
-import { cn } from '@/lib/cn'
-
-interface EyebrowProps {
-  children: ReactNode
-  className?: string
-}
+import * as React from 'react'
 
 /**
- * Tiny uppercase mono label — the Ori.html "01 · Capabilities" pattern.
- * Paired above section titles and on field labels.
+ * Eyebrow — small, mono uppercase, tracked. Sits above section titles.
+ * Single-purpose component so spacing/font choices stay locked.
  */
-export function Eyebrow({ children, className }: EyebrowProps) {
+export function Eyebrow({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
   return (
-    <div
-      className={cn(
-        'font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3',
-        className
-      )}
-    >
+    <div className={['eyebrow', className].filter(Boolean).join(' ')}>
       {children}
     </div>
   )

@@ -1,376 +1,157 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+/**
+ * /settings — minimal config surface.
+ *
+ * Two cards: identity (display name, address pill, sign out) and a
+ * lightweight agent-policy stub. The full settings (bio, links, privacy
+ * toggles, agent kill switch) are out of scope for the rebuild MVP — we
+ * link to /onboard for advanced setup steps and keep this page focused
+ * on what every user needs to see post-sign-in.
+ */
+import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
-import { useQuery } from '@tanstack/react-query'
-import { Loader2, Plus, Save, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
-
-import { AppShell } from '@/components/app-shell'
-import { AgentPolicySection } from '@/components/agent-policy-section'
-import { MerchantSection } from '@/components/merchant-section'
-import { PageHeader, Serif } from '@/components/page-header'
+import { AppShell } from '@/components/layout/app-shell'
+import {
+  Avatar,
+  Button,
+  Eyebrow,
+  GlassCard,
+  Icon,
+  PageHeader,
+} from '@/components/ui'
 import { useSession } from '@/hooks/use-session'
 import { useAutoSign } from '@/hooks/use-auto-sign'
-import { ORI_CHAIN_ID } from '@/lib/chain-config'
-import { getProfile, type ProfileData } from '@/lib/api'
-import {
-  msgSetSlug,
-  msgUpdateAvatar,
-  msgUpdateBio,
-  msgUpdateLinks,
-  msgUpdatePrivacy,
-  msgUpdateTheme,
-} from '@/lib/contracts'
-import { buildAutoSignFee, sendTx } from '@/lib/tx'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const kit = useInterwovenKit()
-  const { initiaAddress, isConnected } = kit
-  const { status, isAuthenticated, signOut } = useSession()
-  const { isEnabled: autoSign } = useAutoSign()
+  const { isConnected, initiaAddress, hexAddress, username, openWallet } =
+    useInterwovenKit()
+  const { isAuthenticated, status, signOut } = useSession()
+  const { isEnabled: autoSign, enable, disable } = useAutoSign()
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isConnected) router.replace('/')
     else if (status === 'unauthenticated') router.replace('/onboard')
   }, [isConnected, status, router])
 
-  const { data: profile, refetch } = useQuery<ProfileData>({
-    queryKey: ['profile', initiaAddress],
-    queryFn: () => getProfile(initiaAddress),
-    enabled: Boolean(initiaAddress) && isAuthenticated,
-    staleTime: 30_000,
-  })
-
-  const [bio, setBio] = useState('')
-  const [avatarUrl, setAvatarUrl] = useState('')
-  const [links, setLinks] = useState<Array<{ label: string; url: string }>>([])
-  const [hideBalance, setHideBalance] = useState(false)
-  const [hideActivity, setHideActivity] = useState(false)
-  const [whitelistOnly, setWhitelistOnly] = useState(false)
-  const [slug, setSlug] = useState('')
-  const [accentColor, setAccentColor] = useState('#6c7bff')
-
-  const [busySection, setBusySection] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!profile) return
-    setBio(profile.bio)
-    setAvatarUrl(profile.avatarUrl)
-    setLinks(profile.links)
-    setHideBalance(profile.hideBalance)
-    setHideActivity(profile.hideActivity)
-    setWhitelistOnly(profile.whitelistOnly)
-  }, [profile])
-
-  const fire = async <T,>(
-    key: string,
-    body: () => Promise<T>,
-  ): Promise<T | null> => {
-    setBusySection(key)
-    try {
-      const r = await body()
-      await refetch()
-      toast.success('Saved')
-      return r
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Save failed')
-      return null
-    } finally {
-      setBusySection(null)
-    }
-  }
-
-  const saveBio = () =>
-    fire('bio', () =>
-      sendTx(kit, {
-        chainId: ORI_CHAIN_ID,
-        messages: [msgUpdateBio(initiaAddress, bio.slice(0, 280))],
-        autoSign,
-        fee: autoSign ? buildAutoSignFee(300_000) : undefined,
-      }),
-    )
-
-  const saveAvatar = () =>
-    fire('avatar', () =>
-      sendTx(kit, {
-        chainId: ORI_CHAIN_ID,
-        messages: [msgUpdateAvatar(initiaAddress, avatarUrl.slice(0, 512))],
-        autoSign,
-        fee: autoSign ? buildAutoSignFee(300_000) : undefined,
-      }),
-    )
-
-  const saveLinks = () =>
-    fire('links', () =>
-      sendTx(kit, {
-        chainId: ORI_CHAIN_ID,
-        messages: [
-          msgUpdateLinks(
-            initiaAddress,
-            links.map((l) => l.url),
-            links.map((l) => l.label),
-          ),
-        ],
-        autoSign,
-        fee: autoSign ? buildAutoSignFee(400_000) : undefined,
-      }),
-    )
-
-  const savePrivacy = () =>
-    fire('privacy', () =>
-      sendTx(kit, {
-        chainId: ORI_CHAIN_ID,
-        messages: [msgUpdatePrivacy(initiaAddress, hideBalance, hideActivity, whitelistOnly)],
-        autoSign,
-        fee: autoSign ? buildAutoSignFee(300_000) : undefined,
-      }),
-    )
-
-  const saveSlug = () =>
-    fire('slug', () =>
-      sendTx(kit, {
-        chainId: ORI_CHAIN_ID,
-        messages: [msgSetSlug(initiaAddress, slug.trim().toLowerCase())],
-        autoSign,
-        fee: autoSign ? buildAutoSignFee(300_000) : undefined,
-      }),
-    )
-
-  const saveTheme = () =>
-    fire('theme', () =>
-      sendTx(kit, {
-        chainId: ORI_CHAIN_ID,
-        messages: [
-          msgUpdateTheme(
-            initiaAddress,
-            JSON.stringify({ accent: accentColor }),
-          ),
-        ],
-        autoSign,
-        fee: autoSign ? buildAutoSignFee(300_000) : undefined,
-      }),
-    )
+  const display = username ?? (initiaAddress ? shortAddr(initiaAddress) : '')
 
   return (
-    <AppShell title="Settings">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <PageHeader
-          kicker="06 · Settings"
-          title={
-            <>
-              Your <Serif>profile</Serif> and caps.
-            </>
-          }
-          sub="Bio, privacy, agent policy, and the kill switch — everything that's only yours to flip."
-        />
+    <AppShell>
+      <PageHeader
+        title="Settings"
+        description="Your wallet, your auto-sign rules, your sign-out — all in one place."
+      />
 
-        <AgentPolicySection />
-
-        <Section title="Bio" busy={busySection === 'bio'} onSave={saveBio}>
-          <textarea
-            rows={3}
-            maxLength={280}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            className="w-full rounded-xl bg-muted border border-border px-3 py-3 focus:outline-none focus:border-primary"
-          />
-          <div className="mt-1 text-[11px] text-muted-foreground text-right">
-            {bio.length} / 280
-          </div>
-        </Section>
-
-        <Section title="Avatar" busy={busySection === 'avatar'} onSave={saveAvatar}>
-          <input
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="ipfs://… or https://…"
-            className="w-full rounded-xl bg-muted border border-border px-3 py-2 font-mono focus:outline-none focus:border-primary"
-          />
-          {avatarUrl && (
-            <img
-              src={avatarUrl}
-              alt=""
-              className="mt-3 w-20 h-20 rounded-xl object-cover border border-border"
-              onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')}
-            />
-          )}
-        </Section>
-
-        <Section title="Links" busy={busySection === 'links'} onSave={saveLinks}>
-          <div className="space-y-2">
-            {links.map((l, i) => (
-              <div key={i} className="flex gap-2 items-center">
-                <input
-                  value={l.label}
-                  onChange={(e) => {
-                    const copy = [...links]
-                    copy[i] = { ...l, label: e.target.value }
-                    setLinks(copy)
-                  }}
-                  placeholder="Label"
-                  className="w-28 rounded-lg bg-muted border border-border px-2 py-1.5 text-sm focus:outline-none focus:border-primary"
-                />
-                <input
-                  value={l.url}
-                  onChange={(e) => {
-                    const copy = [...links]
-                    copy[i] = { ...l, url: e.target.value }
-                    setLinks(copy)
-                  }}
-                  placeholder="https://…"
-                  className="flex-1 rounded-lg bg-muted border border-border px-2 py-1.5 text-sm font-mono focus:outline-none focus:border-primary"
-                />
-                <button
-                  onClick={() => setLinks(links.filter((_, j) => j !== i))}
-                  aria-label="Remove link"
-                  className="p-1.5 rounded hover:bg-muted text-muted-foreground"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+      {/* Identity */}
+      <GlassCard padding="lg" className="mt-10">
+        <Eyebrow>Identity</Eyebrow>
+        <div className="mt-4 flex items-center gap-4">
+          <Avatar seed={initiaAddress ?? 'ori'} initial={display[0]} size="xl" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[20px] font-display font-medium text-ink leading-tight">
+              {display}
+            </div>
+            {initiaAddress && (
+              <div className="mt-1 font-mono text-[12.5px] text-ink-3 truncate">
+                {initiaAddress}
               </div>
-            ))}
-            {links.length < 10 && (
-              <button
-                onClick={() => setLinks([...links, { label: '', url: '' }])}
-                className="w-full rounded-xl border border-dashed border-border py-2 text-sm text-muted-foreground inline-flex items-center justify-center gap-1"
-              >
-                <Plus className="w-4 h-4" />
-                Add link
-              </button>
+            )}
+            {hexAddress && (
+              <div className="mt-0.5 font-mono text-[11.5px] text-ink-4 truncate">
+                {hexAddress}
+              </div>
             )}
           </div>
-        </Section>
-
-        <Section title="Privacy" busy={busySection === 'privacy'} onSave={savePrivacy}>
-          <PrivacyToggle
-            label="Hide my balance on profile"
-            value={hideBalance}
-            onChange={setHideBalance}
-          />
-          <PrivacyToggle
-            label="Hide my activity feed"
-            value={hideActivity}
-            onChange={setHideActivity}
-          />
-          <PrivacyToggle
-            label="Only allow messages from people I follow"
-            value={whitelistOnly}
-            onChange={setWhitelistOnly}
-          />
-        </Section>
-
-        <Section title="Slug" busy={busySection === 'slug'} onSave={saveSlug}>
-          <input
-            value={slug}
-            onChange={(e) =>
-              setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
-            }
-            placeholder="custom-short-link"
-            maxLength={32}
-            className="w-full rounded-xl bg-muted border border-border px-3 py-2 font-mono focus:outline-none focus:border-primary"
-          />
-          <div className="mt-1.5 text-[11px] text-ink-3">
-            Your profile will also be reachable at /{slug || 'your-slug'}
-          </div>
-        </Section>
-
-        <Section title="Accent color" busy={busySection === 'theme'} onSave={saveTheme}>
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              value={accentColor}
-              onChange={(e) => setAccentColor(e.target.value)}
-              className="w-12 h-12 rounded-lg cursor-pointer bg-transparent border border-border"
-              aria-label="Pick accent color"
-            />
-            <input
-              value={accentColor}
-              onChange={(e) => setAccentColor(e.target.value)}
-              className="flex-1 rounded-xl bg-muted border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-primary"
-            />
-          </div>
-          <div className="mt-2 text-[11px] text-ink-3">
-            Shown on your public profile header.
-          </div>
-        </Section>
-
-        <MerchantSection />
-
-        <div className="pt-2">
-          <button
-            onClick={() => void signOut()}
-            className="w-full rounded-xl py-2 bg-muted border border-border text-sm text-muted-foreground"
-          >
-            Sign out of Ori
-          </button>
+          <Button variant="secondary" size="sm" onClick={() => openWallet()}>
+            Wallet
+          </Button>
         </div>
-      </div>
+      </GlassCard>
+
+      {/* Auto-sign */}
+      <GlassCard padding="lg" className="mt-5">
+        <div className="flex items-start gap-4">
+          <div
+            className={[
+              'w-12 h-12 rounded-2xl inline-flex items-center justify-center shrink-0',
+              autoSign ? 'bg-[#058A4D]/10' : 'bg-black/5',
+            ].join(' ')}
+          >
+            <Icon
+              name="lightning"
+              size={22}
+              weight={autoSign ? 'fill' : 'regular'}
+              className={autoSign ? 'text-[#058A4D]' : 'text-ink-3'}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <Eyebrow>Auto-sign</Eyebrow>
+            <h3 className="mt-1 text-[16px] font-display font-medium text-ink leading-tight">
+              {autoSign ? 'On — payments are silent' : 'Off — wallet asks each time'}
+            </h3>
+            <p className="mt-1.5 text-[13px] text-ink-3 leading-[1.55]">
+              When on, transactions sign without a popup for 24 hours. Useful
+              for chat-rate payments. You can revoke at any time.
+            </p>
+          </div>
+          <Button
+            variant={autoSign ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => (autoSign ? disable() : enable())}
+          >
+            {autoSign ? 'Turn off' : 'Turn on'}
+          </Button>
+        </div>
+      </GlassCard>
+
+      {/* Agent policy — stub for now */}
+      <GlassCard padding="lg" className="mt-5">
+        <Eyebrow>Agent policy</Eyebrow>
+        <h3 className="mt-2 text-[16px] font-display font-medium text-ink leading-tight">
+          On-chain spending caps
+        </h3>
+        <p className="mt-1.5 text-[13px] text-ink-3 leading-[1.55] max-w-xl">
+          Limits, kill switch, and per-agent receipts live in the
+          <span className="font-mono text-ink-2"> agent_policy</span> Move
+          module on the ori-1 rollup. Full UI for this lands in the next
+          release; for now configure via the MCP server's local env vars.
+        </p>
+        <Button
+          className="mt-4"
+          variant="secondary"
+          size="sm"
+          trailingIcon="arrow-right"
+          onClick={() => router.push('/ask')}
+        >
+          Configure via Claude
+        </Button>
+      </GlassCard>
+
+      {/* Sign out */}
+      <GlassCard padding="lg" className="mt-5">
+        <Eyebrow>Session</Eyebrow>
+        <div className="mt-2 flex items-start justify-between gap-4">
+          <p className="text-[13px] text-ink-3 leading-[1.55] max-w-md">
+            Signing out clears the local session token. Your wallet stays
+            connected; you'll need to sign one message to come back.
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!isAuthenticated}
+            onClick={() => void signOut()}
+          >
+            Sign out
+          </Button>
+        </div>
+      </GlassCard>
     </AppShell>
   )
 }
 
-function Section({
-  title,
-  busy,
-  onSave,
-  children,
-}: {
-  title: string
-  busy: boolean
-  onSave: () => void | Promise<unknown>
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-2xl border border-[var(--color-border-strong)] bg-white/[0.022] p-5">
-      <div className="flex items-center justify-between mb-3.5">
-        <h2 className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
-          {title}
-        </h2>
-        <button
-          onClick={() => void onSave()}
-          disabled={busy}
-          className="rounded-full h-7 px-3 text-[11.5px] font-medium bg-primary text-primary-foreground disabled:opacity-50 inline-flex items-center gap-1.5 hover:-translate-y-[1px] transition will-change-transform"
-        >
-          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-          Save
-        </button>
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function PrivacyToggle({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: boolean
-  onChange: (v: boolean) => void
-}) {
-  return (
-    <label className="flex items-center justify-between py-2">
-      <span className="text-sm">{label}</span>
-      <button
-        role="switch"
-        aria-checked={value}
-        onClick={() => onChange(!value)}
-        className={
-          'relative w-10 h-6 rounded-full transition ' +
-          (value ? 'bg-primary' : 'bg-border')
-        }
-      >
-        <span
-          className={
-            'absolute top-0.5 w-5 h-5 rounded-full bg-foreground transition ' +
-            (value ? 'left-[18px]' : 'left-0.5')
-          }
-        />
-      </button>
-    </label>
-  )
+function shortAddr(a: string): string {
+  return `${a.slice(0, 8)}…${a.slice(-4)}`
 }

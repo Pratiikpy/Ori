@@ -1,194 +1,212 @@
 'use client'
 
+/**
+ * /today — signed-in home. Bento dashboard.
+ *
+ * One row of "key signal" cards (balance, agent status, today's count),
+ * one row of quick-action tiles, one block of recent activity below.
+ * Everything calls existing backend endpoints; no Move tx fired here.
+ */
+import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { Bot, TrendingUp, ArrowRight, Radio, Repeat, Sparkles } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
-import { AppShell } from '@/components/app-shell'
-import { ActivityFeed } from '@/components/activity-feed'
-import { WeeklyStatsRow } from '@/components/weekly-stats'
-import { PageHeader, Serif } from '@/components/page-header'
-import { Eyebrow } from '@/components/ui'
-import { useAutoSign } from '@/hooks/use-auto-sign'
+import { AppShell } from '@/components/layout/app-shell'
+import { GlassCard, PageHeader, Button, Icon, Eyebrow } from '@/components/ui'
+import { getPortfolio, type PortfolioResponse } from '@/lib/api'
+import { ORI_DECIMALS, ORI_SYMBOL } from '@/lib/chain-config'
 
 export default function TodayPage() {
   const router = useRouter()
   const { isConnected, initiaAddress, username } = useInterwovenKit()
-  const { isEnabled: autoSign } = useAutoSign()
 
-  useEffect(() => {
-    if (!isConnected || !initiaAddress) {
-      router.replace('/')
-    }
-  }, [isConnected, initiaAddress, router])
+  React.useEffect(() => {
+    if (!isConnected) router.replace('/')
+  }, [isConnected, router])
+
+  const { data } = useQuery<PortfolioResponse>({
+    queryKey: ['portfolio', initiaAddress],
+    queryFn: () => getPortfolio(initiaAddress!),
+    enabled: Boolean(initiaAddress),
+    staleTime: 15_000,
+  })
 
   if (!isConnected || !initiaAddress) {
     return (
-      <AppShell title="Today">
-        <div className="text-ink-3 text-sm">Loading…</div>
+      <AppShell>
+        <div className="text-ink-3 text-[14px]">Loading…</div>
       </AppShell>
     )
   }
 
-  const mcpSignerAddr = process.env.NEXT_PUBLIC_MCP_SIGNER_ADDRESS ?? null
+  const greeting = greetingForHour(new Date().getHours())
+  const stats = data?.stats
 
   return (
-    <AppShell title="Today">
+    <AppShell>
       <PageHeader
-        kicker="01 · Today"
         title={
-          username ? (
-            <>
-              Hey, <Serif>{username}</Serif>.
-            </>
-          ) : (
-            <>
-              Welcome <Serif>back</Serif>.
-            </>
-          )
+          <>
+            {greeting},{' '}
+            <span className="text-ink-3">{username ?? 'friend'}</span>.
+          </>
         }
-        sub={
-          autoSign
-            ? 'Auto-sign is on. Claude can transact without popups.'
-            : 'Auto-sign is off. Turn it on in the header to let Claude transact silently.'
-        }
+        description="Everything that moved today, on one surface."
       />
 
-      {/* The grid that actually defines the page: 1 column on mobile,
-          3 columns on desktop. Main column spans 2, sidebar spans 1.
-          Sidebar is `lg:sticky lg:top-6` so it floats with the user as
-          they scroll the dense main column. */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6 min-w-0">
-          {/* Weekly digest — neutral, dense, sits as a stat strip */}
-          <section>
-            <Eyebrow>This week</Eyebrow>
-            <div className="mt-3">
-              <WeeklyStatsRow address={initiaAddress} />
+      {/* Bento — primary signals */}
+      <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5">
+        <GlassCard padding="lg" className="md:col-span-2">
+          <Eyebrow>Sent · Received</Eyebrow>
+          <div className="mt-3 flex items-baseline gap-3">
+            <div className="font-display tnum text-ink leading-none" style={{ fontSize: '40px' }}>
+              {stats ? stats.paymentsSent : '—'}
             </div>
-          </section>
-
-          {/* The ONE accent card on the page — agent setup. Everything
-              else is muted neutral so this CTA actually stands out. */}
-          <Link
-            href="/ask"
-            className="group block rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/5 px-4 py-3.5 hover:from-violet-500/15 hover:to-fuchsia-500/10 transition"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-violet-500/20 inline-flex items-center justify-center shrink-0">
-                <Bot className="h-4 w-4 text-violet-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-violet-300/80">
-                  Agent · signer {mcpSignerAddr ? '· configured' : '· not configured'}
-                </div>
-                <div className="mt-0.5 text-[13.5px] text-foreground">
-                  {mcpSignerAddr
-                    ? `Signs as ${mcpSignerAddr.slice(0, 12)}…${mcpSignerAddr.slice(-6)}`
-                    : 'Set up Claude to spend under your daily cap'}
-                </div>
-              </div>
-              <ArrowRight className="h-4 w-4 text-ink-3 group-hover:text-violet-300 group-hover:translate-x-0.5 transition" />
+            <div className="text-[14px] text-ink-3">
+              {stats ? `${stats.paymentsReceived} received` : 'reading…'}
             </div>
-          </Link>
-
-          {/* Quick actions — dense 2x2. Small icons, p-4, single-line title. */}
-          <section className="space-y-2.5">
-            <Eyebrow>Jump in</Eyebrow>
-            <div className="grid grid-cols-2 gap-2.5">
-              <QuickTile
-                href="/predict"
-                icon={<TrendingUp className="h-4 w-4" />}
-                title={
-                  <>
-                    <Serif>Predict</Serif>
-                  </>
-                }
-                sub="60s markets"
-              />
-              <QuickTile
-                href="/streams"
-                icon={<Radio className="h-4 w-4" />}
-                title={
-                  <>
-                    <Serif>Stream</Serif> money
-                  </>
-                }
-                sub="Per-second pay"
-              />
-              <QuickTile
-                href="/subscriptions"
-                icon={<Repeat className="h-4 w-4" />}
-                title={
-                  <>
-                    <Serif>Subscribe</Serif>
-                  </>
-                }
-                sub="Recurring plans"
-              />
-              <QuickTile
-                href="/send"
-                icon={<ArrowRight className="h-4 w-4" />}
-                title={
-                  <>
-                    <Serif>Send</Serif>
-                  </>
-                }
-                sub="One-tap pay"
-              />
-            </div>
-          </section>
-
-          {/* Slim discovery row — one line, tertiary look. It's a link, not a feature. */}
-          <Link
-            href="/create"
-            className="group flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3 hover:border-zinc-700 hover:bg-zinc-900/60 transition"
-          >
-            <Sparkles className="h-4 w-4 text-ink-3 shrink-0" />
-            <span className="flex-1 text-[13px] text-ink-2">
-              See every way to move money — paywalls, squads, lucky pools, gifts
-            </span>
-            <ArrowRight className="h-3.5 w-3.5 text-ink-4 group-hover:translate-x-0.5 transition" />
-          </Link>
-        </div>
-
-        {/* Sidebar — activity feed. Sticky on desktop, collapses below
-            main on mobile. */}
-        <aside className="lg:col-span-1 lg:sticky lg:top-6 lg:self-start min-w-0">
-          <Eyebrow>Activity</Eyebrow>
-          <div className="mt-3">
-            <ActivityFeed address={initiaAddress} />
           </div>
-        </aside>
+          <div className="mt-6 flex flex-wrap gap-2.5">
+            <Button
+              variant="primary"
+              size="md"
+              leadingIcon="send"
+              onClick={() => router.push('/send')}
+            >
+              Send
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              leadingIcon="chats"
+              onClick={() => router.push('/chats')}
+            >
+              Open chats
+            </Button>
+          </div>
+        </GlassCard>
+
+        <GlassCard padding="lg">
+          <Eyebrow>Tips received</Eyebrow>
+          <div
+            className="mt-3 font-display tnum text-ink leading-none"
+            style={{ fontSize: '40px' }}
+          >
+            {stats ? formatBase(stats.tipsReceivedVolume) : '—'}
+          </div>
+          <div className="mt-1 text-[12px] text-ink-3">
+            {stats ? `${stats.tipsReceived} tips total` : ''}
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* Agent banner — the ONE accent surface on this page */}
+      <Link
+        href="/ask"
+        className="mt-5 block rounded-[2rem] p-7 sm:p-8 bg-gradient-to-br from-[#007AFF]/10 via-white/60 to-[#FF6B9D]/10 border border-white/70 backdrop-blur-md hover:from-[#007AFF]/15 hover:to-[#FF6B9D]/15 transition group"
+      >
+        <div className="flex items-start gap-5">
+          <div className="w-12 h-12 rounded-2xl bg-[#1D1D1F] inline-flex items-center justify-center shrink-0">
+            <Icon name="sparkle" size={22} weight="fill" className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <Eyebrow>Agent · Claude Desktop</Eyebrow>
+            <h3 className="mt-1.5 text-[20px] sm:text-[22px] font-display font-medium text-ink leading-tight tracking-[-0.01em]">
+              Let Claude spend under your rules.
+            </h3>
+            <p className="mt-1.5 text-[13.5px] text-ink-2 max-w-md leading-[1.55]">
+              Plug Ori in as an MCP server. One prompt can tip, predict, and pay across your entire wallet — under the daily cap you wrote on-chain.
+            </p>
+          </div>
+          <Icon name="arrow-right" size={18} className="text-ink-3 group-hover:translate-x-0.5 transition shrink-0 mt-1" />
+        </div>
+      </Link>
+
+      {/* Quick actions */}
+      <section className="mt-10">
+        <Eyebrow>Quick actions</Eyebrow>
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <ActionTile
+            href="/predict"
+            icon="predict"
+            title="Predict"
+            sub="60-sec markets"
+          />
+          <ActionTile
+            href="/send"
+            icon="send"
+            title="Send"
+            sub="One-tap pay"
+          />
+          <ActionTile
+            href="/chats"
+            icon="chats"
+            title="Chats"
+            sub="Talk + pay"
+          />
+          <ActionTile
+            href="/ask"
+            icon="sparkle"
+            title="Ask Claude"
+            sub="14 MCP tools"
+          />
+        </div>
+      </section>
+
+      {/* Footer note */}
+      <div className="mt-12 text-[12px] text-ink-4 font-mono">
+        Connected · <span className="text-ink-3">{shortAddr(initiaAddress)}</span>
       </div>
     </AppShell>
   )
 }
 
-function QuickTile({
+function ActionTile({
   href,
   icon,
   title,
   sub,
 }: {
   href: string
-  icon: React.ReactNode
-  title: React.ReactNode
+  icon: React.ComponentProps<typeof Icon>['name']
+  title: string
   sub: string
 }) {
   return (
     <Link
       href={href}
-      className="group rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 hover:border-zinc-700 hover:bg-zinc-900/60 transition flex flex-col gap-1"
+      className="block glass-card p-5 hover:-translate-y-[2px] transition-transform duration-300 will-change-transform"
     >
-      <span className="text-ink-3 group-hover:text-foreground transition">
-        {icon}
-      </span>
-      <div className="text-[14px] font-medium tracking-[-0.01em] text-foreground mt-1">
+      <Icon name={icon} size={22} className="text-[#007AFF]" />
+      <div className="mt-3 text-[15px] font-display font-medium text-ink tracking-[-0.01em]">
         {title}
       </div>
-      <div className="text-[11px] text-ink-3">{sub}</div>
+      <div className="text-[12px] text-ink-3 mt-0.5">{sub}</div>
     </Link>
   )
+}
+
+function greetingForHour(h: number): string {
+  if (h < 5) return 'Up late'
+  if (h < 12) return 'Good morning'
+  if (h < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function shortAddr(a: string | null | undefined): string {
+  if (!a) return ''
+  return `${a.slice(0, 10)}…${a.slice(-6)}`
+}
+
+function formatBase(raw: string): string {
+  const n = BigInt(raw || '0')
+  const whole = n / 10n ** BigInt(ORI_DECIMALS)
+  const frac = n % 10n ** BigInt(ORI_DECIMALS)
+  const fracStr = frac
+    .toString()
+    .padStart(ORI_DECIMALS, '0')
+    .replace(/0+$/, '')
+    .slice(0, 2)
+  return `${whole}${fracStr ? '.' + fracStr : ''} ${ORI_SYMBOL}`
 }

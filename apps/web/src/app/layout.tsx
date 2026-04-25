@@ -1,41 +1,46 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google'
+import { Outfit, Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
-import { InstallPrompt } from '@/components/install-prompt'
 
-// Geist is the sans of record (Ori.html landing uses it too); weight 500 is
-// the "barely-heavier-than-regular" workhorse, matched to Linear's 510.
-const sans = Geist({
-  variable: '--font-sans',
+/**
+ * Ori type system — Apple-style premium fintech.
+ *
+ *   • Outfit  — display / headings (weights 400, 500, 600, 700)
+ *   • Inter   — body / UI text     (weights 400, 500, 600)
+ *   • JetBrains Mono — addresses, amounts, code blocks (weights 400, 500)
+ *
+ * `next/font/google` self-hosts the woff2 + writes a font-display: swap
+ * stylesheet at build, so we don't pay for an extra HTTP request to
+ * fonts.googleapis.com at first paint. The `variable` field exposes a
+ * CSS var (`--font-display`, etc.) that globals.css picks up.
+ */
+const display = Outfit({
+  variable: '--font-display',
   subsets: ['latin'],
   display: 'swap',
 })
 
-const mono = Geist_Mono({
+const body = Inter({
+  variable: '--font-body',
+  subsets: ['latin'],
+  display: 'swap',
+})
+
+const mono = JetBrains_Mono({
   variable: '--font-mono',
   subsets: ['latin'],
   display: 'swap',
 })
 
-// Editorial serif reserved for single-word accents inside sans headlines.
-// Only the italic 400 is used — do not widen this to multiple weights.
-const serif = Instrument_Serif({
-  variable: '--font-serif',
-  subsets: ['latin'],
-  weight: '400',
-  style: 'italic',
-  display: 'swap',
-})
-
 export const metadata: Metadata = {
-  title: 'Ori — messages that move money',
+  title: 'Ori — chat that pays',
   description:
     'Ori is a chat wallet where your friends, your funds, and your AI agents share one surface. One name everywhere. Settlement in milliseconds.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'default',
     title: 'Ori',
   },
   icons: {
@@ -43,20 +48,22 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'Ori — messages that move money',
+    title: 'Ori — chat that pays',
     description:
       'Chat wallet for friends, funds, and AI agents. One name everywhere. Settlement in milliseconds.',
     type: 'website',
   },
 }
 
-// Allow user-scaling for accessibility (axe: meta-viewport).
-// Prior version locked maximumScale=1 + userScalable=false; that's a
-// WCAG 2.1 AA failure for low-vision users who pinch-zoom.
+/**
+ * Light-only theme — `themeColor` is the canvas (#F5F5F7) so the iOS Safari
+ * status-bar tints to match the page rather than going stark white. Allows
+ * pinch-zoom for a11y (no `maximumScale: 1`).
+ */
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#08090a',
+  themeColor: '#F5F5F7',
   viewportFit: 'cover',
 }
 
@@ -68,20 +75,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sans.variable} ${mono.variable} ${serif.variable} dark antialiased`}
+      className={`${display.variable} ${body.variable} ${mono.variable} antialiased`}
     >
-      <body className="min-h-dvh bg-background text-foreground font-sans">
-        {/* Skip-to-content — required for keyboard-only users so they can
-            bypass the topbar nav and land on the page content. The visual
-            chrome is in globals.css → `.skip-to-content`; it appears only
-            when this <a> receives focus. */}
+      <body className="min-h-dvh bg-bg text-ink font-body">
+        {/* Skip-to-content for keyboard-only users — visually hidden until
+            it receives focus, then slides into the top-left. Lives in
+            globals.css → `.skip-to-content`. */}
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>
-        <Providers>
-          {children}
-          <InstallPrompt />
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

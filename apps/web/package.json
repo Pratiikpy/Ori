@@ -12,6 +12,7 @@
   "dependencies": {
     "@initia/initia.js": "^1.0.21",
     "@initia/interwovenkit-react": "^2.6.0",
+    "@phosphor-icons/react": "^2.1.7",
     "@ori/api": "workspace:*",
     "@ori/shared-types": "workspace:*",
     "@supabase/supabase-js": "^2.47.0",
