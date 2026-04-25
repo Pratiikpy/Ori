@@ -14,7 +14,9 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { Icon } from '@/components/ui/icon'
+// Use the inline-SVG static icon (not Phosphor) so this shell stays safe
+// to import from Server Components like /_not-found.
+import { ArrowRightIcon } from '@/components/ui/static-icons'
 
 export function LandingShell({ children }: { children: React.ReactNode }) {
   const ctaHref = '/onboard'
@@ -56,7 +58,7 @@ export function LandingShell({ children }: { children: React.ReactNode }) {
             className="rounded-full h-10 px-5 bg-[#1D1D1F] text-white text-[13.5px] font-medium inline-flex items-center gap-1.5 hover:bg-black active:scale-[0.97] transition"
           >
             Open the app
-            <Icon name="arrow-right" size={14} />
+            <ArrowRightIcon size={14} />
           </Link>
         </div>
       </header>
