@@ -3,15 +3,15 @@
 /**
  * OriShell — brutalist app chrome (sidebar + topbar + mobile bottom nav).
  *
- * Verbatim port of ui-ref-orii/frontend/src/components/OriShell.jsx with
- * react-router-dom replaced by next/navigation:
- *   - NavLink → Link (active state derived from usePathname)
- *   - useLocation → usePathname
- *   - <Outlet /> → {children}
+ * Verbatim port of ui-ref-orii/frontend/src/components/OriShell.jsx with:
+ *   - NavLink → Link, useLocation → usePathname, <Outlet /> → {children}
+ *   - Sidebar wallet card pulls real address + .init username from
+ *     useInterwovenKit() + useUsernameQuery() (the wallet provider chain
+ *     is mounted by the (ori) layout, so these hooks resolve here).
+ *   - Disconnect button calls InterwovenKit's disconnect().
  *
- * The disconnect handler delegates to InterwovenKit's wagmi connector. The
- * displayed handle/address/balance still come from the static mock —
- * they'll be wired to useInterwovenKit() in a follow-up. (TODO: real data.)
+ * Balance still comes from the mock until a chain-balance fetcher exists.
+ * (TODO: real balance via the bank/move modules.)
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -26,9 +26,16 @@ import {
   UserRound,
   Wallet,
 } from 'lucide-react'
+import { useInterwovenKit, useUsernameQuery } from '@initia/interwovenkit-react'
 
 import { Button } from '@/components/ui/button'
 import { currentUser, navItems } from '@/data/ori-data'
+
+function shortenAddress(address: string | undefined | null): string {
+  if (!address) return '—'
+  if (address.length <= 16) return address
+  return `${address.slice(0, 8)}...${address.slice(-4)}`
+}
 
 type NavId = (typeof navItems)[number]['id']
 
@@ -42,14 +49,20 @@ const icons: Record<NavId, LucideIcon> = {
 
 export function OriShell({
   children,
-  onDisconnect,
 }: {
   children: React.ReactNode
-  onDisconnect?: () => void
 }) {
   const pathname = usePathname() ?? '/inbox'
   const active =
     navItems.find((item) => pathname.includes(item.id)) ?? navItems[0]
+  const { initiaAddress, isConnected, openConnect, disconnect } =
+    useInterwovenKit()
+  const usernameQuery = useUsernameQuery(initiaAddress || undefined)
+  const username = usernameQuery.data
+  const handle = username ? `${username}.init` : currentUser.handle
+  const address = isConnected ? shortenAddress(initiaAddress) : currentUser.address
+  // TODO: real balance via bank/move balance fetcher; mock until then.
+  const balance = currentUser.balance
 
   return (
     <div
@@ -119,28 +132,38 @@ export function OriShell({
                 className="mt-3 font-mono text-sm"
                 data-testid="sidebar-wallet-handle"
               >
-                {currentUser.handle}
+                {handle}
               </p>
               <p
                 className="font-mono text-xs text-[#52525B]"
                 data-testid="sidebar-wallet-address"
               >
-                {currentUser.address}
+                {address}
               </p>
               <p
                 className="mt-3 font-mono text-lg font-bold"
                 data-testid="sidebar-wallet-balance"
               >
-                {currentUser.balance}
+                {balance}
               </p>
-              <Button
-                onClick={onDisconnect}
-                variant="outline"
-                className="mt-4 w-full rounded-none border-black hover:bg-black hover:text-white"
-                data-testid="disconnect-wallet-button"
-              >
-                Disconnect
-              </Button>
+              {isConnected ? (
+                <Button
+                  onClick={() => disconnect()}
+                  variant="outline"
+                  className="mt-4 w-full rounded-none border-black hover:bg-black hover:text-white"
+                  data-testid="disconnect-wallet-button"
+                >
+                  Disconnect
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => openConnect()}
+                  className="mt-4 w-full rounded-none bg-[#0022FF] text-white hover:bg-[#0019CC]"
+                  data-testid="connect-wallet-button"
+                >
+                  Connect wallet
+                </Button>
+              )}
             </div>
           </div>
         </div>
