@@ -36,7 +36,10 @@ export default function TodayPage() {
 
   return (
     <AppShell title="Today">
-      <div className="px-5 pt-8 pb-6 max-w-xl mx-auto w-full space-y-6">
+      {/* Outer container scales: phone-narrow on mobile, ~672px on tablet,
+          full 1024px column on desktop with breathing room either side.
+          That kills the giant empty void on wide monitors. */}
+      <div className="px-5 pt-8 pb-6 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto w-full">
         <PageHeader
           kicker="01 · Today"
           title={
@@ -57,90 +60,99 @@ export default function TodayPage() {
           }
         />
 
-        {/* Weekly digest */}
-        <WeeklyStatsRow address={initiaAddress} />
+        {/* Two-column layout on desktop: main content (header, agent banner,
+            quick actions) on the left ~60%, activity feed sticky on the right
+            ~40%. Stacks on mobile/tablet so nothing is below the fold. */}
+        <div className="grid lg:grid-cols-[1.5fr_1fr] gap-6 lg:gap-10">
+          <div className="space-y-6 min-w-0">
+            {/* Weekly digest */}
+            <WeeklyStatsRow address={initiaAddress} />
 
-        {/* Agent banner — quiet card, editorial copy. The indigo accent is
-            reserved for the icon tile only; the surface stays neutral so the
-            banner doesn't compete with actual data below. */}
-        <section className="panel-hover rounded-2xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/[0.05] p-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
-              <Bot className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
-                Agent · signer
+            {/* Agent banner — quiet card, editorial copy. */}
+            <section className="panel-hover rounded-2xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/[0.05] p-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
+                    Agent · signer
+                  </div>
+                  <div className="mt-0.5 text-[13px] text-foreground truncate">
+                    {mcpSignerAddr ? (
+                      <>
+                        Signs as <span className="font-mono text-ink-2">{mcpSignerAddr.slice(0, 14)}…{mcpSignerAddr.slice(-6)}</span>
+                      </>
+                    ) : (
+                      <>Not configured <Serif>yet</Serif>.</>
+                    )}
+                  </div>
+                </div>
+                <Link
+                  href="/ask"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-[12px] font-medium text-ink-2 border border-[var(--color-border-strong)] hover:text-foreground hover:bg-white/[0.04] hover:border-[var(--color-border-emphasis)] transition shrink-0"
+                >
+                  Setup <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
-              <div className="mt-0.5 text-[13px] text-foreground truncate">
-                {mcpSignerAddr ? (
-                  <>
-                    Signs as <span className="font-mono text-ink-2">{mcpSignerAddr.slice(0, 14)}…{mcpSignerAddr.slice(-6)}</span>
-                  </>
-                ) : (
-                  <>Not configured <Serif>yet</Serif>.</>
-                )}
-              </div>
+            </section>
+
+            {/* Quick actions — 2-up grid. Each tile has full breathing room. */}
+            <div className="space-y-3">
+              <Eyebrow>Jump in</Eyebrow>
+              <section className="grid grid-cols-2 gap-3">
+                <QuickAction
+                  href="/predict"
+                  icon={<TrendingUp className="w-[18px] h-[18px]" />}
+                  title={<><Serif>Predict</Serif></>}
+                  sub="60-sec markets · no counterparty"
+                />
+                <QuickAction
+                  href="/ask"
+                  icon={<Bot className="w-[18px] h-[18px]" />}
+                  title={<>Ask <Serif>Claude</Serif></>}
+                  sub="14 MCP tools · one prompt"
+                />
+                <QuickAction
+                  href="/streams"
+                  icon={<Radio className="w-[18px] h-[18px]" />}
+                  title={<><Serif>Stream</Serif> money</>}
+                  sub="Continuous pay per second"
+                />
+                <QuickAction
+                  href="/subscriptions"
+                  icon={<Repeat className="w-[18px] h-[18px]" />}
+                  title={<><Serif>Subscribe</Serif></>}
+                  sub="Recurring, creator-by-creator"
+                />
+              </section>
+              <Link
+                href="/create"
+                className="block rounded-2xl border border-primary/30 bg-primary/[0.05] p-4 panel-hover"
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 text-primary-bright shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14.5px] font-medium">
+                      See <Serif>every</Serif> way to move money
+                    </div>
+                    <div className="text-[12px] text-ink-3 mt-0.5">
+                      Hub for paywalls, squads, lucky pools, gifts, and more
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-ink-3" />
+                </div>
+              </Link>
             </div>
-            <Link
-              href="/ask"
-              className="inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-[12px] font-medium text-ink-2 border border-[var(--color-border-strong)] hover:text-foreground hover:bg-white/[0.04] hover:border-[var(--color-border-emphasis)] transition shrink-0"
-            >
-              Setup <ArrowRight className="w-3 h-3" />
-            </Link>
           </div>
-        </section>
 
-        {/* Quick actions — mono kickers + italic serif accent on the number. */}
-        <div className="space-y-3">
-          <Eyebrow>Jump in</Eyebrow>
-          <section className="grid grid-cols-2 gap-3">
-            <QuickAction
-              href="/predict"
-              icon={<TrendingUp className="w-[18px] h-[18px]" />}
-              title={<><Serif>Predict</Serif></>}
-              sub="60-sec markets · no counterparty"
-            />
-            <QuickAction
-              href="/ask"
-              icon={<Bot className="w-[18px] h-[18px]" />}
-              title={<>Ask <Serif>Claude</Serif></>}
-              sub="14 MCP tools · one prompt"
-            />
-            <QuickAction
-              href="/streams"
-              icon={<Radio className="w-[18px] h-[18px]" />}
-              title={<><Serif>Stream</Serif> money</>}
-              sub="Continuous pay per second"
-            />
-            <QuickAction
-              href="/subscriptions"
-              icon={<Repeat className="w-[18px] h-[18px]" />}
-              title={<><Serif>Subscribe</Serif></>}
-              sub="Recurring, creator-by-creator"
-            />
-          </section>
-          <Link
-            href="/create"
-            className="block rounded-2xl border border-primary/30 bg-primary/[0.05] p-4 panel-hover"
-          >
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-primary-bright shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-[14.5px] font-medium">
-                  See <Serif>every</Serif> way to move money
-                </div>
-                <div className="text-[12px] text-ink-3 mt-0.5">
-                  Hub for paywalls, squads, lucky pools, gifts, and more
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-ink-3" />
-            </div>
-          </Link>
+          {/* Right rail — activity feed. Sticks just below the header on
+              desktop scroll so the user always sees their recent on-chain
+              moves while exploring features on the left. */}
+          <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
+            <ActivityFeed address={initiaAddress} />
+          </aside>
         </div>
-
-        {/* Activity feed (reverse-chron) */}
-        <ActivityFeed address={initiaAddress} />
       </div>
     </AppShell>
   )

@@ -18,7 +18,10 @@ export function Header({ title }: { title?: string }) {
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--color-line-hairline)] backdrop-blur-xl bg-background/70 safe-area-top">
-      <div className="flex items-center justify-between px-4 h-14">
+      {/* Inner row keeps the same chrome height but caps width on desktop
+          so brand-mark + actions are visually anchored to the same column
+          as the page content below. */}
+      <div className="flex items-center justify-between px-4 h-14 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-2.5 group" aria-label="Ori home">
           <svg viewBox="0 0 24 24" className="h-6 w-6 text-foreground" aria-hidden>
             <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="1.25" fill="none" />

@@ -101,7 +101,7 @@ export default function SendPage() {
 
   return (
     <AppShell title="Send">
-      <div className="max-w-md mx-auto w-full px-5 pt-8 pb-6 space-y-6">
+      <div className="max-w-md md:max-w-xl mx-auto w-full px-5 pt-8 pb-6 space-y-6">
         <PageHeader
           kicker="04 · Create"
           title={

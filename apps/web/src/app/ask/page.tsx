@@ -64,7 +64,7 @@ export default function AskClaudePage() {
 
   return (
     <AppShell title="Ask">
-      <div className="px-5 pt-8 pb-10 max-w-xl mx-auto w-full">
+      <div className="px-5 pt-8 pb-10 max-w-md md:max-w-2xl mx-auto w-full">
         <PageHeader
           kicker="01 · Ask"
           title={

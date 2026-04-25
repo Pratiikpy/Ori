@@ -40,7 +40,7 @@ export default function DiscoverPage() {
 
   return (
     <AppShell title="Discover">
-      <div className="max-w-md mx-auto w-full px-5 pt-8 pb-8">
+      <div className="max-w-md md:max-w-3xl mx-auto w-full px-5 pt-8 pb-8">
         <PageHeader
           kicker="02 · Discover"
           title={

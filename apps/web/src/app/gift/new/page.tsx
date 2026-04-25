@@ -176,7 +176,7 @@ export default function NewGiftPage() {
 
   return (
     <AppShell title="New gift">
-      <div className="max-w-md mx-auto w-full px-5 py-5 space-y-4">
+      <div className="max-w-md md:max-w-xl mx-auto w-full px-5 py-5 space-y-4">
         <h1 className="text-2xl font-bold inline-flex items-center gap-2">
           <Gift className="w-6 h-6 text-primary" />
           Gift-wrap a payment

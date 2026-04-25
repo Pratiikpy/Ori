@@ -236,7 +236,7 @@ export default function OnboardPage() {
 
   return (
     <AppShell title="Welcome" hideNav>
-      <div className="flex-1 px-5 pt-8 pb-8 max-w-md mx-auto w-full">
+      <div className="flex-1 px-5 pt-8 pb-8 max-w-md md:max-w-lg mx-auto w-full">
         <PageHeader
           kicker="01 · Welcome"
           title={

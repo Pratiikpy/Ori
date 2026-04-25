@@ -265,7 +265,7 @@ export default function PredictPage() {
 
   return (
     <AppShell title="Predict">
-      <div className="px-5 pt-8 pb-6 max-w-lg mx-auto w-full space-y-6">
+      <div className="px-5 pt-8 pb-6 max-w-lg md:max-w-2xl mx-auto w-full space-y-6">
         <PageHeader
           kicker="02 · Predict"
           title={

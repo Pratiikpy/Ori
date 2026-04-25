@@ -62,7 +62,7 @@ export default function ProfilePage() {
 
   return (
     <AppShell title={displayName}>
-      <div className="max-w-md mx-auto w-full px-4 py-5">
+      <div className="max-w-md md:max-w-2xl mx-auto w-full px-4 py-5">
         <div className="flex items-center gap-4">
           <Avatar seed={resolved?.initiaAddress ?? decoded} />
           <div className="flex-1 min-w-0">
