@@ -175,3 +175,45 @@ textarea {
   transition-property: background-color, color, border-color, box-shadow, transform, opacity;
   transition-duration: 180ms;
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * InterwovenKit reset overrides
+ *
+ * `@initia/interwovenkit-react/styles.css` ships a brutal 0-specificity reset:
+ *     :where(*){box-sizing:border-box;margin:0;padding:0}
+ *     :where(button){all:unset; ...; display:flex; width:100%}
+ * That `all: unset` strips every default property off every <button>, and the
+ * `width:100%` makes them stretch their container. Tailwind utilities win on
+ * properties they explicitly set (specificity 0,1,0 beats 0,0,0), but they
+ * don't beat properties the page never opted into — so buttons without an
+ * explicit width were spanning full rows, etc.
+ *
+ * The overrides below have specificity 0,0,1 (plain element selectors), which
+ * beats `:where()` 0,0,0. They re-establish a Tailwind-friendly baseline so
+ * (ori) routes look identical to the marketing route.
+ * ────────────────────────────────────────────────────────────────────────── */
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+button {
+  background: transparent;
+  border: 0 solid transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+input,
+label,
+button {
+  /* InterwovenKit forces width:100% on these — Tailwind w-* should still win
+   * but we restore the default explicitly for unstyled inputs. */
+  width: auto;
+}

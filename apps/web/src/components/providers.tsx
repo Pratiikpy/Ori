@@ -8,19 +8,19 @@ import {
   InterwovenKitProvider,
   TESTNET,
   initiaPrivyWalletConnector,
-  injectStyles,
 } from '@initia/interwovenkit-react'
 import '@initia/interwovenkit-react/styles.css'
-import InterwovenKitStyles from '@initia/interwovenkit-react/styles.js'
 import { Toaster } from 'sonner'
 
 import { ORI_CHAIN_ID, ORI_RPC_URL, oriChain } from '@/lib/chain-config'
 import { SessionBoot } from './session-boot'
 
-// Inject InterwovenKit drawer/modal styles once on client.
-if (typeof document !== 'undefined') {
-  injectStyles(InterwovenKitStyles)
-}
+// Note: InterwovenKit drawer/modal styles come in via the static import above
+// (Next bundles it into the page CSS). The runtime `injectStyles()` call was
+// removed because it duplicated those rules and the global `:where(button) {
+// all: unset }` reset shipped inside that bundle was clobbering Tailwind
+// utilities on every <button> in the (ori) routes. Defensive overrides live
+// in `app/globals.css` (see "InterwovenKit reset overrides" block).
 
 // Wagmi requires at least one chain. InterwovenKit handles all actual ops;
 // this is a placeholder chain to satisfy wagmi config.
