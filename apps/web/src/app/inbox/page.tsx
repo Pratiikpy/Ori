@@ -1,52 +1,65 @@
 'use client'
 
 /**
- * /inbox — Inbox surface (Emergent design parity).
+ * /inbox — Inbox surface, ported 1:1 from prototype Inbox.jsx.
  *
- * Three columns on desktop:
- *   THREADS                 │  CONVERSATION       │  AGENT PANEL
- *   open chat threads       │  active thread body │  agent profile + actions
+ * Layout (lg+): grid-cols-[320px_1fr_360px]
+ *   • Threads (left)       — driven by /v1/profiles/:address/activity entries
+ *   • Conversation (mid)   — placeholder for the selected thread (deeper
+ *                            inline rendering is a follow-up; clicking a
+ *                            thread can route to /chat/[address])
+ *   • Agent panel (right)  — Authorized agents + Actions/MCP tools tabs
  *
- * Threads come from /v1/chats (existing endpoint). Active conversation
- * uses the existing /chat/[identifier] page when clicked.
+ * "MCP control room" header replaces the prototype's "Nova Agent" persona,
+ * since your real backend authorizes agents by address (Claude Desktop's
+ * wallet, etc.), not a built-in mascot.
  */
 import * as React from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { AppShell } from '@/components/layout/app-shell'
-import { Icon } from '@/components/ui/icon'
+import { ActionCard, type ActionDef } from '@/components/ui/action-card'
+import { ActionDialog } from '@/components/ui/action-dialog'
 import { getActivityFeed, getUserAgentActions } from '@/lib/api'
+import { mcpTools } from '@/lib/ori-data'
+
+type AgentTab = 'actions' | 'tools'
 
 interface ThreadStub {
   identifier: string
   title: string
   preview: string
   unread: number
-  isAgent?: boolean
 }
+
+const quickActions: ActionDef[] = [
+  { id: 'encrypted-dm',    title: 'Send encrypted DM',  contract: '/v1/messages',          fields: ['Thread', 'Encrypted payload'] },
+  { id: 'mark-read',       title: 'Mark message read',  contract: '/v1/messages/:id/read', fields: ['Message ID'] },
+  { id: 'thread-payment',  title: 'Pay from chat',      contract: 'ori.send_payment',      fields: ['Recipient', 'Amount', 'Memo'] },
+  { id: 'thread-gift',     title: 'Create chat gift',   contract: 'ori.create_link_gift',  fields: ['Amount', 'Shortcode'] },
+]
 
 export default function InboxPage() {
   const { initiaAddress } = useInterwovenKit()
+  const [agentTab, setAgentTab]       = React.useState<AgentTab>('actions')
+  const [draft, setDraft]             = React.useState('')
+  const [modalAction, setModalAction] = React.useState<ActionDef | null>(null)
+  const [activeThreadId, setActiveThreadId] = React.useState<string | null>(null)
 
-  // Pull recent activity to derive thread stubs (real endpoint).
   const activity = useQuery({
     queryKey: ['activity', initiaAddress],
     queryFn: () => getActivityFeed(initiaAddress!),
     enabled: Boolean(initiaAddress),
     staleTime: 30_000,
   })
-
-  const agentActions = useQuery({
+  const agentActionsQuery = useQuery({
     queryKey: ['user-agent-actions', initiaAddress],
     queryFn: () => getUserAgentActions(initiaAddress!),
     enabled: Boolean(initiaAddress),
     staleTime: 30_000,
   })
 
-  // Build thread list from activity entries. ActivityEntry has a `kind` and
-  // a counterparty (e.g. `from` / `to`). We accept any string field that
-  // looks like an address to seed thread stubs.
   const threads = React.useMemo<ThreadStub[]>(() => {
     const seen = new Set<string>()
     const out: ThreadStub[] = []
@@ -71,127 +84,223 @@ export default function InboxPage() {
     return out
   }, [activity.data])
 
-  const recentAgentAction = agentActions.data?.entries?.[0]
+  const activeThread = threads.find((t) => t.identifier === activeThreadId) ?? threads[0]
+  const recentAgentActions = (agentActionsQuery.data?.entries ?? []).slice(0, 4)
 
   return (
     <AppShell eyebrow="Inbox" title="Chat wallet control room">
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)_320px] gap-3 min-h-[600px]">
+      <section className="grid min-h-[calc(100vh-90px)] grid-cols-1 border-b border-black/10 lg:grid-cols-[320px_1fr_360px]">
         {/* Threads */}
-        <aside className="border border-[var(--color-line)] rounded-md bg-white">
-          <div className="px-4 h-12 flex items-center border-b border-[var(--color-line)]">
-            <span className="eyebrow">Threads</span>
-          </div>
-          <ul className="flex flex-col">
+        <aside className="border-b border-black/10 bg-[#F5F5F5] p-4 lg:border-b-0 lg:border-r">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
+            Threads
+          </p>
+          <div className="space-y-2">
             {activity.isLoading && Array.from({ length: 4 }).map((_, i) => (
-              <li key={i} className="h-20 border-b border-[var(--color-line)] p-4">
-                <div className="h-4 w-32 bg-[var(--color-bg-muted)] rounded animate-pulse" />
-                <div className="mt-2 h-3 w-48 bg-[var(--color-bg-muted)] rounded animate-pulse" />
-              </li>
+              <div key={i} className="h-20 border border-black/10 bg-white animate-pulse" />
             ))}
             {!activity.isLoading && threads.length === 0 && (
-              <li className="p-5 text-[13px] text-ink-3">
+              <p className="border border-black/10 bg-white p-4 text-sm text-[#52525B]">
                 No conversations yet. Send a payment to start one.
-              </li>
+              </p>
             )}
-            {threads.map((t, i) => (
-              <li key={t.identifier} className={i !== threads.length - 1 ? 'border-b border-[var(--color-line)]' : ''}>
-                <Link
-                  href={`/chat/${t.identifier}`}
-                  className="block px-4 py-3.5 hover:bg-[var(--color-surface-hover)] transition cursor-pointer"
+            {threads.map((thread) => {
+              const active = activeThread?.identifier === thread.identifier
+              return (
+                <button
+                  key={thread.identifier}
+                  type="button"
+                  onClick={() => setActiveThreadId(thread.identifier)}
+                  className={[
+                    'w-full border p-4 text-left transition-colors cursor-pointer',
+                    active
+                      ? 'border-[#0022FF] bg-white shadow-[4px_4px_0px_0px_rgba(0,34,255,1)]'
+                      : 'border-black/10 bg-white hover:border-black',
+                  ].join(' ')}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-display font-bold text-[14px] text-ink truncate">
-                      {t.title}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-display text-base font-bold truncate">
+                      {thread.title}
                     </span>
-                    {t.unread > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-[var(--color-accent)] text-white text-[10.5px] font-mono">
-                        {t.unread}
-                      </span>
+                    {thread.unread > 0 && (
+                      <span className="font-mono text-xs text-[#0022FF]">{thread.unread}</span>
                     )}
                   </div>
-                  <div className="mt-1 font-mono text-[11px] text-ink-3">
-                    {short(t.identifier)}
-                  </div>
-                  <div className="mt-1 text-[12px] text-ink-3 truncate">
-                    {t.preview}
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  <p className="mt-1 font-mono text-xs text-[#52525B] truncate">{thread.identifier}</p>
+                  <p className="mt-3 text-sm text-[#52525B] truncate">{thread.preview}</p>
+                </button>
+              )
+            })}
+          </div>
         </aside>
 
-        {/* Conversation placeholder */}
-        <main className="border border-[var(--color-line)] rounded-md bg-white flex flex-col">
-          <div className="px-5 h-12 flex items-center border-b border-[var(--color-line)]">
-            <span className="eyebrow">Active conversation</span>
-          </div>
-          <div className="flex-1 flex items-center justify-center p-10">
-            <div className="text-center">
-              <Icon name="chats" size={28} className="text-ink-3 mx-auto" />
-              <p className="mt-4 text-[14px] text-ink-2">
-                Pick a thread on the left or start one with{' '}
-                <Link href="/send" className="text-[var(--color-accent)] underline">
-                  Send payment
-                </Link>.
-              </p>
-            </div>
-          </div>
-          <div className="border-t border-[var(--color-line)] px-5 h-14 flex items-center gap-2 text-[12.5px] text-ink-3 overflow-x-auto">
-            <span className="px-3 h-7 inline-flex items-center rounded-full border border-[var(--color-line)]">Send encrypted DM</span>
-            <span className="px-3 h-7 inline-flex items-center rounded-full border border-[var(--color-line)]">Mark message read</span>
-            <span className="px-3 h-7 inline-flex items-center rounded-full border border-[var(--color-line)]">Pay from chat</span>
-            <span className="px-3 h-7 inline-flex items-center rounded-full border border-[var(--color-line)]">Create chat gift</span>
-          </div>
-        </main>
-
-        {/* Agent panel */}
-        <aside className="border border-[var(--color-line)] rounded-md bg-white">
-          <div className="px-4 h-12 flex items-center border-b border-[var(--color-line)]">
-            <span className="eyebrow">Agent</span>
-          </div>
-          <div className="p-5">
-            <div className="flex items-center gap-3">
-              <span className="w-10 h-10 rounded-md bg-[var(--color-accent-soft)] inline-flex items-center justify-center">
-                <Icon name="sparkle" size={18} className="text-[var(--color-accent)]" />
-              </span>
-              <div>
-                <div className="font-display font-bold text-[15px] text-ink">Agents</div>
-                <div className="text-[11.5px] text-ink-3 font-mono">A2A + MCP</div>
-              </div>
-            </div>
-            <p className="mt-4 text-[13px] text-ink-3 leading-[1.55]">
-              Tools your AI agents can call on your behalf — under the on-chain caps you set.
-            </p>
-            <Link
-              href="/ask"
-              className="mt-4 inline-flex items-center justify-center w-full h-9 rounded-md bg-[var(--color-ink)] text-white text-[12.5px] font-medium hover:opacity-85 transition cursor-pointer"
-            >
-              View MCP tools
-            </Link>
-          </div>
-          <div className="px-5 pb-5">
-            <span className="eyebrow">Recent agent action</span>
-            {recentAgentAction ? (
-              <div className="mt-3 border border-[var(--color-line)] rounded-md p-3">
-                <div className="font-mono text-[11px] text-[var(--color-accent)]">
-                  {recentAgentAction.toolName}
+        {/* Conversation */}
+        <div className="flex min-h-[620px] flex-col">
+          <div className="border-b border-black/10 p-5">
+            {activeThread ? (
+              <>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">DM</p>
+                <h2 className="font-display text-2xl font-black tracking-tight sm:text-3xl">
+                  {activeThread.title}
+                </h2>
+                <div className="mt-1 flex flex-wrap items-center gap-3 font-mono text-xs text-[#52525B]">
+                  <span>{activeThread.identifier}</span>
+                  <span className="flex items-center gap-1 text-[#00A858]">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#00C566]" />
+                    online
+                  </span>
                 </div>
-                <div className="mt-1 text-[13px] font-medium text-ink capitalize">
-                  {recentAgentAction.status} · {short(recentAgentAction.agentAddr)}
-                </div>
-              </div>
+              </>
             ) : (
-              <div className="mt-3 text-[12.5px] text-ink-3">No agent activity yet.</div>
+              <p className="font-mono text-sm text-[#52525B]">Pick a thread or start one.</p>
             )}
           </div>
+
+          <div className="flex-1 flex items-center justify-center p-10 bg-white">
+            {activeThread ? (
+              <Link
+                href={`/chat/${activeThread.identifier}`}
+                className="border border-black px-6 py-3 text-sm font-semibold transition hover:bg-black hover:text-white cursor-pointer"
+              >
+                Open full thread →
+              </Link>
+            ) : (
+              <p className="font-mono text-sm text-[#52525B]">No active thread.</p>
+            )}
+          </div>
+
+          {/* Composer */}
+          <div className="border-t border-black/10 p-4">
+            <div className="mb-3 grid grid-cols-2 gap-2 xl:grid-cols-4">
+              {quickActions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => setModalAction(action)}
+                  className="border border-black/20 px-3 py-3 text-xs font-semibold leading-tight transition hover:bg-black hover:text-white sm:text-sm cursor-pointer"
+                >
+                  {action.title}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-stretch gap-2">
+              <input
+                type="text"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="Write encrypted message..."
+                className="h-12 w-full min-w-0 border border-black/20 bg-white px-3 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-[#0022FF]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (draft.trim() && activeThread) {
+                    // Quick stub: route to the full chat where the real send fires
+                    window.location.href = `/chat/${activeThread.identifier}?d=${encodeURIComponent(draft)}`
+                  }
+                }}
+                className="h-12 shrink-0 bg-[#0022FF] px-4 text-white transition hover:bg-[#0019CC] cursor-pointer"
+                aria-label="Send encrypted message"
+              >
+                <SendGlyph />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Agent panel */}
+        <aside className="border-t border-black/10 bg-[#F5F5F5] p-4 lg:border-l lg:border-t-0">
+          <div className="mb-5 border border-black/10 bg-white p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
+              MCP control room
+            </p>
+            <h3 className="mt-2 font-display text-xl font-black tracking-tight">
+              Authorized agents
+            </h3>
+            <p className="mt-2 text-sm leading-5 text-[#52525B]">
+              Claude runs outside Ori. This panel only shows policy, allowed tools, and action logs.
+            </p>
+          </div>
+          <div className="grid h-auto grid-cols-2 bg-white">
+            <button
+              type="button"
+              onClick={() => setAgentTab('actions')}
+              className={[
+                'inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition cursor-pointer',
+                agentTab === 'actions' ? 'bg-black text-white' : 'text-[#0A0A0A] hover:bg-[#F5F5F5]',
+              ].join(' ')}
+            >
+              Actions
+            </button>
+            <button
+              type="button"
+              onClick={() => setAgentTab('tools')}
+              className={[
+                'inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition cursor-pointer',
+                agentTab === 'tools' ? 'bg-black text-white' : 'text-[#0A0A0A] hover:bg-[#F5F5F5]',
+              ].join(' ')}
+            >
+              MCP tools
+            </button>
+          </div>
+
+          {agentTab === 'actions' && (
+            <div className="mt-4 space-y-3">
+              {agentActionsQuery.isLoading && Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-24 border border-black/10 bg-white animate-pulse" />
+              ))}
+              {!agentActionsQuery.isLoading && recentAgentActions.length === 0 && (
+                <p className="border border-black/10 bg-white p-4 text-sm text-[#52525B]">
+                  No agent activity yet. Authorize Claude in Settings to start.
+                </p>
+              )}
+              {recentAgentActions.map((item) => (
+                <div key={item.id} className="border border-black/10 bg-white p-4">
+                  <p className="font-mono text-xs text-[#0022FF]">{item.toolName}</p>
+                  <p className="mt-2 text-sm font-semibold capitalize">{item.status}</p>
+                  <p className="mt-2 font-mono text-xs text-[#52525B] truncate">
+                    {short(item.agentAddr)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+          {agentTab === 'tools' && (
+            <div className="mt-4 grid grid-cols-1 gap-3">
+              {mcpTools.map((tool) => (
+                <ActionCard
+                  key={tool}
+                  scope="mcp"
+                  action={{
+                    id: tool.replaceAll('.', '-'),
+                    title: tool,
+                    contract: 'MCP stdio tool',
+                    fields: ['Input JSON', 'Spending cap'],
+                  }}
+                  onOpen={setModalAction}
+                />
+              ))}
+            </div>
+          )}
         </aside>
-      </div>
+      </section>
+
+      <ActionDialog action={modalAction} onClose={() => setModalAction(null)} />
     </AppShell>
   )
 }
 
 function short(addr: string | null | undefined): string {
-  if (!addr) return '—'
+  if (!addr) return ''
+  if (addr.length <= 14) return addr
   return `${addr.slice(0, 8)}…${addr.slice(-4)}`
+}
+
+function SendGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m22 2-7 20-4-9-9-4Z" />
+      <path d="M22 2 11 13" />
+    </svg>
+  )
 }

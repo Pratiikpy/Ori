@@ -1,12 +1,13 @@
 'use client'
 
 /**
- * /explore — Explore surface.
+ * /explore — Explore surface, ported from prototype Explore.jsx.
  *
- * Top: 3 columns — Recent / Top Creators / Rising — each driven by
- * /v1/discover/* endpoints.
- * Tabs: Leaderboards | Oracle prices | Activity | Squads.
- * Body: 3-column ranked list cards (top creators, top tippers, etc.)
+ * Sections:
+ *   • Three discovery columns (Recent / Top Creators / Rising) — real
+ *     data via /v1/discover/*
+ *   • Tabs: Leaderboards / Oracle prices / Activity / Squads
+ *   • Per-tab content driven by real backend
  */
 import * as React from 'react'
 import Link from 'next/link'
@@ -21,63 +22,74 @@ import {
   getOracleTickers,
   getOraclePrice,
 } from '@/lib/api'
-import { Icon } from '@/components/ui/icon'
 
 type Tab = 'leaderboards' | 'oracle' | 'activity' | 'squads'
 
 export default function ExplorePage() {
   const [tab, setTab] = React.useState<Tab>('leaderboards')
 
-  const recent = useQuery({ queryKey: ['discover-recent'],   queryFn: () => getDiscoverRecent(8),       staleTime: 30_000 })
-  const top    = useQuery({ queryKey: ['discover-top'],      queryFn: () => getDiscoverTopCreators(8),  staleTime: 30_000 })
-  const rising = useQuery({ queryKey: ['discover-rising'],   queryFn: () => getDiscoverRising(8),       staleTime: 30_000 })
+  const recent = useQuery({ queryKey: ['discover-recent'], queryFn: () => getDiscoverRecent(8),      staleTime: 30_000 })
+  const top    = useQuery({ queryKey: ['discover-top'],    queryFn: () => getDiscoverTopCreators(8), staleTime: 30_000 })
+  const rising = useQuery({ queryKey: ['discover-rising'], queryFn: () => getDiscoverRising(8),      staleTime: 30_000 })
 
   return (
     <AppShell eyebrow="Explore" title="Explore surface">
-      {/* DISCOVER COLUMNS */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <DiscoverColumn title="Recent"       items={recent.data ?? []} loading={recent.isLoading} />
-        <DiscoverColumn title="Top Creators" items={top.data    ?? []} loading={top.isLoading} />
-        <DiscoverColumn title="Rising"       items={rising.data ?? []} loading={rising.isLoading} />
-      </section>
+      <section className="p-4 sm:p-6 lg:p-8">
+        {/* 3 discovery columns */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <DiscoverColumn title="Recent"        items={recent.data ?? []} loading={recent.isLoading} />
+          <DiscoverColumn title="Top Creators"  items={top.data    ?? []} loading={top.isLoading} />
+          <DiscoverColumn title="Rising"        items={rising.data ?? []} loading={rising.isLoading} />
+        </div>
 
-      {/* TABS */}
-      <section className="mt-8 border-b border-[var(--color-line)] flex items-center gap-1 overflow-x-auto">
-        {(['leaderboards', 'oracle', 'activity', 'squads'] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={[
-              'shrink-0 h-10 px-4 text-[13px] font-medium transition rounded-t-md cursor-pointer capitalize',
-              t === tab ? 'bg-[var(--color-accent)] text-white' : 'text-ink-2 hover:text-ink hover:bg-[var(--color-surface-hover)]',
-            ].join(' ')}
-          >
-            {t === 'oracle' ? 'Oracle prices' : t}
-          </button>
-        ))}
-      </section>
+        {/* Tabs */}
+        <div className="mt-8">
+          <div className="flex h-auto w-full flex-wrap justify-start border border-black/10 bg-white">
+            {(['leaderboards', 'oracle', 'activity', 'squads'] as Tab[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={[
+                  'border-r border-black/10 px-4 py-3 text-sm font-semibold transition cursor-pointer capitalize',
+                  t === tab ? 'bg-[#0022FF] text-white' : 'bg-white text-[#0A0A0A] hover:bg-[#F5F5F5]',
+                ].join(' ')}
+              >
+                {t === 'oracle' ? 'Oracle prices' : t}
+              </button>
+            ))}
+          </div>
 
-      {/* TAB CONTENT */}
-      <section className="mt-6">
-        {tab === 'leaderboards' && <LeaderboardsTab />}
-        {tab === 'oracle' && <OracleTab />}
-        {tab === 'activity' && (
-          <div className="border border-[var(--color-line)] rounded-md p-8 text-center text-ink-3 text-[14px]">
-            Realtime activity feed — coming live as transactions land.
+          <div className="mt-6">
+            {tab === 'leaderboards' && <LeaderboardsTab />}
+            {tab === 'oracle'       && <OracleTab />}
+            {tab === 'activity'     && (
+              <div className="border border-black/10 bg-white p-8 text-center font-mono text-sm text-[#52525B]">
+                Real-time activity feed appears here as transactions land.
+              </div>
+            )}
+            {tab === 'squads'       && (
+              <div className="border border-black/10 bg-white p-8 text-center font-mono text-sm text-[#52525B]">
+                Squads directory — visit{' '}
+                <Link href="/squads" className="text-[#0022FF] underline">
+                  /squads
+                </Link>{' '}
+                for the full list.
+              </div>
+            )}
           </div>
-        )}
-        {tab === 'squads' && (
-          <div className="border border-[var(--color-line)] rounded-md p-8 text-center text-ink-3 text-[14px]">
-            Squads directory — link from <Link href="/squads" className="text-[var(--color-accent)] underline">Squads page</Link>.
-          </div>
-        )}
+        </div>
       </section>
     </AppShell>
   )
 }
 
-/* ───────────────────────────────────────────────────────────── */
+/* ───────────────── Discovery columns ───────────────── */
+
+interface DiscoverItem {
+  address: string
+  initName: string | null
+}
 
 function DiscoverColumn({
   title,
@@ -85,26 +97,26 @@ function DiscoverColumn({
   loading,
 }: {
   title: string
-  items: Array<{ address: string; initName: string | null }>
+  items: DiscoverItem[]
   loading: boolean
 }) {
   return (
-    <div className="border border-[var(--color-line)] rounded-md p-5 bg-white min-h-[280px]">
+    <div className="border border-black/10 bg-white p-5 min-h-[280px]">
       <div className="flex items-center gap-2 mb-4">
-        <Icon name="eye" size={14} className="text-[var(--color-accent)]" />
-        <h3 className="font-display font-bold text-[18px] text-ink">{title}</h3>
+        <CompassGlyph />
+        <h3 className="font-display text-xl font-black tracking-tight">{title}</h3>
       </div>
       <ul className="flex flex-col gap-2">
         {loading && Array.from({ length: 4 }).map((_, i) => (
-          <li key={i} className="h-9 rounded-md bg-[var(--color-bg-muted)] animate-pulse" />
+          <li key={i} className="h-10 bg-[#F5F5F5] animate-pulse" />
         ))}
         {!loading && items.length === 0 && (
-          <li className="text-[13px] text-ink-3">No data yet.</li>
+          <li className="text-sm text-[#52525B]">No data yet.</li>
         )}
         {!loading && items.map((item) => (
           <li
             key={item.address}
-            className="h-10 px-3 rounded-md border border-[var(--color-line)] flex items-center font-mono text-[13px] text-ink"
+            className="border border-black/10 px-3 py-2 font-mono text-xs"
           >
             {item.initName ?? short(item.address)}
           </li>
@@ -114,50 +126,68 @@ function DiscoverColumn({
   )
 }
 
+/* ───────────────── Leaderboards tab ───────────────── */
+
 function LeaderboardsTab() {
   const creators = useQuery({ queryKey: ['top-creators'], queryFn: () => getTopCreators(5), staleTime: 30_000 })
   const tippers  = useQuery({ queryKey: ['top-tippers'],  queryFn: () => getTopTippers(5),  staleTime: 30_000 })
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <RankedList title="Top creators"        items={creators.data ?? []}              unit="tips" field="tipsReceived" />
-      <RankedList title="Top tippers"          items={tippers.data ?? []}               unit="tips" field="tipsGiven" />
-      <RankedList title="Creator top tippers"  items={tippers.data?.slice(0, 3) ?? []}  unit="count" field="tipCount" />
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <RankedList
+        title="Top creators"
+        items={creators.data ?? []}
+        unit="tips"
+        valueKey="tipsReceived"
+      />
+      <RankedList
+        title="Top tippers"
+        items={tippers.data ?? []}
+        unit="tips"
+        valueKey="tipsGiven"
+      />
+      <RankedList
+        title="Creator top tippers"
+        items={(tippers.data ?? []).slice(0, 3)}
+        unit="count"
+        valueKey="tipCount"
+      />
     </div>
   )
+}
+
+interface LeaderRow {
+  rank?: number
+  address: string
+  initName: string | null
+  tipsReceived?: number
+  tipsGiven?: number
+  tipCount?: number
 }
 
 function RankedList({
   title,
   items,
   unit,
-  field,
+  valueKey,
 }: {
   title: string
-  items: Array<{
-    rank?: number
-    address: string
-    initName: string | null
-    tipsReceived?: number
-    tipsGiven?: number
-    tipCount?: number
-    volume?: string
-  }>
+  items: LeaderRow[]
   unit: string
-  field: 'tipsReceived' | 'tipsGiven' | 'tipCount'
+  valueKey: 'tipsReceived' | 'tipsGiven' | 'tipCount'
 }) {
   return (
-    <div className="border border-[var(--color-line)] rounded-md p-5 bg-white min-h-[200px]">
-      <h3 className="font-display font-bold text-[18px] text-ink mb-4">{title}</h3>
-      <ol className="flex flex-col gap-1.5 font-mono text-[13px]">
-        {items.length === 0 && <li className="text-ink-3">No data yet.</li>}
-        {items.map((item, i) => (
-          <li key={item.address} className="flex items-center justify-between">
-            <span className="text-ink">
-              {i + 1}. {item.initName ?? short(item.address)}
+    <div className="border border-black/10 bg-white p-5 min-h-[200px]">
+      <h3 className="font-display text-xl font-black tracking-tight mb-4">{title}</h3>
+      <ol className="flex flex-col gap-1.5 font-mono text-sm">
+        {items.length === 0 && <li className="text-[#52525B]">No data yet.</li>}
+        {items.map((row, i) => (
+          <li key={row.address} className="flex items-center justify-between">
+            <span>
+              {i + 1}. {row.initName ?? short(row.address)}
             </span>
-            <span className="text-ink-3 tnum">
-              {(item[field] ?? 0).toLocaleString()} {unit}
+            <span className="text-[#52525B] tnum">
+              {(row[valueKey] ?? 0).toLocaleString()} {unit}
             </span>
           </li>
         ))}
@@ -166,18 +196,23 @@ function RankedList({
   )
 }
 
-function OracleTab() {
-  const tickers = useQuery({ queryKey: ['oracle-tickers'], queryFn: getOracleTickers, staleTime: 60_000 })
+/* ───────────────── Oracle tab ───────────────── */
 
+function OracleTab() {
+  const tickers = useQuery({
+    queryKey: ['oracle-tickers'],
+    queryFn: getOracleTickers,
+    staleTime: 60_000,
+  })
   return (
-    <div className="border border-[var(--color-line)] rounded-md p-5 bg-white">
-      <h3 className="font-display font-bold text-[18px] text-ink mb-4">Slinky oracle</h3>
+    <div className="border border-black/10 bg-white p-5">
+      <h3 className="font-display text-xl font-black tracking-tight mb-4">Slinky oracle</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+        {tickers.isLoading && Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-20 bg-[#F5F5F5] animate-pulse" />
+        ))}
         {(tickers.data?.tickers ?? []).map((pair) => (
           <OracleTile key={pair} pair={pair} />
-        ))}
-        {tickers.isLoading && Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-20 rounded-md bg-[var(--color-bg-muted)] animate-pulse" />
         ))}
       </div>
     </div>
@@ -190,21 +225,32 @@ function OracleTile({ pair }: { pair: string }) {
     queryFn: () => getOraclePrice(pair),
     refetchInterval: 5_000,
   })
-  // OraclePrice.price is a raw integer string scaled by `decimals`.
-  const display = data
-    ? (Number(data.price) / 10 ** data.decimals).toFixed(2)
-    : null
+  const display = data ? (Number(data.price) / 10 ** data.decimals).toFixed(2) : null
   return (
-    <div className="border border-[var(--color-line)] rounded-md p-3 bg-white">
-      <div className="font-mono text-[10.5px] uppercase text-ink-3 tracking-[0.10em]">{pair}</div>
-      <div className="mt-1 font-mono tnum text-[15px] font-medium text-ink">
+    <div className="border border-black/10 bg-white p-3">
+      <div className="font-mono text-[10px] uppercase tracking-[0.10em] text-[#52525B]">
+        {pair}
+      </div>
+      <div className="mt-1 font-mono tnum text-[15px] font-bold">
         ${display ?? '—'}
       </div>
     </div>
   )
 }
 
-function short(addr: string | undefined): string {
+/* ───────────────── Glyphs ───────────────── */
+
+function CompassGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0022FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </svg>
+  )
+}
+
+function short(addr: string | null | undefined): string {
   if (!addr) return '—'
+  if (addr.length <= 14) return addr
   return `${addr.slice(0, 8)}…${addr.slice(-4)}`
 }
