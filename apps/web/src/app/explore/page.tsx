@@ -190,11 +190,15 @@ function OracleTile({ pair }: { pair: string }) {
     queryFn: () => getOraclePrice(pair),
     refetchInterval: 5_000,
   })
+  // OraclePrice.price is a raw integer string scaled by `decimals`.
+  const display = data
+    ? (Number(data.price) / 10 ** data.decimals).toFixed(2)
+    : null
   return (
     <div className="border border-[var(--color-line)] rounded-md p-3 bg-white">
       <div className="font-mono text-[10.5px] uppercase text-ink-3 tracking-[0.10em]">{pair}</div>
       <div className="mt-1 font-mono tnum text-[15px] font-medium text-ink">
-        ${data?.price?.toFixed(2) ?? '—'}
+        ${display ?? '—'}
       </div>
     </div>
   )
