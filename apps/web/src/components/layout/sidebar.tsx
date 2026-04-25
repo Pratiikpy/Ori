@@ -15,7 +15,7 @@ import { usePathname } from 'next/navigation'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { Icon } from '@/components/ui/icon'
 import { Avatar } from '@/components/ui/avatar'
-import { APP_NAV } from './nav-config'
+import { APP_NAV, MORE_NAV } from './nav-config'
 
 export function Sidebar() {
   const pathname = usePathname() ?? ''
@@ -70,7 +70,7 @@ export function Sidebar() {
       )}
 
       {/* Nav */}
-      <nav aria-label="Sections" className="flex-1 flex flex-col gap-1">
+      <nav aria-label="Sections" className="flex-1 flex flex-col gap-1 overflow-y-auto -mx-2 px-2">
         {APP_NAV.map((item) => {
           const active = item.match(pathname)
           return (
@@ -88,6 +88,34 @@ export function Sidebar() {
               <Icon
                 name={item.icon}
                 size={18}
+                weight={active ? 'fill' : 'regular'}
+              />
+              <span>{item.label}</span>
+            </Link>
+          )
+        })}
+
+        {/* More — secondary feature surfaces */}
+        <div className="mt-4 mb-1.5 px-4 text-[10.5px] uppercase tracking-[0.14em] text-ink-4 font-mono">
+          More
+        </div>
+        {MORE_NAV.map((item) => {
+          const active = item.match(pathname)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? 'page' : undefined}
+              className={[
+                'flex items-center gap-3 h-10 px-4 rounded-full text-[13.5px] font-medium transition',
+                active
+                  ? 'bg-[#1D1D1F] text-white'
+                  : 'text-ink-3 hover:text-ink hover:bg-black/5',
+              ].join(' ')}
+            >
+              <Icon
+                name={item.icon}
+                size={16}
                 weight={active ? 'fill' : 'regular'}
               />
               <span>{item.label}</span>
