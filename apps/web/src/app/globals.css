@@ -177,43 +177,41 @@ textarea {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * InterwovenKit reset overrides
+ * InterwovenKit reset overrides — CSS @layer cascade defense
  *
- * `@initia/interwovenkit-react/styles.css` ships a brutal 0-specificity reset:
- *     :where(*){box-sizing:border-box;margin:0;padding:0}
- *     :where(button){all:unset; ...; display:flex; width:100%}
- * That `all: unset` strips every default property off every <button>, and the
- * `width:100%` makes them stretch their container. Tailwind utilities win on
- * properties they explicitly set (specificity 0,1,0 beats 0,0,0), but they
- * don't beat properties the page never opted into — so buttons without an
- * explicit width were spanning full rows, etc.
+ * `@initia/interwovenkit-react/styles.css` ships these UNLAYERED resets:
  *
- * The overrides below have specificity 0,0,1 (plain element selectors), which
- * beats `:where()` 0,0,0. They re-establish a Tailwind-friendly baseline so
- * (ori) routes look identical to the marketing route.
+ *   :where(*){ box-sizing: border-box; margin: 0; padding: 0 }
+ *   :where(button){ all: unset; ...; display: flex; width: 100% }
+ *   :where(input, button){ width: 100%; color: inherit; font: inherit;
+ *                          display: block }
+ *   :where(label){ display: block }
+ *
+ * Per the CSS @layer cascade spec, UNLAYERED styles always beat layered
+ * styles, regardless of specificity. Tailwind v4 puts ALL utilities inside
+ * `@layer utilities`, so `.p-4 { padding: 1rem }` is layered and loses to
+ * the unlayered `:where(*) { padding: 0 }` even though `.p-4` has higher
+ * specificity. Symptom: padding/margin Tailwind utilities silently
+ * disappear in the (ori) routes (which mount Providers and load this
+ * stylesheet) but work fine on the (marketing) route which doesn't.
+ *
+ * Fix: emit unlayered rules that use `revert-layer`. revert-layer says
+ * "use the value from the next-lower cascade layer" — punting these
+ * properties back into the layered cascade where Tailwind utilities win
+ * by specificity as designed.
  * ────────────────────────────────────────────────────────────────────────── */
 *,
 ::before,
 ::after {
   box-sizing: border-box;
+  padding: revert-layer;
+  margin: revert-layer;
 }
 
-button {
-  background: transparent;
-  border: 0 solid transparent;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-  width: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
+button,
 input,
 label,
-button {
-  /* InterwovenKit forces width:100% on these — Tailwind w-* should still win
-   * but we restore the default explicitly for unstyled inputs. */
-  width: auto;
+textarea,
+select {
+  all: revert-layer;
 }
