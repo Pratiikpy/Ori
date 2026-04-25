@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Outfit, Inter, JetBrains_Mono } from 'next/font/google'
+import { Outfit, Inter, JetBrains_Mono, Archivo_Black } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 
@@ -18,6 +18,16 @@ import { Providers } from '@/components/providers'
 const display = Outfit({
   variable: '--font-display',
   subsets: ['latin'],
+  display: 'swap',
+})
+
+// Hero / surface H1s use the heavier Archivo Black to match the prototype
+// "Messages, money, and AI agents…" weight. Outfit only goes to 700 — the
+// prototype face needs ~900.
+const heavy = Archivo_Black({
+  variable: '--font-heavy',
+  subsets: ['latin'],
+  weight: '400', // Archivo_Black ships only one weight
   display: 'swap',
 })
 
@@ -75,7 +85,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${display.variable} ${body.variable} ${mono.variable} antialiased`}
+      className={`${display.variable} ${heavy.variable} ${body.variable} ${mono.variable} antialiased`}
     >
       <body className="min-h-dvh bg-bg text-ink font-body">
         {/* Skip-to-content for keyboard-only users — visually hidden until

@@ -40,7 +40,7 @@ export function AppShell({ eyebrow, title, children }: AppShellProps) {
             <div className="flex flex-col">
               {eyebrow && <span className="eyebrow leading-none">{eyebrow}</span>}
               {title && (
-                <h1 className="mt-1 font-display font-bold text-[24px] leading-tight text-ink tracking-[-0.02em]">
+                <h1 className="mt-1 font-heavy text-[28px] leading-tight text-ink tracking-[-0.02em]">
                   {title}
                 </h1>
               )}

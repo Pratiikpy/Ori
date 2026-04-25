@@ -45,6 +45,7 @@
 
   /* Fonts (vars come from layout.tsx) */
   --font-display: var(--font-display);
+  --font-heavy:   var(--font-heavy);
   --font-body:    var(--font-body);
   --font-mono:    var(--font-mono);
 
@@ -150,6 +151,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .font-display { font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif; }
+.font-heavy   { font-family: var(--font-heavy),   ui-sans-serif, system-ui, sans-serif; font-weight: 400; }
 .font-mono    { font-family: var(--font-mono),    ui-monospace, 'SF Mono', Menlo, monospace; }
 
 /* Legacy compat — old code still references these. Map to new tokens. */
