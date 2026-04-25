@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Manrope, IBM_Plex_Sans, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
-import { Providers } from '@/components/providers'
 
 const heading = Manrope({
   subsets: ['latin'],
@@ -63,9 +62,7 @@ export default function RootLayout({
       lang="en"
       className={`${heading.variable} ${body.variable} ${mono.variable}`}
     >
-      <body>
-        <Providers>{children}</Providers>
-      </body>
+      <body>{children}</body>
     </html>
   )
 }
