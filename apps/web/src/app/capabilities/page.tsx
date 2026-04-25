@@ -1,4 +1,5 @@
-import type { Metadata } from 'next'
+'use client'
+
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import {
@@ -25,13 +26,15 @@ import {
 
 import { MarketingTopbar, MarketingFooter } from '@/components/marketing-chrome'
 import { CapabilitiesGrid } from '@/components/landing/CapabilitiesGrid'
-import { Eyebrow, Reveal, SectionHead, Serif } from '@/components/ui'
+// Direct imports to skip the @/components/ui barrel — the barrel transitively
+// pulls in Phosphor's Icon, whose `createContext` at module top breaks
+// Turbopack's SSR config-collection for Server Components.
+import { Eyebrow } from '@/components/ui/eyebrow'
+import { Reveal } from '@/components/ui/reveal'
+import { SectionHead, Serif } from '@/components/ui/section-head'
 
-export const metadata: Metadata = {
-  title: 'Capabilities · Ori',
-  description:
-    'Sixteen primitives, one conversation. Every action a user takes, an agent can take too — over a standard protocol, with on-chain caps and a kill switch you control.',
-}
+// metadata moved to <title> tag in component body since this is now a Client
+// Component (Server-only `metadata` export isn't allowed here).
 
 interface Primitive {
   num: string

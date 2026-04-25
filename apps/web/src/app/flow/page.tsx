@@ -1,16 +1,13 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight, Send } from 'lucide-react'
 
 import { MarketingTopbar, MarketingFooter } from '@/components/marketing-chrome'
 import { FlowStage } from '@/components/landing/FlowStage'
-import { Eyebrow, Reveal, Serif } from '@/components/ui'
-
-export const metadata: Metadata = {
-  title: 'Flow · Ori',
-  description:
-    'Three surfaces, one continuous thought. From conversation to settled in a single gesture.',
-}
+import { Eyebrow } from '@/components/ui/eyebrow'
+import { Reveal } from '@/components/ui/reveal'
+import { Serif } from '@/components/ui/section-head'
 
 interface Step {
   n: string

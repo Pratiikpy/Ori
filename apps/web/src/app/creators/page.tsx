@@ -1,16 +1,14 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight, Heart, Lock, Repeat, Star } from 'lucide-react'
 
 import { MarketingTopbar, MarketingFooter } from '@/components/marketing-chrome'
 import { CreatorProfile } from '@/components/landing/CreatorProfile'
-import { Card, Eyebrow, Reveal, Serif } from '@/components/ui'
-
-export const metadata: Metadata = {
-  title: 'Creators · Ori',
-  description:
-    'Linktree, Patreon, and Stripe in one page that lives on the chain. Tips in 100ms, agent-payable paywalls, escrowed subscriptions.',
-}
+import { Card } from '@/components/ui/card'
+import { Eyebrow } from '@/components/ui/eyebrow'
+import { Reveal } from '@/components/ui/reveal'
+import { Serif } from '@/components/ui/section-head'
 
 interface FeatureBlurb {
   icon: typeof Star

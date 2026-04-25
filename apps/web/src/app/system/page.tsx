@@ -1,16 +1,13 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight, Github } from 'lucide-react'
 
 import { MarketingTopbar, MarketingFooter } from '@/components/marketing-chrome'
 import { SystemGrid, MoveModuleGrid } from '@/components/landing/SystemGrid'
-import { Eyebrow, Reveal, Serif } from '@/components/ui'
-
-export const metadata: Metadata = {
-  title: 'System · Ori',
-  description:
-    'Eighteen Move modules, three open protocols, one rollup. The technical surface area of Ori.',
-}
+import { Eyebrow } from '@/components/ui/eyebrow'
+import { Reveal } from '@/components/ui/reveal'
+import { Serif } from '@/components/ui/section-head'
 
 interface ProtocolCard {
   eyebrow: string
