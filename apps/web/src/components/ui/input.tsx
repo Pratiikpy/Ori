@@ -13,8 +13,11 @@
  */
 import * as React from 'react'
 
+// Native <input> has `size: number` (visible char width) — we hide it so our
+// design-system size variant ('sm'|'md') stays consistent with Button/Avatar.
+// Width should be controlled via classes, never via the legacy attribute.
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string
   helper?: string
   error?: string
