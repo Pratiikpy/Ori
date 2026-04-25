@@ -8,7 +8,7 @@ import { PageHeader, Serif } from '@/components/page-header'
 export default function GiftIndexPage() {
   return (
     <AppShell title="Gift">
-      <div className="max-w-md mx-auto w-full px-5 pt-8 pb-8">
+      <div className="max-w-2xl">
         <PageHeader
           kicker="04 · Gift"
           title={

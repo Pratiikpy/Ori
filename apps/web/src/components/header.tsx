@@ -1,9 +1,18 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { Zap, ZapOff } from 'lucide-react'
 import { useAutoSign } from '@/hooks/use-auto-sign'
+
+const APP_NAV: { href: string; label: string; match: (p: string) => boolean }[] = [
+  { href: '/today', label: 'Today', match: (p) => p === '/today' },
+  { href: '/create', label: 'Create', match: (p) => p.startsWith('/create') || p.startsWith('/send') || p.startsWith('/gift') || p.startsWith('/paywall') || p.startsWith('/streams') || p.startsWith('/subscriptions') || p.startsWith('/squads') || p.startsWith('/lucky') },
+  { href: '/predict', label: 'Predict', match: (p) => p.startsWith('/predict') },
+  { href: '/ask', label: 'Ask', match: (p) => p.startsWith('/ask') },
+  { href: '/chats', label: 'Chats', match: (p) => p.startsWith('/chat') || p.startsWith('/discover') },
+]
 
 /**
  * Shared app header for all logged-in pages. Matches the landing chrome:
@@ -11,6 +20,7 @@ import { useAutoSign } from '@/hooks/use-auto-sign'
  * + filled inner dot + serif O) is the same on every surface for continuity.
  */
 export function Header({ title }: { title?: string }) {
+  const pathname = usePathname()
   const { isConnected, openConnect, openWallet, username, initiaAddress } = useInterwovenKit()
   const { isEnabled: autoSignEnabled, enable, disable } = useAutoSign()
 
@@ -18,11 +28,8 @@ export function Header({ title }: { title?: string }) {
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--color-line-hairline)] backdrop-blur-xl bg-background/70 safe-area-top">
-      {/* Inner row keeps the same chrome height but caps width on desktop
-          so brand-mark + actions are visually anchored to the same column
-          as the page content below. */}
-      <div className="flex items-center justify-between px-4 h-14 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto w-full">
-        <Link href="/" className="flex items-center gap-2.5 group" aria-label="Ori home">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 flex items-center gap-6 h-14">
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="Ori home">
           <svg viewBox="0 0 24 24" className="h-6 w-6 text-foreground" aria-hidden>
             <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="1.25" fill="none" />
             <circle cx="12" cy="12" r="4" fill="currentColor" />
@@ -40,7 +47,30 @@ export function Header({ title }: { title?: string }) {
           )}
         </Link>
 
-        <div className="flex items-center gap-2">
+        {/* Desktop nav — replaces the bottom tab bar above lg. */}
+        {isConnected && (
+          <nav className="hidden lg:flex items-center gap-1 flex-1">
+            {APP_NAV.map((item) => {
+              const active = item.match(pathname ?? '')
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={
+                    'rounded-md px-3 h-8 inline-flex items-center text-[12.5px] transition ' +
+                    (active
+                      ? 'text-foreground bg-white/[0.05]'
+                      : 'text-ink-3 hover:text-foreground hover:bg-white/[0.025]')
+                  }
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+        )}
+
+        <div className="flex items-center gap-2 ml-auto">
           {isConnected && (
             <button
               aria-label={autoSignEnabled ? 'Disable auto-sign' : 'Enable auto-sign'}

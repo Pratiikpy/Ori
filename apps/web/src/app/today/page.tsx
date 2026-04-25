@@ -17,7 +17,6 @@ export default function TodayPage() {
   const { isConnected, initiaAddress, username } = useInterwovenKit()
   const { isEnabled: autoSign } = useAutoSign()
 
-  // Redirect unconnected users to landing — Today is the signed-in home.
   useEffect(() => {
     if (!isConnected || !initiaAddress) {
       router.replace('/')
@@ -27,7 +26,7 @@ export default function TodayPage() {
   if (!isConnected || !initiaAddress) {
     return (
       <AppShell title="Today">
-        <div className="px-5 py-10 text-muted-foreground text-sm">Loading…</div>
+        <div className="text-ink-3 text-sm">Loading…</div>
       </AppShell>
     )
   }
@@ -36,129 +35,138 @@ export default function TodayPage() {
 
   return (
     <AppShell title="Today">
-      {/* Outer container scales: phone-narrow on mobile, ~672px on tablet,
-          full 1024px column on desktop with breathing room either side.
-          That kills the giant empty void on wide monitors. */}
-      <div className="px-5 pt-8 pb-6 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto w-full">
-        <PageHeader
-          kicker="01 · Today"
-          title={
-            username ? (
-              <>
-                Hey, <Serif>{username}</Serif>.
-              </>
-            ) : (
-              <>
-                Welcome <Serif>back</Serif>.
-              </>
-            )
-          }
-          sub={
-            autoSign
-              ? 'Auto-sign is on. Claude can transact without popups.'
-              : 'Auto-sign is off. Turn it on in the header to let Claude transact silently.'
-          }
-        />
+      <PageHeader
+        kicker="01 · Today"
+        title={
+          username ? (
+            <>
+              Hey, <Serif>{username}</Serif>.
+            </>
+          ) : (
+            <>
+              Welcome <Serif>back</Serif>.
+            </>
+          )
+        }
+        sub={
+          autoSign
+            ? 'Auto-sign is on. Claude can transact without popups.'
+            : 'Auto-sign is off. Turn it on in the header to let Claude transact silently.'
+        }
+      />
 
-        {/* Two-column layout on desktop: main content (header, agent banner,
-            quick actions) on the left ~60%, activity feed sticky on the right
-            ~40%. Stacks on mobile/tablet so nothing is below the fold. */}
-        <div className="grid lg:grid-cols-[1.5fr_1fr] gap-6 lg:gap-10">
-          <div className="space-y-6 min-w-0">
-            {/* Weekly digest */}
-            <WeeklyStatsRow address={initiaAddress} />
-
-            {/* Agent banner — quiet card, editorial copy. */}
-            <section className="panel-hover rounded-2xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/[0.05] p-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                  <Bot className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
-                    Agent · signer
-                  </div>
-                  <div className="mt-0.5 text-[13px] text-foreground truncate">
-                    {mcpSignerAddr ? (
-                      <>
-                        Signs as <span className="font-mono text-ink-2">{mcpSignerAddr.slice(0, 14)}…{mcpSignerAddr.slice(-6)}</span>
-                      </>
-                    ) : (
-                      <>Not configured <Serif>yet</Serif>.</>
-                    )}
-                  </div>
-                </div>
-                <Link
-                  href="/ask"
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-[12px] font-medium text-ink-2 border border-[var(--color-border-strong)] hover:text-foreground hover:bg-white/[0.04] hover:border-[var(--color-border-emphasis)] transition shrink-0"
-                >
-                  Setup <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </section>
-
-            {/* Quick actions — 2-up grid. Each tile has full breathing room. */}
-            <div className="space-y-3">
-              <Eyebrow>Jump in</Eyebrow>
-              <section className="grid grid-cols-2 gap-3">
-                <QuickAction
-                  href="/predict"
-                  icon={<TrendingUp className="w-[18px] h-[18px]" />}
-                  title={<><Serif>Predict</Serif></>}
-                  sub="60-sec markets · no counterparty"
-                />
-                <QuickAction
-                  href="/ask"
-                  icon={<Bot className="w-[18px] h-[18px]" />}
-                  title={<>Ask <Serif>Claude</Serif></>}
-                  sub="14 MCP tools · one prompt"
-                />
-                <QuickAction
-                  href="/streams"
-                  icon={<Radio className="w-[18px] h-[18px]" />}
-                  title={<><Serif>Stream</Serif> money</>}
-                  sub="Continuous pay per second"
-                />
-                <QuickAction
-                  href="/subscriptions"
-                  icon={<Repeat className="w-[18px] h-[18px]" />}
-                  title={<><Serif>Subscribe</Serif></>}
-                  sub="Recurring, creator-by-creator"
-                />
-              </section>
-              <Link
-                href="/create"
-                className="block rounded-2xl border border-primary/30 bg-primary/[0.05] p-4 panel-hover"
-              >
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-5 h-5 text-primary-bright shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[14.5px] font-medium">
-                      See <Serif>every</Serif> way to move money
-                    </div>
-                    <div className="text-[12px] text-ink-3 mt-0.5">
-                      Hub for paywalls, squads, lucky pools, gifts, and more
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-ink-3" />
-                </div>
-              </Link>
+      {/* The grid that actually defines the page: 1 column on mobile,
+          3 columns on desktop. Main column spans 2, sidebar spans 1.
+          Sidebar is `lg:sticky lg:top-6` so it floats with the user as
+          they scroll the dense main column. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
+          {/* Weekly digest — neutral, dense, sits as a stat strip */}
+          <section>
+            <Eyebrow>This week</Eyebrow>
+            <div className="mt-3">
+              <WeeklyStatsRow address={initiaAddress} />
             </div>
-          </div>
+          </section>
 
-          {/* Right rail — activity feed. Sticks just below the header on
-              desktop scroll so the user always sees their recent on-chain
-              moves while exploring features on the left. */}
-          <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
-            <ActivityFeed address={initiaAddress} />
-          </aside>
+          {/* The ONE accent card on the page — agent setup. Everything
+              else is muted neutral so this CTA actually stands out. */}
+          <Link
+            href="/ask"
+            className="group block rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/5 px-4 py-3.5 hover:from-violet-500/15 hover:to-fuchsia-500/10 transition"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-violet-500/20 inline-flex items-center justify-center shrink-0">
+                <Bot className="h-4 w-4 text-violet-300" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-violet-300/80">
+                  Agent · signer {mcpSignerAddr ? '· configured' : '· not configured'}
+                </div>
+                <div className="mt-0.5 text-[13.5px] text-foreground">
+                  {mcpSignerAddr
+                    ? `Signs as ${mcpSignerAddr.slice(0, 12)}…${mcpSignerAddr.slice(-6)}`
+                    : 'Set up Claude to spend under your daily cap'}
+                </div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-ink-3 group-hover:text-violet-300 group-hover:translate-x-0.5 transition" />
+            </div>
+          </Link>
+
+          {/* Quick actions — dense 2x2. Small icons, p-4, single-line title. */}
+          <section className="space-y-2.5">
+            <Eyebrow>Jump in</Eyebrow>
+            <div className="grid grid-cols-2 gap-2.5">
+              <QuickTile
+                href="/predict"
+                icon={<TrendingUp className="h-4 w-4" />}
+                title={
+                  <>
+                    <Serif>Predict</Serif>
+                  </>
+                }
+                sub="60s markets"
+              />
+              <QuickTile
+                href="/streams"
+                icon={<Radio className="h-4 w-4" />}
+                title={
+                  <>
+                    <Serif>Stream</Serif> money
+                  </>
+                }
+                sub="Per-second pay"
+              />
+              <QuickTile
+                href="/subscriptions"
+                icon={<Repeat className="h-4 w-4" />}
+                title={
+                  <>
+                    <Serif>Subscribe</Serif>
+                  </>
+                }
+                sub="Recurring plans"
+              />
+              <QuickTile
+                href="/send"
+                icon={<ArrowRight className="h-4 w-4" />}
+                title={
+                  <>
+                    <Serif>Send</Serif>
+                  </>
+                }
+                sub="One-tap pay"
+              />
+            </div>
+          </section>
+
+          {/* Slim discovery row — one line, tertiary look. It's a link, not a feature. */}
+          <Link
+            href="/create"
+            className="group flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3 hover:border-zinc-700 hover:bg-zinc-900/60 transition"
+          >
+            <Sparkles className="h-4 w-4 text-ink-3 shrink-0" />
+            <span className="flex-1 text-[13px] text-ink-2">
+              See every way to move money — paywalls, squads, lucky pools, gifts
+            </span>
+            <ArrowRight className="h-3.5 w-3.5 text-ink-4 group-hover:translate-x-0.5 transition" />
+          </Link>
         </div>
+
+        {/* Sidebar — activity feed. Sticky on desktop, collapses below
+            main on mobile. */}
+        <aside className="lg:col-span-1 lg:sticky lg:top-6 lg:self-start min-w-0">
+          <Eyebrow>Activity</Eyebrow>
+          <div className="mt-3">
+            <ActivityFeed address={initiaAddress} />
+          </div>
+        </aside>
       </div>
     </AppShell>
   )
 }
 
-function QuickAction({
+function QuickTile({
   href,
   icon,
   title,
@@ -172,11 +180,15 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="panel-hover rounded-2xl border border-[var(--color-border-strong)] bg-white/[0.022] p-4 flex flex-col gap-2"
+      className="group rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 hover:border-zinc-700 hover:bg-zinc-900/60 transition flex flex-col gap-1"
     >
-      <span className="text-primary-bright">{icon}</span>
-      <div className="text-[15px] font-medium tracking-[-0.01em]">{title}</div>
-      <div className="text-[11.5px] text-ink-3 leading-[1.45]">{sub}</div>
+      <span className="text-ink-3 group-hover:text-foreground transition">
+        {icon}
+      </span>
+      <div className="text-[14px] font-medium tracking-[-0.01em] text-foreground mt-1">
+        {title}
+      </div>
+      <div className="text-[11px] text-ink-3">{sub}</div>
     </Link>
   )
 }

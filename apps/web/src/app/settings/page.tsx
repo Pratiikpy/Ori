@@ -156,7 +156,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell title="Settings">
-      <div className="max-w-md md:max-w-2xl mx-auto w-full px-5 pt-8 pb-6 space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6">
         <PageHeader
           kicker="06 · Settings"
           title={

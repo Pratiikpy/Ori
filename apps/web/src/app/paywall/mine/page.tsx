@@ -116,7 +116,7 @@ export default function MyPaywallsPage() {
 
   return (
     <AppShell title="My paywalls">
-      <div className="max-w-2xl mx-auto w-full px-5 pt-8 pb-10 space-y-8">
+      <div className="max-w-3xl space-y-8">
         <PageHeader
           kicker="· Paywall · Mine"
           title={

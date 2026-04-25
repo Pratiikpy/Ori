@@ -23,7 +23,7 @@ export default function NewChatPage() {
 
   return (
     <AppShell title="New chat" hideNav>
-      <div className="flex-1 px-5 py-6 max-w-md mx-auto w-full">
+      <div className="max-w-lg">
         <h1 className="text-2xl font-bold">Start a conversation</h1>
         <p className="mt-2 text-muted-foreground text-sm">
           Enter a <span className="font-mono">.init</span> username (like{' '}

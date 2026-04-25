@@ -97,7 +97,7 @@ export default function ClaimGroupSlotPage() {
 
   return (
     <AppShell title="Claim" hideNav>
-      <div className="max-w-md mx-auto w-full px-5 pt-8 pb-10 space-y-8">
+      <div className="max-w-lg mx-auto space-y-8">
         <PageHeader
           kicker="· Gift"
           title={

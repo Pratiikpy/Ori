@@ -111,7 +111,7 @@ export default function ClaimPage() {
   if (previewError) {
     return (
       <AppShell title="Claim" hideNav>
-        <div className="max-w-md mx-auto w-full px-5 py-10 text-center">
+        <div className="max-w-md mx-auto py-10 text-center">
           <Gift className="w-10 h-10 text-muted-foreground mx-auto" />
           <h1 className="mt-4 text-xl font-bold">Link unavailable</h1>
           <p className="mt-2 text-sm text-muted-foreground">{previewError}</p>
@@ -123,7 +123,7 @@ export default function ClaimPage() {
   if (!preview) {
     return (
       <AppShell title="Claim" hideNav>
-        <div className="max-w-md mx-auto w-full px-5 py-10 text-center">
+        <div className="max-w-md mx-auto py-10 text-center">
           <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
         </div>
       </AppShell>
@@ -136,7 +136,7 @@ export default function ClaimPage() {
 
   return (
     <AppShell title="Claim" hideNav>
-      <div className="max-w-md mx-auto w-full px-5 py-6">
+      <div className="max-w-md mx-auto py-6">
         <div className="rounded-3xl bg-gradient-to-br from-primary/30 via-primary/10 to-background border border-primary/30 p-6 text-center">
           <div className="text-6xl">{emoji}</div>
           <h1 className="mt-4 text-2xl font-bold">{senderDisplay} sent you a gift</h1>

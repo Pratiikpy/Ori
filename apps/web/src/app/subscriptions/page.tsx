@@ -277,7 +277,7 @@ export default function SubscriptionsPage() {
 
   return (
     <AppShell title="Subscriptions">
-      <div className="max-w-2xl mx-auto w-full px-5 pt-8 pb-10 space-y-10">
+      <div className="max-w-3xl space-y-10">
         <PageHeader
           kicker="· Subscriptions"
           title={

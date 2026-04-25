@@ -155,7 +155,7 @@ export default function NewPaywallPage() {
 
   return (
     <AppShell title="New paywall">
-      <div className="max-w-xl mx-auto w-full px-5 pt-8 pb-10 space-y-8">
+      <div className="max-w-2xl mx-auto space-y-8">
         <PageHeader
           kicker="· Paywall · New"
           title={

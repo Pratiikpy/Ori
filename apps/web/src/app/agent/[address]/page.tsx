@@ -90,7 +90,7 @@ export default function AgentDetailPage() {
 
   return (
     <AppShell title="Agent">
-      <div className="px-5 py-6 max-w-2xl mx-auto w-full space-y-5">
+      <div className="space-y-5">
         <Link
           href="/today"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition"

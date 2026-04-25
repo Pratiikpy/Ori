@@ -131,7 +131,7 @@ export default function PaywallPayPage() {
 
   return (
     <AppShell title="Paywall" hideNav>
-      <div className="max-w-md mx-auto w-full px-4 py-8">
+      <div className="max-w-md mx-auto py-8">
         {loading && <div className="text-xs text-muted-foreground">Reading paywall from chain…</div>}
         {!loading && !pw && <div className="text-danger">Paywall not found</div>}
         {pw && (

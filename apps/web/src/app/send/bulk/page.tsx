@@ -81,7 +81,7 @@ export default function BulkSendPage() {
 
   return (
     <AppShell title="Bulk send">
-      <div className="max-w-md mx-auto w-full px-5 py-5">
+      <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold inline-flex items-center gap-2">
           <Users className="w-6 h-6 text-primary" />
           Bulk send

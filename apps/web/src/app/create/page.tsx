@@ -187,7 +187,7 @@ function Bucket({
 export default function CreatePage() {
   return (
     <AppShell title="Create">
-      <div className="max-w-3xl mx-auto w-full px-5 pt-8 pb-12 space-y-10">
+      <div className="space-y-10">
         <PageHeader
           kicker="04 · Create"
           title={

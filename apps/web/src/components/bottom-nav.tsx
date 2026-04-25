@@ -43,11 +43,9 @@ export function BottomNav() {
   ]
 
   return (
-    <nav className="sticky bottom-0 z-20 backdrop-blur-xl bg-background/80 border-t border-[var(--color-line-hairline)] safe-area-bottom">
-      {/* Inner container is max-width-clamped + centered so on wide
-          monitors the icons sit in a proper tab-bar shape instead of
-          stretching across 1920px and looking like a tablet kiosk. */}
-      <ul className="grid grid-cols-5 max-w-md md:max-w-2xl mx-auto">
+    <nav className="lg:hidden sticky bottom-0 z-20 backdrop-blur-xl bg-background/80 border-t border-[var(--color-line-hairline)] safe-area-bottom">
+      {/* Mobile-only — desktop uses the topbar nav. */}
+      <ul className="grid grid-cols-5 max-w-md mx-auto">
         {items.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname)
           return (

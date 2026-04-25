@@ -63,8 +63,8 @@ export default function ChatsPage() {
 
   return (
     <AppShell title="Chats">
-      <div className="flex-1 flex flex-col w-full max-w-md md:max-w-2xl mx-auto">
-        <div className="px-5 pt-8 pb-4 flex items-start justify-between gap-3">
+      <div className="flex-1 flex flex-col w-full max-w-2xl">
+        <div className="pb-4 flex items-start justify-between gap-3">
           <PageHeader
             kicker="05 · Friends"
             title={

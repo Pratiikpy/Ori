@@ -36,33 +36,31 @@ export function ActivityFeed({ address }: Props) {
   const entries: ActivityEntry[] = data?.pages.flatMap((p) => p.entries) ?? []
 
   return (
-    <section className="rounded-2xl border border-border bg-muted/30 p-4">
-      <h3 className="text-sm font-semibold">Activity</h3>
-      <p className="text-[11px] text-muted-foreground">On-chain, in reverse chronological order.</p>
-
+    <section>
       {isLoading && (
-        <div className="mt-3 text-xs text-muted-foreground">
-          Reading the chain… shouldn't take more than a second.
+        <div className="rounded-lg border border-dashed border-zinc-800 px-3 py-4 text-center text-[11.5px] text-ink-3">
+          Reading the chain…
         </div>
       )}
       {!isLoading && entries.length === 0 && (
-        <div className="mt-3 text-xs text-muted-foreground">
-          Quiet here. Send a tip, split a bill, or open a gift —
-          anything that touches the chain lands here in real time.
+        <div className="rounded-lg border border-dashed border-zinc-800 px-3 py-4 text-center text-[11.5px] text-ink-3">
+          Quiet here. Activity lands in real time.
         </div>
       )}
 
-      <ul className="mt-3 space-y-2">
-        {entries.map((e) => (
-          <ActivityRow key={e.id} entry={e} />
-        ))}
-      </ul>
+      {entries.length > 0 && (
+        <ul className="space-y-2">
+          {entries.map((e) => (
+            <ActivityRow key={e.id} entry={e} />
+          ))}
+        </ul>
+      )}
 
       {hasNextPage && (
         <button
           onClick={() => void fetchNextPage()}
           disabled={isFetchingNextPage}
-          className="mt-3 w-full rounded-xl py-2 bg-muted border border-border text-xs hover:border-primary/40 transition disabled:opacity-50"
+          className="mt-3 w-full rounded-lg py-2 border border-zinc-800 bg-zinc-900/40 text-[11.5px] text-ink-2 hover:border-zinc-700 transition disabled:opacity-50"
         >
           {isFetchingNextPage ? 'Loading…' : 'Load more'}
         </button>

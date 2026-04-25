@@ -51,7 +51,7 @@ export default function PortfolioPage() {
   if (!isConnected || !initiaAddress) {
     return (
       <AppShell title="Portfolio">
-        <div className="max-w-md md:max-w-xl mx-auto w-full px-5 pt-10 pb-10">
+        <div className="max-w-md mx-auto py-10">
           <PageHeader
             kicker="03 · Portfolio"
             title={
@@ -78,7 +78,7 @@ export default function PortfolioPage() {
 
   return (
     <AppShell title="Portfolio">
-      <div className="max-w-md md:max-w-2xl mx-auto w-full px-5 pt-8 pb-8 space-y-5">
+      <div className="space-y-5">
         <PageHeader
           kicker="03 · Portfolio"
           title={
