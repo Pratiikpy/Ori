@@ -15,6 +15,7 @@
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import type { LucideIcon } from 'lucide-react'
 import {
   Bot,
   CircleDollarSign,
@@ -29,7 +30,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { currentUser, navItems } from '@/data/ori-data'
 
-const icons: Record<string, typeof Inbox> = {
+type NavId = (typeof navItems)[number]['id']
+
+const icons: Record<NavId, LucideIcon> = {
   inbox: Inbox,
   money: CircleDollarSign,
   play: Gamepad2,
