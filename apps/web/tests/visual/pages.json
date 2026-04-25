@@ -1,0 +1,20 @@
+{
+  "$comment": "Map of reference path → built path. The diff harness screenshots each pair at 3 viewports and pixel-compares. Add a route here to enforce parity.",
+  "pages": [
+    { "name": "landing", "ref": "/", "built": "/" },
+    { "name": "inbox", "ref": "/", "built": "/inbox", "$note": "reference is a SPA with onLaunch state — same DOM lives at /; add a click step in diff.mjs to navigate" },
+    { "name": "money", "ref": "/", "built": "/money", "$note": "same — navigate via reference SPA state" },
+    { "name": "play", "ref": "/", "built": "/play", "$note": "same" },
+    { "name": "explore", "ref": "/", "built": "/explore", "$note": "same" },
+    { "name": "profile", "ref": "/", "built": "/profile", "$note": "same" }
+  ],
+  "viewports": [
+    { "name": "desktop", "width": 1440, "height": 900 },
+    { "name": "tablet",  "width": 820,  "height": 1180 },
+    { "name": "mobile",  "width": 375,  "height": 812 }
+  ],
+  "thresholds": {
+    "diffRatio": 0.001,
+    "$comment": "0.1% of pixels can differ before a route is flagged as failing"
+  }
+}

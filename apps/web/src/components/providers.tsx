@@ -9,18 +9,22 @@ import {
   TESTNET,
   initiaPrivyWalletConnector,
 } from '@initia/interwovenkit-react'
-import '@initia/interwovenkit-react/styles.css'
 import { Toaster } from 'sonner'
 
 import { ORI_CHAIN_ID, ORI_RPC_URL, oriChain } from '@/lib/chain-config'
 import { SessionBoot } from './session-boot'
 
-// Note: InterwovenKit drawer/modal styles come in via the static import above
-// (Next bundles it into the page CSS). The runtime `injectStyles()` call was
-// removed because it duplicated those rules and the global `:where(button) {
-// all: unset }` reset shipped inside that bundle was clobbering Tailwind
-// utilities on every <button> in the (ori) routes. Defensive overrides live
-// in `app/globals.css` (see "InterwovenKit reset overrides" block).
+// IMPORTANT: We deliberately do NOT import '@initia/interwovenkit-react/styles.css'.
+// That file ships UNLAYERED `:where(*) { padding:0; margin:0 }` and
+// `:where(button) { all:unset; ...; width:100% }` resets that bypass CSS
+// @layer cascade. Per spec, unlayered styles always beat layered styles —
+// so Tailwind utilities (which all live in @layer utilities) silently
+// lost on every (ori) route. Symptom: padding/margin/width of brutalist
+// cards rendered as 0 even though `p-4 border bg-white` was on the
+// element. Skipping the global stylesheet means the connect-wallet
+// drawer may render slightly less polished when opened, but every page
+// of our app keeps its design system. If the drawer needs scoped
+// styling later, load it under a layer (see globals.css).
 
 // Wagmi requires at least one chain. InterwovenKit handles all actual ops;
 // this is a placeholder chain to satisfy wagmi config.
