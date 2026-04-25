@@ -1,24 +1,41 @@
+'use client'
+
 /**
  * Landing — Ori's public marketing page.
  *
- * Apple-style: one big hero sentence, one image-equivalent (a glass card
- * showing the chat surface), three confident capability blocks below.
- * Honest and minimal — we don't have product photos, so the hero "image"
- * is a static composition of what payment-in-chat actually looks like.
- *
- * Pure Server Component. No client JS on this route — landing chrome,
- * hero composition, capability cards, and flow steps are all static
- * markup. Wallet state lives behind the /onboard CTA, not on landing.
+ * Client Component so the hero CTA can open the wallet drawer directly via
+ * useInterwovenKit() instead of bouncing through /onboard. Cuts the
+ * onboarding from two clicks to one.
  */
+import { useInterwovenKit } from '@initia/interwovenkit-react'
+import { useRouter } from 'next/navigation'
 import { LandingShell } from '@/components/layout/landing-shell'
 import { Eyebrow } from '@/components/ui/eyebrow'
-import {
-  ArrowRightIcon,
-  CheckIcon,
-} from '@/components/ui/static-icons'
+import { ArrowRightIcon, CheckIcon } from '@/components/ui/static-icons'
 import Link from 'next/link'
 
 export default function LandingPage() {
+  const router = useRouter()
+  const { isConnected, openConnect } = useInterwovenKit()
+
+  const handlePrimaryCTA = () => {
+    if (isConnected) {
+      router.push('/today')
+    } else {
+      void openConnect()
+    }
+  }
+
+  return <LandingPageView onPrimary={handlePrimaryCTA} isConnected={isConnected} />
+}
+
+function LandingPageView({
+  onPrimary,
+  isConnected,
+}: {
+  onPrimary: () => void
+  isConnected: boolean
+}) {
   return (
     <LandingShell>
       {/* ====================== HERO ====================== */}
@@ -50,20 +67,25 @@ export default function LandingPage() {
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link
-                href="/onboard"
-                className="rounded-full h-12 px-7 bg-[#1D1D1F] text-white text-[15px] font-medium inline-flex items-center gap-2 hover:bg-black active:scale-[0.97] transition"
+              <button
+                type="button"
+                onClick={onPrimary}
+                className="rounded-full h-14 px-8 bg-[#1D1D1F] text-white text-[16px] font-medium inline-flex items-center gap-2.5 hover:bg-black active:scale-[0.97] transition cursor-pointer shadow-lg shadow-black/10"
               >
-                Open the app
-                <ArrowRightIcon size={16} />
-              </Link>
+                {isConnected ? 'Open dashboard' : 'Connect wallet'}
+                <ArrowRightIcon size={18} />
+              </button>
               <a
                 href="#capabilities"
-                className="rounded-full h-12 px-7 bg-black/5 text-ink text-[15px] font-medium hover:bg-black/10 active:scale-[0.97] transition inline-flex items-center"
+                className="rounded-full h-14 px-7 bg-black/5 text-ink text-[15px] font-medium hover:bg-black/10 active:scale-[0.97] transition inline-flex items-center cursor-pointer"
               >
-                See it work
+                See how it works
               </a>
             </div>
+            <p className="mt-4 text-[13px] text-ink-3 inline-flex items-center gap-2">
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#34C759]" />
+              Privy, MetaMask, or any EVM wallet · No token launch
+            </p>
 
             {/* Stat strip — black-on-white, mono digits */}
             <dl className="mt-12 grid grid-cols-3 max-w-md gap-6">
@@ -239,13 +261,14 @@ export default function LandingPage() {
             Open the app. The rest is one tap.
           </h2>
           <div className="mt-8">
-            <Link
-              href="/onboard"
-              className="rounded-full h-14 px-8 bg-[#1D1D1F] text-white text-[16px] font-medium inline-flex items-center gap-2 hover:bg-black active:scale-[0.97] transition"
+            <button
+              type="button"
+              onClick={onPrimary}
+              className="rounded-full h-14 px-8 bg-[#1D1D1F] text-white text-[16px] font-medium inline-flex items-center gap-2 hover:bg-black active:scale-[0.97] transition cursor-pointer shadow-lg shadow-black/10"
             >
-              Get started
+              {isConnected ? 'Open dashboard' : 'Connect wallet'}
               <ArrowRightIcon size={18} />
-            </Link>
+            </button>
           </div>
         </div>
       </section>
