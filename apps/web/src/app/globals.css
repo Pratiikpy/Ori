@@ -1,96 +1,69 @@
 @import 'tailwindcss';
 
 /* ──────────────────────────────────────────────────────────────────────────
-   ORI DESIGN SYSTEM — Apple-style premium fintech, light-only.
+   ORI DESIGN SYSTEM — Emergent prototype parity.
 
-   Calibrated against the blank-ui-ref aesthetic: #F5F5F7 canvas,
-   #1D1D1F ink, glassmorphic cards (rgba(255,255,255,0.6) + 40px blur),
-   Apple-blue #007AFF accent used sparingly. No dark theme this iteration —
-   single visual language end-to-end is the entire point of the rebuild.
-
-   Why these particular tokens:
-     • Background #F5F5F7 — Apple's macOS / iOS canvas color exactly. Reads
-       as "premium content surface" rather than the off-white you'd get from
-       e.g. #FAFAFA (too clinical) or #FFFFFF (too sterile).
-     • Ink #1D1D1F — Apple's text-primary. 1.5 percentage points off pure
-       black; reduces glare without losing AAA contrast (16.8:1 on canvas).
-     • Accent #007AFF — Apple's "system blue". Used ONLY for active states
-       and links, never for hero CTAs (which use ink itself, black-on-light).
-     • Card opacity 0.6 over a soft gradient — gives the frosted-glass
-       lensing effect the reference relies on. Backdrop-blur-3xl (40px) is
-       what makes it actually feel like glass and not just a tinted div.
+   Pure white canvas, pure black ink, electric blue accent. Sharp borders,
+   small radius, no glassmorphism. Heavy bold display type for headings.
+   Monospace for eyebrows + numeric values. Black solid-fill primary
+   buttons. White outlined secondary. Single visual language end-to-end.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
-  /* Canvas + surfaces — semantic names instead of generic gray-100, so when
-     we map them to Tailwind utilities (bg-bg, bg-surface) the intent is
-     legible at the call site. */
-  --color-bg:               #F5F5F7;
+  /* Canvas */
+  --color-bg:               #FFFFFF;
+  --color-bg-muted:         #FAFAFA;
   --color-bg-elevated:      #FFFFFF;
-  --color-surface:          rgba(255, 255, 255, 0.6);
-  --color-surface-solid:    #FFFFFF;
-  --color-surface-hover:    rgba(255, 255, 255, 0.8);
-  --color-surface-pressed:  rgba(0, 0, 0, 0.04);
+  --color-surface:          #FFFFFF;
+  --color-surface-hover:    #F5F5F5;
+  --color-surface-pressed:  #EBEBEB;
 
-  /* Ink (text + iconography) — 5-stop ladder. Anything past `ink-3` is
-     borderline AAA on glass cards; reserved for tertiary chrome. */
-  --color-ink:              #1D1D1F;
-  --color-ink-2:            rgba(29, 29, 31, 0.72);
-  --color-ink-3:            rgba(29, 29, 31, 0.55);
-  --color-ink-4:            rgba(29, 29, 31, 0.40);
-  --color-ink-5:            rgba(29, 29, 31, 0.25);
+  /* Ink */
+  --color-ink:              #0A0A0B;
+  --color-ink-2:            #404044;
+  --color-ink-3:            #6E6E76;
+  --color-ink-4:            #9C9CA3;
+  --color-ink-5:            #C9C9CF;
 
-  /* Borders — these are deliberately darker than ink-5 so they read as
-     "structural" rather than "tertiary text". On glass cards a too-faint
-     border just looks broken at common monitor gammas. */
-  --color-line:             rgba(0, 0, 0, 0.06);
-  --color-line-strong:      rgba(0, 0, 0, 0.10);
-  --color-line-emphasis:    rgba(0, 0, 0, 0.18);
+  /* Borders */
+  --color-line:             #E5E5E7;
+  --color-line-strong:      #D4D4D8;
+  --color-line-emphasis:    #A1A1AA;
 
-  /* Accent — Apple system blue. Used sparingly: active sidebar item,
-     selected state, links, focus rings. NEVER on a hero CTA (those use
-     ink black-on-light, the Apple way). */
-  --color-accent:           #007AFF;
-  --color-accent-hover:     #0066CC;
-  --color-accent-soft:      rgba(0, 122, 255, 0.10);
+  /* Accent — electric saturated blue (Emergent tone) */
+  --color-accent:           #1747FB;
+  --color-accent-hover:     #0F36D8;
+  --color-accent-soft:      rgba(23, 71, 251, 0.10);
+  --color-accent-text:      #FFFFFF;
 
-  /* Semantic — sparingly used. Money-success is intentionally not the
-     full saturated #34C759 (Apple's iOS green) because that color in
-     finance UIs reads as "gambling app". A muted emerald is more grown-up. */
-  --color-success:          #058A4D;
-  --color-success-soft:     rgba(5, 138, 77, 0.10);
+  /* Semantic */
+  --color-success:          #16A34A;
+  --color-success-soft:     rgba(22, 163, 74, 0.10);
   --color-warning:          #B45309;
   --color-warning-soft:     rgba(180, 83, 9, 0.10);
-  --color-danger:           #B91C1C;
-  --color-danger-soft:      rgba(185, 28, 28, 0.10);
+  --color-danger:           #DC2626;
+  --color-danger-soft:      rgba(220, 38, 38, 0.10);
 
-  /* Type / fonts — the next/font CSS vars come from layout.tsx. */
+  /* Fonts (vars come from layout.tsx) */
   --font-display: var(--font-display);
   --font-body:    var(--font-body);
   --font-mono:    var(--font-mono);
 
-  /* Radii — Apple uses dramatic corner radii on cards (32px / 2rem) and
-     pills (full). The two-tier system mirrors that: small for inline
-     surfaces, large for content cards. No micro-radii (4px is illegal). */
-  --radius-xs:  6px;
-  --radius-sm:  10px;
-  --radius-md:  14px;
-  --radius-lg:  20px;
-  --radius-xl:  28px;
-  --radius-2xl: 32px;   /* Apple's signature card radius */
+  /* Radii — sharp / small. Cards 8-12px, pills full. */
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  8px;
+  --radius-lg:  10px;
+  --radius-xl:  12px;
+  --radius-2xl: 14px;
   --radius-full: 9999px;
 
-  /* Motion — `--ease-apple` is Apple's iOS spring curve. Use it for any
-     "lifts on hover" or "page slides in" interaction so motion feels
-     consistent across surfaces. */
-  --ease-apple:    cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  /* Motion */
+  --ease-std:    cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Shadows — light-theme cards need real shadow to lift off the canvas.
-     Apple uses a single 8px-offset, 32px-blur, low-opacity drop. */
-  --shadow-card:   0 8px 32px rgba(0, 0, 0, 0.04);
-  --shadow-lift:   0 16px 48px rgba(0, 0, 0, 0.08);
-  --shadow-popup:  0 24px 64px rgba(0, 0, 0, 0.12);
+  /* Shadows — minimal */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lift: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 html {
@@ -99,7 +72,6 @@ html {
   -moz-osx-font-smoothing: grayscale;
   color-scheme: light;
   font-family: var(--font-body), ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-  font-feature-settings: 'cv11';
   text-rendering: optimizeLegibility;
 }
 
@@ -110,100 +82,58 @@ body {
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* All headings get the display face — Outfit. */
+/* Headings — heavy bold display face. */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display), ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   letter-spacing: -0.02em;
   color: var(--color-ink);
+  font-weight: 700;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   AMBIENT BACKGROUND — CSS-only abstract gradient.
-
-   Three soft radial color fields stacked behind a low-noise overlay. No
-   external image dep, scales infinitely, never breaks at any viewport.
-   The cool-to-warm rotation echoes the frosted-glass plate effect from
-   the reference without paying for image bytes.
-
-   Pinned `position: fixed` so glass cards always have something to refract
-   against; pointer-events: none so it never intercepts clicks.
+   SHARED COMPONENT CLASSES
    ────────────────────────────────────────────────────────────────────────── */
-.bg-ambient::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 1200px 900px at 8% 10%,  rgba(0, 122, 255, 0.10), transparent 60%),
-    radial-gradient(ellipse 1100px 800px at 95% 25%, rgba(255, 107, 157, 0.07), transparent 60%),
-    radial-gradient(ellipse 1300px 1000px at 50% 95%, rgba(106, 167, 255, 0.10), transparent 65%);
-}
-.bg-ambient::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(circle at 25% 35%, rgba(0,0,0,0.018) 1px, transparent 1.5px),
-    radial-gradient(circle at 70% 70%, rgba(0,0,0,0.014) 1px, transparent 1.5px);
-  background-size: 240px 240px, 320px 320px;
-  opacity: 0.6;
-}
 
-/* ──────────────────────────────────────────────────────────────────────────
-   GLASS CARD — Apple-style frosted surface.
-
-   Why a class and not just Tailwind utilities: the `backdrop-filter` chain
-   needs `-webkit-` prefix for Safari iOS, and Tailwind v4's arbitrary value
-   syntax doesn't compile cleanly with vendor-prefixed compound filters.
-   So we author the canonical surface here once, use `.glass-card` site-wide.
-   ────────────────────────────────────────────────────────────────────────── */
-.glass-card {
+/* Surface card — sharp white, 1px border, no shadow by default. */
+.surface-card {
   background: var(--color-surface);
-  backdrop-filter: blur(40px) saturate(1.4);
-  -webkit-backdrop-filter: blur(40px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
 }
 
-/* Slimmer inner card for nested compositions (e.g. stat cards inside a
-   bento panel). Solid white at 50% so the parent's blur can come through. */
-.glass-inner {
-  background: rgba(255, 255, 255, 0.50);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: var(--radius-lg);
+/* Black solid pill button — primary. */
+.btn-primary {
+  background: var(--color-ink);
+  color: #FFFFFF;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  transition: opacity 150ms var(--ease-std), transform 150ms var(--ease-std);
 }
+.btn-primary:hover  { opacity: 0.85; }
+.btn-primary:active { transform: scale(0.98); }
 
-/* Sidebar surface — heavier blur, slightly more transparent so the ambient
-   color shifts behind it stay visible at a glance. */
-.glass-sidebar {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(60px) saturate(1.6);
-  -webkit-backdrop-filter: blur(60px) saturate(1.6);
-  border-right: 1px solid rgba(255, 255, 255, 0.7);
+/* Blue accent pill button. */
+.btn-accent {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  transition: background 150ms var(--ease-std);
 }
+.btn-accent:hover { background: var(--color-accent-hover); }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   TYPOGRAPHY HELPERS
-   ────────────────────────────────────────────────────────────────────────── */
-.tnum {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum';
+/* White outlined secondary. */
+.btn-outline {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  transition: background 150ms var(--ease-std);
 }
+.btn-outline:hover { background: var(--color-surface-hover); }
 
-.font-display {
-  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
-}
-
-.font-mono {
-  font-family: var(--font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
-}
-
-/* Eyebrow utility — small, mono, uppercase, tracked. Sits above section
-   titles. Used by `<Eyebrow>` primitive. */
+/* Eyebrow — tiny mono uppercase tracked. Replaces the .eyebrow style. */
 .eyebrow {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 11px;
@@ -211,6 +141,34 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-ink-3);
+}
+
+/* Tabular numerals — for INIT amounts, balances, etc. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.font-display { font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif; }
+.font-mono    { font-family: var(--font-mono),    ui-monospace, 'SF Mono', Menlo, monospace; }
+
+/* Legacy compat — old code still references these. Map to new tokens. */
+.glass-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+.glass-inner {
+  background: var(--color-bg-muted);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+.glass-sidebar {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-line);
+}
+.bg-ambient {
+  background: var(--color-bg);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -243,28 +201,23 @@ select:focus-visible,
   border-radius: var(--radius-md);
   font-weight: 500;
 }
-.skip-to-content:focus {
-  top: 16px;
-}
+.skip-to-content:focus { top: 16px; }
 
 @media (pointer: fine) {
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  ::-webkit-scrollbar       { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(29, 29, 31, 0.18);
-    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 4px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(29, 29, 31, 0.32);
-  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.28); }
 }
 
-/* Reduced-motion users get static reveals + no transforms. */
+@media (max-width: 640px) {
+  .safe-area-top    { padding-top:    env(safe-area-inset-top); }
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -272,18 +225,5 @@ select:focus-visible,
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
-}
-
-/* Safe-area insets for mobile (iOS PWA installs). */
-@supports (padding: max(0px)) {
-  .safe-area-top    { padding-top: max(1rem, env(safe-area-inset-top)); }
-  .safe-area-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
-}
-
-/* Selection — colored selection feels intentional, not default-blue. */
-::selection {
-  background: var(--color-accent-soft);
-  color: var(--color-ink);
 }

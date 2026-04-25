@@ -1,422 +1,191 @@
 'use client'
 
 /**
- * Landing — Ori's public marketing page.
+ * Landing — Emergent prototype parity.
  *
- * Client Component so the hero CTA can open the wallet drawer directly via
- * useInterwovenKit() instead of bouncing through /onboard. Cuts the
- * onboarding from two clicks to one.
+ *   ┌─────────────────────────────────────────────────────────────┐
+ *   │ ▢ Ori                                       [Launch app]    │  ← topbar
+ *   ├─────────────────────────────────────────────────────────────┤
+ *   │ INITIA CHAT WALLET                                           │
+ *   │ Messages, money, and AI agents          ┌──────────────┐    │
+ *   │ under one .init name.                   │  hero card    │    │
+ *   │ supporting copy                         │  rendered as  │    │
+ *   │ [Connect wallet] [Explore surface]      │  CSS          │    │
+ *   │                                          └──────────────┘    │
+ *   ├─────────────────────────────────────────────────────────────┤
+ *   │ Encrypted DMs · Wallet actions · Agent caps · Markets · ... │
+ *   └─────────────────────────────────────────────────────────────┘
+ *
+ * Single coded hero composition (no image dep). When connected, the
+ * primary CTA flips to "Open dashboard" and routes to /inbox.
  */
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useRouter } from 'next/navigation'
-import { LandingShell } from '@/components/layout/landing-shell'
-import { Eyebrow } from '@/components/ui/eyebrow'
-import { ArrowRightIcon, CheckIcon } from '@/components/ui/static-icons'
 import Link from 'next/link'
+import { ArrowRightIcon } from '@/components/ui/static-icons'
 
 export default function LandingPage() {
   const router = useRouter()
   const { isConnected, openConnect } = useInterwovenKit()
 
-  const handlePrimaryCTA = () => {
-    if (isConnected) {
-      router.push('/today')
-    } else {
-      void openConnect()
-    }
+  const onPrimary = () => {
+    if (isConnected) router.push('/inbox')
+    else void openConnect()
   }
 
-  return <LandingPageView onPrimary={handlePrimaryCTA} isConnected={isConnected} />
-}
-
-function LandingPageView({
-  onPrimary,
-  isConnected,
-}: {
-  onPrimary: () => void
-  isConnected: boolean
-}) {
   return (
-    <LandingShell>
-      {/* ====================== HERO ====================== */}
-      <section className="mx-auto w-full max-w-7xl px-5 sm:px-8 pt-16 sm:pt-24 pb-20 sm:pb-32">
-        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-12 lg:gap-20 items-center">
+    <div className="min-h-dvh bg-white">
+      {/* TOP BAR */}
+      <header className="h-16 border-b border-[var(--color-line)] flex items-center justify-between px-5 sm:px-8">
+        <Link href="/" className="flex items-center gap-2.5" aria-label="Ori home">
+          <span className="w-8 h-8 rounded-md bg-[var(--color-accent)] inline-flex items-center justify-center">
+            <span className="block w-3 h-3 rounded-full bg-white" />
+          </span>
+          <span className="text-[18px] font-display font-bold text-ink tracking-[-0.02em]">Ori</span>
+        </Link>
+        <button
+          type="button"
+          onClick={onPrimary}
+          className="h-9 px-4 rounded-md bg-[var(--color-ink)] text-white text-[13px] font-medium hover:opacity-85 active:scale-[0.98] transition cursor-pointer"
+        >
+          {isConnected ? 'Open dashboard' : 'Launch app'}
+        </button>
+      </header>
+
+      {/* HERO */}
+      <section className="px-5 sm:px-8 lg:px-16 py-12 lg:py-20 max-w-[1280px] mx-auto">
+        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-16 items-center">
           {/* Copy */}
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/60 backdrop-blur-md border border-black/5 px-3 h-7 text-[12px] text-ink-2">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-[#34C759] opacity-60 animate-ping" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#34C759]" />
-              </span>
-              <span className="font-mono">Live on Initia · v0.1</span>
-            </span>
-
-            <h1
-              className="mt-7 font-display font-medium text-ink leading-[1.02] tracking-[-0.03em]"
-              style={{ fontSize: 'clamp(40px, 7vw, 80px)' }}
-            >
-              Chat that pays.
-              <br />
-              <span className="text-ink-3">Agents that own a wallet.</span>
+            <span className="eyebrow">Initia chat wallet</span>
+            <h1 className="mt-4 font-display font-bold text-ink leading-[1.05] tracking-[-0.025em] text-[40px] sm:text-[52px] lg:text-[60px]">
+              Messages, money, and AI agents under one <span className="text-[var(--color-accent)]">.init</span> name.
             </h1>
-
-            <p className="mt-7 text-[17px] sm:text-[18px] leading-[1.55] text-ink-2 max-w-xl">
-              Ori is one surface for messages, money, and AI agents.
-              Settle in milliseconds. Spend under your own on-chain rules.
-              No popups, no token launch.
+            <p className="mt-5 text-[15px] sm:text-[16px] leading-[1.55] text-ink-2 max-w-xl">
+              Ori turns the wallet into the conversation layer: chat, pay, gift, sell, wager, stream,
+              subscribe, and give agents spending limits from one minimalist control room.
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={onPrimary}
-                className="rounded-full h-14 px-8 bg-[#1D1D1F] text-white text-[16px] font-medium inline-flex items-center gap-2.5 hover:bg-black active:scale-[0.97] transition cursor-pointer shadow-lg shadow-black/10"
+                className="h-12 px-6 rounded-md bg-[var(--color-accent)] text-white text-[14px] font-medium hover:opacity-90 active:scale-[0.98] transition inline-flex items-center gap-2 cursor-pointer"
               >
-                {isConnected ? 'Open dashboard' : 'Connect wallet'}
-                <ArrowRightIcon size={18} />
+                {isConnected ? 'Open dashboard' : 'Connect simulated wallet'}
+                <ArrowRightIcon size={14} />
               </button>
-              <a
-                href="#capabilities"
-                className="rounded-full h-14 px-7 bg-black/5 text-ink text-[15px] font-medium hover:bg-black/10 active:scale-[0.97] transition inline-flex items-center cursor-pointer"
+              <Link
+                href="/inbox"
+                className="h-12 px-6 rounded-md bg-white border border-[var(--color-line-strong)] text-ink text-[14px] font-medium hover:bg-[var(--color-surface-hover)] active:scale-[0.98] transition inline-flex items-center cursor-pointer"
               >
-                See how it works
-              </a>
+                Explore surface
+              </Link>
             </div>
-            <p className="mt-4 text-[13px] text-ink-3 inline-flex items-center gap-2">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#34C759]" />
-              Privy, MetaMask, or any EVM wallet · No token launch
-            </p>
-
-            {/* Stat strip — black-on-white, mono digits */}
-            <dl className="mt-12 grid grid-cols-3 max-w-md gap-6">
-              <Stat k="97" unit="ms" label="median settle" />
-              <Stat k="0" label="wallet popups" />
-              <Stat k="14" label="MCP tools" />
-            </dl>
           </div>
 
-          {/* Hero card — a static composition representing the chat surface */}
+          {/* Coded hero card — replaces the static image */}
           <HeroCard />
         </div>
-      </section>
 
-      {/* ============== STATS DIVIDER (full bleed) ============== */}
-      <section className="border-y border-black/5 bg-white/40 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 py-7 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-10">
-          <BigStat label="Sub-second settlement" value="100ms" />
-          <BigStat label="On-chain agent caps" value="MCP" />
-          <BigStat label="No counterparty risk" value="Predict" />
-          <BigStat label="One name everywhere" value=".init" />
+        {/* HERO STATS RIBBON */}
+        <div className="mt-10 grid grid-cols-3 max-w-md gap-6">
+          <Stat k="USE SURFACE" v="Chat · Money · Agents" />
+          <Stat k="IDENTITY" v=".init names" />
+          <Stat k="RAILS" v="Move contracts" />
         </div>
       </section>
 
-      {/* ====================== CAPABILITIES ====================== */}
-      <section
-        id="capabilities"
-        className="mx-auto w-full max-w-7xl px-5 sm:px-8 py-24 sm:py-32"
-      >
-        <div className="max-w-3xl">
-          <Eyebrow>01 · Capabilities</Eyebrow>
-          <h2
-            className="mt-4 font-display font-medium text-ink leading-[1.05] tracking-[-0.02em]"
-            style={{ fontSize: 'clamp(32px, 4.5vw, 56px)' }}
-          >
-            Payments, messages, and agents on the same surface.
-          </h2>
-          <p className="mt-5 text-[16px] sm:text-[17px] text-ink-2 leading-[1.55] max-w-2xl">
-            Six primitives. No feature menu. Everything Ori does, it does from a
-            single conversation.
-          </p>
-        </div>
-
-        <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <Capability
-            label="Pay"
-            title="Tap, type, send."
-            body="No recipient form, no gas picker, no confirmation modal. The money lands in the conversation as a card both sides see at the same moment."
+      {/* FEATURE ROW */}
+      <section className="border-t border-[var(--color-line)] bg-[var(--color-bg-muted)]">
+        <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-16 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <Feature
+            label="Encrypted DMs"
+            body="Message friends with payments and read state."
           />
-          <Capability
-            label="Identity"
-            title="One name, everywhere."
-            body="Your .init is your chat handle, your payment address, your profile URL, and your agent endpoint. Resolve once, reuse forever."
+          <Feature
+            label="Wallet actions"
+            body="Send, split, tip, gift, stream, subscribe."
           />
-          <Capability
-            label="Agents"
-            title="Built for AI to use safely."
-            body="MCP for Claude Desktop, A2A JSON-RPC for any agent over HTTP, on-chain spending caps, kill switch only you control."
+          <Feature
+            label="Agent caps"
+            body="AI agents act only inside on-chain limits you set."
           />
-          <Capability
-            label="Predict"
-            title="60-second markets."
-            body="Bet on BTC, ETH, SOL, or any Connect oracle pair. Markets resolve themselves. No counterparty, no settlement risk."
+          <Feature
+            label="Markets · wagers"
+            body="PvP bets, YES/NO pools, lucky draws."
           />
-          <Capability
-            label="Stream"
-            title="Pay by the second."
-            body="Consulting, subscriptions, attention — as a continuous flow. Stops the moment either side says stop."
-          />
-          <Capability
-            label="Caps"
-            title="Daily limits, kill switch."
-            body="Give an agent 50 INIT/day on-chain. Revoke from any device in one transaction. No trust required."
+          <Feature
+            label="On-chain reputation"
+            body="Badges, attestations, social graph, trust."
           />
         </div>
       </section>
 
-      {/* ====================== AGENTS ====================== */}
-      <section
-        id="agents"
-        className="mx-auto w-full max-w-7xl px-5 sm:px-8 pb-24 sm:pb-32"
-      >
-        <div className="max-w-3xl">
-          <Eyebrow>02 · Agents</Eyebrow>
-          <h2
-            className="mt-4 font-display font-medium text-ink leading-[1.05] tracking-[-0.02em]"
-            style={{ fontSize: 'clamp(32px, 4.5vw, 56px)' }}
-          >
-            One prompt does the whole product.
-          </h2>
-          <p className="mt-5 text-[16px] sm:text-[17px] text-ink-2 leading-[1.55] max-w-2xl">
-            Plug Ori into Claude Desktop. A single message can check your
-            balance, find a paywalled article, buy it, tip the author, and open
-            a prediction — all on-chain, all under your daily cap.
-          </p>
-        </div>
-
-        <div className="mt-12 grid lg:grid-cols-[1.1fr_1fr] gap-5">
-          <div className="glass-card p-7 sm:p-8">
-            <Eyebrow>Claude Desktop · MCP</Eyebrow>
-            <h3 className="mt-3 text-[20px] sm:text-[24px] font-display font-medium text-ink leading-tight tracking-[-0.01em]">
-              Fourteen tools in one config line.
-            </h3>
-            <pre className="mt-5 rounded-2xl bg-black text-white/90 p-5 text-[12px] leading-[1.7] font-mono overflow-x-auto">
-{`{
-  "mcpServers": {
-    "ori": {
-      "command": "npx",
-      "args": ["-y", "@ori/mcp-server"]
-    }
-  }
-}`}
-            </pre>
-            <p className="mt-4 text-[14px] text-ink-3 leading-[1.55]">
-              Restart Claude, ask in plain English. Each tool signs under the
-              policy you wrote on-chain.
-            </p>
-          </div>
-          <div className="glass-card p-7 sm:p-8">
-            <Eyebrow>Any agent · A2A JSON-RPC</Eyebrow>
-            <h3 className="mt-3 text-[20px] sm:text-[24px] font-display font-medium text-ink leading-tight tracking-[-0.01em]">
-              One HTTP endpoint. Standard protocol.
-            </h3>
-            <pre className="mt-5 rounded-2xl bg-black text-white/90 p-5 text-[12px] leading-[1.7] font-mono overflow-x-auto">
-{`POST /a2a
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "ori.send_tip",
-  "params": { "to": "mira.init", "amount": 5 }
-}`}
-            </pre>
-            <p className="mt-4 text-[14px] text-ink-3 leading-[1.55]">
-              Discover capabilities at <span className="font-mono text-ink-2">/.well-known/agent.json</span>. Every Ori user is callable by name.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ====================== FLOW ====================== */}
-      <section
-        id="flow"
-        className="mx-auto w-full max-w-7xl px-5 sm:px-8 pb-24 sm:pb-32"
-      >
-        <div className="max-w-3xl">
-          <Eyebrow>03 · Flow</Eyebrow>
-          <h2
-            className="mt-4 font-display font-medium text-ink leading-[1.05] tracking-[-0.02em]"
-            style={{ fontSize: 'clamp(32px, 4.5vw, 56px)' }}
-          >
-            From a thought to a payment, in one gesture.
-          </h2>
-          <p className="mt-5 text-[16px] sm:text-[17px] text-ink-2 leading-[1.55] max-w-2xl">
-            No forms. No popups. Numbers turn into transactions where you typed
-            them — inside the conversation.
-          </p>
-        </div>
-
-        <div className="mt-12 grid sm:grid-cols-3 gap-5">
-          <FlowStep n="01" title="Type a name" body="Tag any .init. Resolves to address instantly." />
-          <FlowStep n="02" title="Pick the amount" body="Number pad in-line. No recipient form." />
-          <FlowStep n="03" title="Money lands" body="A payment card appears in chat. Both sides see it at the same moment." />
-        </div>
-      </section>
-
-      {/* ====================== FINAL CTA ====================== */}
-      <section className="mx-auto w-full max-w-7xl px-5 sm:px-8 pb-24 sm:pb-32">
-        <div className="glass-card p-10 sm:p-16 text-center">
-          <h2
-            className="font-display font-medium text-ink leading-[1.05] tracking-[-0.02em] mx-auto max-w-3xl"
-            style={{ fontSize: 'clamp(32px, 4.5vw, 56px)' }}
-          >
-            Open the app. The rest is one tap.
-          </h2>
-          <div className="mt-8">
-            <button
-              type="button"
-              onClick={onPrimary}
-              className="rounded-full h-14 px-8 bg-[#1D1D1F] text-white text-[16px] font-medium inline-flex items-center gap-2 hover:bg-black active:scale-[0.97] transition cursor-pointer shadow-lg shadow-black/10"
-            >
-              {isConnected ? 'Open dashboard' : 'Connect wallet'}
-              <ArrowRightIcon size={18} />
-            </button>
-          </div>
-        </div>
-      </section>
-    </LandingShell>
+      {/* FOOTER */}
+      <footer className="border-t border-[var(--color-line)] py-8 px-5 sm:px-8 lg:px-16 max-w-[1280px] mx-auto flex flex-wrap items-center justify-between gap-4 text-[12.5px] font-mono text-ink-3">
+        <span>Built on bridged INIT · No token launch</span>
+        <span>© Ori — all quiet.</span>
+      </footer>
+    </div>
   )
 }
 
-/* ────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────── */
 
-function Stat({
-  k,
-  unit,
-  label,
-}: {
-  k: string
-  unit?: string
-  label: string
-}) {
+function Stat({ k, v }: { k: string; v: string }) {
   return (
     <div>
-      <div className="font-display tnum text-ink leading-none" style={{ fontSize: '28px' }}>
-        {k}
-        {unit && <span className="text-ink-3 text-[18px] ml-0.5">{unit}</span>}
-      </div>
-      <div className="mt-1.5 text-[12px] text-ink-3">{label}</div>
+      <div className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-3">{k}</div>
+      <div className="mt-1 text-[13.5px] text-ink font-medium">{v}</div>
     </div>
   )
 }
 
-function BigStat({ label, value }: { label: string; value: string }) {
+function Feature({ label, body }: { label: string; body: string }) {
   return (
-    <div className="flex flex-col">
-      <div
-        className="font-display font-medium text-ink leading-none"
-        style={{ fontSize: 'clamp(20px, 2.4vw, 28px)' }}
-      >
-        {value}
+    <div>
+      <div className="w-9 h-9 rounded-md bg-white border border-[var(--color-line)] inline-flex items-center justify-center mb-3">
+        <span className="block w-2 h-2 rounded-full bg-[var(--color-accent)]" />
       </div>
-      <div className="mt-2 text-[11.5px] sm:text-[12px] text-ink-3 font-mono uppercase tracking-[0.1em]">
-        {label}
-      </div>
+      <h3 className="font-display font-bold text-[15px] text-ink">{label}</h3>
+      <p className="mt-1.5 text-[12.5px] text-ink-3 leading-[1.55]">{body}</p>
     </div>
-  )
-}
-
-function Capability({
-  label,
-  title,
-  body,
-}: {
-  label: string
-  title: string
-  body: string
-}) {
-  return (
-    <article className="glass-card p-7 hover:-translate-y-[2px] transition-transform duration-300 will-change-transform">
-      <Eyebrow>{label}</Eyebrow>
-      <h3 className="mt-3 text-[18px] sm:text-[20px] font-display font-medium text-ink leading-tight tracking-[-0.01em]">
-        {title}
-      </h3>
-      <p className="mt-2.5 text-[14px] text-ink-3 leading-[1.55]">{body}</p>
-    </article>
-  )
-}
-
-function FlowStep({
-  n,
-  title,
-  body,
-}: {
-  n: string
-  title: string
-  body: string
-}) {
-  return (
-    <article className="glass-card p-7">
-      <span className="font-mono text-[12px] text-ink-4 tracking-[0.14em]">
-        STEP {n}
-      </span>
-      <h3 className="mt-2 text-[18px] sm:text-[20px] font-display font-medium text-ink leading-tight tracking-[-0.01em]">
-        {title}
-      </h3>
-      <p className="mt-2 text-[14px] text-ink-3 leading-[1.55]">{body}</p>
-    </article>
   )
 }
 
 /**
- * HeroCard — the visual on the right of the hero.
- * A static composition showing what payment-inside-chat looks like.
+ * HeroCard — coded composition replacing the prototype's image.
+ * Shows a chat bubble + payment card to convey "chat that pays."
  */
 function HeroCard() {
   return (
-    <div className="relative">
-      {/* Soft halo */}
-      <div
-        aria-hidden
-        className="absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-[#007AFF]/10 via-transparent to-[#FF6B9D]/10 blur-2xl"
-      />
-      {/* The chat card */}
-      <div className="relative glass-card p-6 sm:p-7 max-w-md mx-auto">
-        {/* Chat header */}
-        <div className="flex items-center gap-3 pb-4 border-b border-black/5">
-          <div
-            className="w-10 h-10 rounded-full"
-            style={{
-              background: 'linear-gradient(135deg, #FF9EC7, #FF6B9D)',
-            }}
-            aria-hidden
-          />
-          <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-medium text-ink">
-              mira<span className="text-ink-3">.init</span>
-            </div>
-            <div className="text-[11px] text-ink-3 font-mono">active now</div>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className="pt-5 flex flex-col gap-2.5">
-          <div className="self-start max-w-[80%] rounded-2xl rounded-bl-md bg-black/5 px-3.5 py-2 text-[13.5px] text-ink">
-            dinner at nobu, $64.80 split 4 ways?
-          </div>
-          <div className="self-end max-w-[80%] rounded-2xl rounded-br-md bg-[#1D1D1F] px-3.5 py-2 text-[13.5px] text-white">
-            sending now
-          </div>
-
-          {/* Payment card */}
-          <div className="self-end max-w-[88%] rounded-2xl bg-white border border-black/5 p-4 shadow-sm">
-            <div className="text-[10.5px] uppercase tracking-[0.14em] text-ink-3 font-mono">
-              Sent · mira.init
-            </div>
-            <div className="mt-1 font-mono tnum text-[24px] font-medium text-ink">
-              $16.20
-            </div>
-            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-ink-3 font-mono">
-              <span className="inline-flex h-3.5 w-3.5 rounded-full bg-[#34C759] items-center justify-center">
-                <CheckIcon size={9} className="text-white" />
-              </span>
-              Landed · 97ms · 0x4a…b3c2
-            </div>
-          </div>
-
-          <div className="self-start max-w-[80%] rounded-2xl rounded-bl-md bg-black/5 px-3.5 py-2 text-[13.5px] text-ink">
-            ty 🙏
-          </div>
+    <div className="relative h-[320px] lg:h-[360px] border border-[var(--color-line)] rounded-md bg-gradient-to-br from-[#FFFFFF] via-[#F8F9FF] to-[#FCFCFF] overflow-hidden">
+      {/* speech bubble */}
+      <div className="absolute top-7 left-7 right-7 bg-white border border-[var(--color-line)] rounded-md p-4 shadow-sm">
+        <div className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-ink-3">mira.init · 09:18</div>
+        <div className="mt-2 text-[14px] text-ink leading-[1.4]">
+          Send 5 INIT to nova.init for the demo deck preview?
         </div>
       </div>
+
+      {/* payment card */}
+      <div className="absolute bottom-7 left-7 right-7 bg-[var(--color-ink)] text-white rounded-md p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-white/55">Sent · mira.init</div>
+            <div className="mt-1.5 font-mono tnum text-[26px] font-medium">5.00 INIT</div>
+          </div>
+          <span className="inline-flex items-center gap-2 text-[12px] font-mono text-white/70">
+            <span className="block w-1.5 h-1.5 rounded-full bg-[#34C759]" />
+            Landed · 97ms
+          </span>
+        </div>
+      </div>
+
+      {/* dot accents */}
+      <span className="absolute top-6 right-6 w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
+      <span className="absolute bottom-6 right-12 w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]/40" />
     </div>
   )
 }

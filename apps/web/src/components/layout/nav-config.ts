@@ -1,12 +1,15 @@
 /**
- * Single source of truth for the signed-in app navigation.
+ * Navigation — Emergent 5-surface model.
  *
- * Both the desktop sidebar and the mobile drawer render from this list, so
- * adding a route is a one-line change. Order matters — it's what users see.
+ *   Inbox    → /inbox     — chats + agent control room
+ *   Money    → /money     — payments / gifts / streams / subs / paywalls / sponsor
+ *   Play     → /play      — wagers / prediction markets / lucky pools
+ *   Explore  → /explore   — leaderboards / discover / activity / oracle / squads
+ *   Profile  → /profile   — identity / reputation / agent policy / settings
  *
- * MORE_NAV holds secondary features (paywalls, gift, prediction markets,
- * squads, etc.) — surfaced under a collapsible "More" section so the primary
- * 6 items stay scannable.
+ * Each surface lists every Move-module flow as a card with an "Open flow"
+ * button, routing to the existing per-feature page (where the actual
+ * contract calls live).
  */
 import type { IconName } from '@/components/ui/icon'
 
@@ -14,112 +17,16 @@ export interface NavItem {
   href: string
   label: string
   icon: IconName
-  /** Predicate over pathname so nested routes light up the right item */
   match: (path: string) => boolean
 }
 
 export const APP_NAV: NavItem[] = [
-  {
-    href: '/today',
-    label: 'Today',
-    icon: 'home',
-    match: (p) => p === '/today',
-  },
-  {
-    href: '/chats',
-    label: 'Chats',
-    icon: 'chats',
-    match: (p) => p === '/chats' || p.startsWith('/chat/'),
-  },
-  {
-    href: '/send',
-    label: 'Send',
-    icon: 'send',
-    match: (p) => p.startsWith('/send'),
-  },
-  {
-    href: '/predict',
-    label: 'Predict',
-    icon: 'predict',
-    match: (p) => p.startsWith('/predict'),
-  },
-  {
-    href: '/ask',
-    label: 'Ask Claude',
-    icon: 'sparkle',
-    match: (p) => p.startsWith('/ask'),
-  },
-  {
-    href: '/settings',
-    label: 'Settings',
-    icon: 'settings',
-    match: (p) => p.startsWith('/settings'),
-  },
+  { href: '/inbox',   label: 'Inbox',   icon: 'chats',    match: (p) => p === '/inbox'   || p.startsWith('/chats') || p.startsWith('/chat/') },
+  { href: '/money',   label: 'Money',   icon: 'dollar',   match: (p) => p === '/money'   || p.startsWith('/send')  || p.startsWith('/gift')  || p.startsWith('/streams') || p.startsWith('/subscriptions') || p.startsWith('/paywall') },
+  { href: '/play',    label: 'Play',    icon: 'predict',  match: (p) => p === '/play'    || p.startsWith('/predict') || p.startsWith('/lucky') },
+  { href: '/explore', label: 'Explore', icon: 'eye',      match: (p) => p === '/explore' || p.startsWith('/discover') || p.startsWith('/creators') || p.startsWith('/squads') },
+  { href: '/profile', label: 'Profile', icon: 'user',     match: (p) => p === '/profile' || p === '/today' || p === '/settings' || p === '/portfolio' || p.startsWith('/agent/') || p.startsWith('/[identifier]') },
 ]
 
-/**
- * Secondary feature surfaces. Rendered in a "More" group below the primary
- * nav. Order roughly matches the demo flow.
- */
-export const MORE_NAV: NavItem[] = [
-  {
-    href: '/portfolio',
-    label: 'Portfolio',
-    icon: 'wallet',
-    match: (p) => p.startsWith('/portfolio'),
-  },
-  {
-    href: '/discover',
-    label: 'Discover',
-    icon: 'eye',
-    match: (p) => p.startsWith('/discover'),
-  },
-  {
-    href: '/creators',
-    label: 'Creators',
-    icon: 'user',
-    match: (p) => p.startsWith('/creators'),
-  },
-  {
-    href: '/paywall/mine',
-    label: 'Paywalls',
-    icon: 'shield-check',
-    match: (p) => p.startsWith('/paywall'),
-  },
-  {
-    href: '/gift',
-    label: 'Gift cards',
-    icon: 'gift',
-    match: (p) => p.startsWith('/gift'),
-  },
-  {
-    href: '/streams',
-    label: 'Streams',
-    icon: 'lightning',
-    match: (p) => p.startsWith('/streams'),
-  },
-  {
-    href: '/subscriptions',
-    label: 'Subscriptions',
-    icon: 'receipt',
-    match: (p) => p.startsWith('/subscriptions'),
-  },
-  {
-    href: '/squads',
-    label: 'Squads',
-    icon: 'user',
-    match: (p) => p.startsWith('/squads'),
-  },
-  {
-    href: '/lucky',
-    label: 'Lucky',
-    icon: 'sparkle',
-    match: (p) => p.startsWith('/lucky'),
-  },
-  {
-    href: '/system',
-    label: 'System',
-    icon: 'info',
-    match: (p) => p.startsWith('/system'),
-  },
-]
+// Kept for legacy imports — older sidebar code references MORE_NAV.
+export const MORE_NAV: NavItem[] = []

@@ -1,31 +1,61 @@
+'use client'
+
 /**
- * AppShell — wrapper for every signed-in page.
+ * AppShell — Emergent layout.
  *
- * Composition:
- *   • Ambient gradient background (pinned, pointer-events: none)
- *   • Desktop: Sidebar fixed left + main content with `lg:pl-72`
- *   • Mobile: MobileChrome sticky top + drawer
+ *   ┌────────┬────────────────────────────────────────────────────┐
+ *   │        │  EYEBROW                          ┌─────────────┐  │
+ *   │ Sidebar│  Surface title (h1)               │ Trust 92    │  │
+ *   │        │                                   │ 250 INIT/day│  │
+ *   │        ├───────────────────────────────────┴─────────────┤  │
+ *   │        │  page children                                  │  │
+ *   │        │                                                 │  │
+ *   └────────┴─────────────────────────────────────────────────┘
  *
- * Width is owned here, not at the page. Pages render content; AppShell
- * enforces the column. Keep pages free of `max-w-*`.
+ * Sidebar fixed w-64 on lg+. Mobile uses MobileChrome drawer. Surface
+ * header is sticky so badges stay visible during scroll.
  */
 import * as React from 'react'
 import { Sidebar } from './sidebar'
 import { MobileChrome } from './mobile-chrome'
+import { TopBadges } from './top-badges'
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  /** Small uppercase mono label above the title. */
+  eyebrow?: string
+  /** Surface heading — bold display face. */
+  title?: string
+  children: React.ReactNode
+}
+
+export function AppShell({ eyebrow, title, children }: AppShellProps) {
   return (
-    <div className="relative min-h-dvh bg-ambient">
+    <div className="relative min-h-dvh bg-white">
       <Sidebar />
       <MobileChrome />
-      <main
-        id="main-content"
-        className="relative z-10 min-h-dvh lg:pl-72"
-      >
-        <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 lg:px-10 py-8 lg:py-12">
+
+      <div className="lg:pl-64">
+        {(title || eyebrow) && (
+          <header className="hidden lg:flex sticky top-0 z-20 h-20 px-8 items-center justify-between bg-white border-b border-[var(--color-line)]">
+            <div className="flex flex-col">
+              {eyebrow && <span className="eyebrow leading-none">{eyebrow}</span>}
+              {title && (
+                <h1 className="mt-1 font-display font-bold text-[24px] leading-tight text-ink tracking-[-0.02em]">
+                  {title}
+                </h1>
+              )}
+            </div>
+            <TopBadges />
+          </header>
+        )}
+
+        <main
+          id="main-content"
+          className="px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10 max-w-[1280px]"
+        >
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }
