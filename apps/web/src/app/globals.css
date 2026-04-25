@@ -136,6 +136,14 @@ body {
   50%      { box-shadow: 0 0 0 8px rgba(107, 208, 163, 0.06); }
 }
 
+/* SystemGrid Motion card — slides a 20%-wide accent bar L→R→L. Curve uses
+   --ease (0.2,0.7,0.2,1) so the demo IS the curve. */
+@keyframes ori-motion-slide {
+  0%   { transform: translateX(0%);  width: 20%; }
+  50%  { transform: translateX(250%); width: 20%; }
+  100% { transform: translateX(0%);  width: 20%; }
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    AMBIENT BACKDROP
    Three stacked radial gradients + a tiny-star field. Same trick as your
