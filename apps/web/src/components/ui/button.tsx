@@ -24,13 +24,20 @@ import { Icon, type IconName } from './icon'
 type Variant = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
+// Icon props accept either IconName (new system) OR ReactNode (legacy callers
+// pass JSX like <Sparkles />). Aliases `leftIcon` / `rightIcon` are kept for
+// backwards compat with the legacy pages restored from /_legacy.
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
   size?: Size
   loading?: boolean
-  leadingIcon?: IconName
-  trailingIcon?: IconName
+  leadingIcon?: IconName | React.ReactNode
+  trailingIcon?: IconName | React.ReactNode
+  /** @deprecated alias for leadingIcon — keeps legacy pages building */
+  leftIcon?: IconName | React.ReactNode
+  /** @deprecated alias for trailingIcon — keeps legacy pages building */
+  rightIcon?: IconName | React.ReactNode
   fullWidth?: boolean
 }
 
@@ -53,12 +60,20 @@ const SIZE_STYLES: Record<Size, string> = {
   lg: 'h-14 px-7 text-[15px] gap-2.5',
 }
 
+function renderIcon(slot: IconName | React.ReactNode | undefined) {
+  if (!slot) return null
+  if (typeof slot === 'string') return <Icon name={slot as IconName} size={16} />
+  return <span className="inline-flex">{slot}</span>
+}
+
 export function Button({
   variant = 'primary',
   size = 'md',
   loading,
   leadingIcon,
   trailingIcon,
+  leftIcon,
+  rightIcon,
   fullWidth,
   disabled,
   className = '',
@@ -66,6 +81,8 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const isDisabled = disabled || loading
+  const lead = leadingIcon ?? leftIcon
+  const trail = trailingIcon ?? rightIcon
   return (
     <button
       type="button"
@@ -74,7 +91,7 @@ export function Button({
         'inline-flex items-center justify-center rounded-full font-medium',
         'transition-[background-color,transform,opacity] duration-150',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
-        'will-change-transform',
+        'will-change-transform cursor-pointer',
         VARIANT_STYLES[variant],
         SIZE_STYLES[size],
         fullWidth ? 'w-full' : '',
@@ -86,11 +103,11 @@ export function Button({
     >
       {loading ? (
         <Icon name="spinner" size={16} className="animate-spin" />
-      ) : leadingIcon ? (
-        <Icon name={leadingIcon} size={16} />
-      ) : null}
+      ) : (
+        renderIcon(lead)
+      )}
       <span>{children}</span>
-      {!loading && trailingIcon ? <Icon name={trailingIcon} size={16} /> : null}
+      {!loading && renderIcon(trail)}
     </button>
   )
 }
