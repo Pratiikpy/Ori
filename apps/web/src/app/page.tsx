@@ -1,230 +1,262 @@
 'use client'
 
 /**
- * Landing — Emergent prototype parity.
+ * Landing — Emergent prototype port (1:1 structure, real backend wiring).
  *
- *   ┌─────────────────────────────────────────────────────────────┐
- *   │ ▢ Ori                                       [Launch app]    │  ← topbar
- *   ├─────────────────────────────────────────────────────────────┤
- *   │ INITIA CHAT WALLET                                           │
- *   │ Messages, money, and AI agents          ┌──────────────┐    │
- *   │ under one .init name.                   │  hero card    │    │
- *   │ supporting copy                         │  rendered as  │    │
- *   │ [Connect wallet] [Explore surface]      │  CSS          │    │
- *   │                                          └──────────────┘    │
- *   ├─────────────────────────────────────────────────────────────┤
- *   │ Encrypted DMs · Wallet actions · Agent caps · Markets · ... │
- *   └─────────────────────────────────────────────────────────────┘
+ * Layout:
+ *   <nav>: Ori brand left, "Launch app" CTA right
+ *   <section> Hero:
+ *     left  (col-span-7) : kicker → headline → subheadline → CTA row →
+ *                          login options grid (3 buttons) → sign-message note
+ *     right (col-span-5) : art card with stage gradient + speech bubble +
+ *                          3 stat tiles below
+ *   <section> Feature grid: 5 tiles with icons
  *
- * Single coded hero composition (no image dep). When connected, the
- * primary CTA flips to "Open dashboard" and routes to /inbox.
+ * Differences from prototype:
+ *   • Image asset replaced by CSS art (no Emergent CDN dep)
+ *   • All 3 login buttons + main CTA call useInterwovenKit().openConnect()
+ *     since the InterwovenKit drawer covers Email/Google/Privy/MetaMask
+ *   • If already connected, every CTA routes to /inbox instead of opening
+ *     the drawer again
  */
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRightIcon } from '@/components/ui/static-icons'
+
+const featureTiles = [
+  { id: 'chat',   title: 'Encrypted DMs',         detail: 'Message threads with payments and read state.',     glyph: 'chat' as const },
+  { id: 'money',  title: 'Wallet actions',        detail: 'Send, split, tip, gift, stream, subscribe.',         glyph: 'wallet' as const },
+  { id: 'agents', title: 'Agent caps',            detail: 'AI agents act only inside user-set limits.',         glyph: 'bot' as const },
+  { id: 'play',   title: 'Markets + wagers',      detail: 'PvP bets, YES/NO pools, lucky draws.',               glyph: 'gift' as const },
+  { id: 'trust',  title: 'On-chain reputation',   detail: 'Badges, attestations, social graph, trust.',         glyph: 'shield' as const },
+]
+
+const landingStats = [
+  { id: 'surface',  label: 'One surface', value: 'Chat + Money + Agents' },
+  { id: 'identity', label: 'Identity',    value: '.init native' },
+  { id: 'rails',    label: 'Rails',       value: 'Move contracts' },
+]
 
 export default function LandingPage() {
   const router = useRouter()
   const { isConnected, openConnect } = useInterwovenKit()
 
-  const onPrimary = () => {
+  const launch = () => {
     if (isConnected) router.push('/inbox')
     else void openConnect()
   }
 
   return (
-    <div className="min-h-dvh bg-white">
-      {/* TOP BAR */}
-      <header className="h-16 border-b border-[var(--color-line)] flex items-center justify-between px-5 sm:px-8">
-        <Link href="/" className="flex items-center gap-2.5" aria-label="Ori home">
-          <span className="w-8 h-8 rounded-md bg-[var(--color-accent)] inline-flex items-center justify-center">
-            <span className="block w-3 h-3 rounded-full bg-white" />
+    <main className="min-h-screen bg-white text-[#0A0A0A]">
+      {/* TOP NAV */}
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
+        <Link href="/" className="flex items-center gap-3" aria-label="Ori home">
+          <span className="grid h-10 w-10 place-items-center bg-[#0022FF] font-display text-lg font-black text-white">
+            O
           </span>
-          <span className="text-[18px] font-display font-bold text-ink tracking-[-0.02em]">Ori</span>
+          <span className="font-display text-2xl font-black tracking-tight">Ori</span>
         </Link>
         <button
           type="button"
-          onClick={onPrimary}
-          className="h-9 px-4 rounded-md bg-[var(--color-ink)] text-white text-[13px] font-medium hover:opacity-85 active:scale-[0.98] transition cursor-pointer"
+          onClick={launch}
+          className="inline-flex items-center gap-2 bg-[#0A0A0A] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0022FF] cursor-pointer"
         >
-          {isConnected ? 'Open dashboard' : 'Launch app'}
+          {isConnected ? 'Open app' : 'Launch app'}
+          <ArrowRightGlyph />
         </button>
-      </header>
+      </nav>
 
       {/* HERO */}
-      <section className="px-5 sm:px-8 lg:px-16 py-12 lg:py-20 max-w-[1280px] mx-auto">
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-16 items-center">
-          {/* Copy */}
-          <div>
-            <span className="eyebrow">Initia chat wallet</span>
-            <h1 className="mt-5 font-heavy text-ink leading-[1.02] tracking-[-0.025em] text-[44px] sm:text-[60px] lg:text-[72px]">
-              Messages, money, and AI agents under one <span className="text-[var(--color-accent)]">.init</span> name.
-            </h1>
-            <p className="mt-5 text-[15px] sm:text-[16px] leading-[1.55] text-ink-2 max-w-xl">
-              Ori turns the wallet into the conversation layer: chat, pay, gift, sell, wager, stream,
-              subscribe, and give agents spending limits from one minimalist control room.
-            </p>
+      <section className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-5 pb-12 pt-8 sm:px-8 lg:grid-cols-12 lg:gap-12 lg:pb-16">
+        {/* Hero copy */}
+        <div className="lg:col-span-7">
+          <p className="mb-5 text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
+            Initia chat wallet
+          </p>
+          <h1 className="font-display text-5xl font-black leading-none tracking-tighter sm:text-6xl lg:text-7xl">
+            Messages, money, and AI agents under one .init name.
+          </h1>
+          <p className="mt-8 max-w-2xl text-base leading-7 text-[#52525B] sm:text-lg">
+            Ori turns the wallet into the conversation layer: chat, pay, gift, sell, wager, stream, subscribe, and give agents spending limits from one minimalist control room.
+          </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={onPrimary}
-                className="h-12 px-6 rounded-md bg-[var(--color-accent)] text-white text-[14px] font-medium hover:opacity-90 active:scale-[0.98] transition inline-flex items-center gap-2 cursor-pointer"
-              >
-                {isConnected ? 'Open dashboard' : 'Connect simulated wallet'}
-                <ArrowRightIcon size={14} />
-              </button>
-              <Link
-                href="/inbox"
-                className="h-12 px-6 rounded-md bg-white border border-[var(--color-line-strong)] text-ink text-[14px] font-medium hover:bg-[var(--color-surface-hover)] active:scale-[0.98] transition inline-flex items-center cursor-pointer"
-              >
-                Explore surface
-              </Link>
-            </div>
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={launch}
+              className="inline-flex items-center justify-center gap-2 bg-[#0022FF] px-7 py-4 text-base font-semibold text-white transition hover:bg-[#0019CC] cursor-pointer"
+            >
+              {isConnected ? 'Open dashboard' : 'Connect wallet'}
+              <ArrowRightGlyph />
+            </button>
+            <a
+              href="#feature-grid"
+              className="inline-flex items-center justify-center border border-black px-7 py-3 font-semibold transition hover:bg-black hover:text-white cursor-pointer"
+            >
+              Explore surface
+            </a>
           </div>
 
-          {/* Hero card frame: image area on top + 3 stat tiles on bottom,
-              all wrapped in one bordered shell to match the prototype. */}
-          <div className="border border-[var(--color-line)] rounded-md bg-[var(--color-bg-muted)] overflow-hidden">
-            <HeroCard />
-            <div className="grid grid-cols-3 border-t border-[var(--color-line)] divide-x divide-[var(--color-line)]">
-              <StatTile k="ONE SURFACE" v="Chat + Money + Agents" />
-              <StatTile k="IDENTITY"    v=".init native" />
-              <StatTile k="RAILS"       v="Move contracts" />
-            </div>
+          {/* Login options — all three open the same InterwovenKit drawer.
+              The drawer surfaces Privy (email + Google) + MetaMask + any
+              installed EVM wallet. Three buttons match prototype labels. */}
+          <div className="mt-6 grid max-w-2xl grid-cols-1 gap-2 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={launch}
+              className="inline-flex items-center justify-center gap-2 border border-black/20 px-3 py-3 text-xs font-semibold transition hover:bg-black hover:text-white cursor-pointer"
+            >
+              <MailGlyph /> Email / Privy
+            </button>
+            <button
+              type="button"
+              onClick={launch}
+              className="inline-flex items-center justify-center gap-2 border border-black/20 px-3 py-3 text-xs font-semibold transition hover:bg-black hover:text-white cursor-pointer"
+            >
+              <SparkGlyph /> Google / Privy
+            </button>
+            <button
+              type="button"
+              onClick={launch}
+              className="inline-flex items-center justify-center gap-2 border border-black/20 px-3 py-3 text-xs font-semibold transition hover:bg-black hover:text-white cursor-pointer"
+            >
+              <WalletGlyph /> MetaMask
+            </button>
+          </div>
+          <p className="mt-3 font-mono text-xs text-[#52525B]">
+            Sign one tiny EIP-191 message after wallet connect — no transaction fee.
+          </p>
+        </div>
+
+        {/* Hero art card */}
+        <div className="relative border border-black/10 bg-[#F5F5F5] p-4 lg:col-span-5">
+          {/* Coded illustration replacing the Emergent CDN image */}
+          <HeroArt />
+          <div className="grid grid-cols-3 border-t border-black/10 bg-white">
+            {landingStats.map((stat, i) => (
+              <div
+                key={stat.id}
+                className={[
+                  'p-3',
+                  i < landingStats.length - 1 ? 'border-r border-black/10' : '',
+                ].join(' ')}
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#52525B]">
+                  {stat.label}
+                </p>
+                <p className="mt-2 font-mono text-xs font-bold">{stat.value}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* FEATURE ROW — five icons + labels matching the prototype. */}
-      <section className="border-t border-[var(--color-line)] bg-[var(--color-bg-muted)]">
-        <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-16 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
-          <Feature icon="chat"   label="Encrypted DMs"        body="Message friends with payments and read state." />
-          <Feature icon="wallet" label="Wallet actions"       body="Send, split, tip, gift, stream, subscribe." />
-          <Feature icon="bot"    label="Agent caps"           body="AI agents act only inside user-set limits." />
-          <Feature icon="gift"   label="Markets + wagers"     body="PvP bets, YES/NO pools, lucky draws." />
-          <Feature icon="shield" label="On-chain reputation"  body="Badges, attestations, social graph, trust." />
+      {/* FEATURE GRID */}
+      <section id="feature-grid" className="border-y border-black/10 bg-[#F5F5F5]">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-px bg-black/10 px-5 py-px sm:px-8 md:grid-cols-2 lg:grid-cols-5">
+          {featureTiles.map((tile) => (
+            <article key={tile.id} className="min-h-56 bg-white p-6">
+              <FeatureGlyph kind={tile.glyph} />
+              <h2 className="mt-8 font-display text-2xl font-black tracking-tight">
+                {tile.title}
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-[#52525B]">
+                {tile.detail}
+              </p>
+            </article>
+          ))}
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-[var(--color-line)] py-8 px-5 sm:px-8 lg:px-16 max-w-[1280px] mx-auto flex flex-wrap items-center justify-between gap-4 text-[12.5px] font-mono text-ink-3">
-        <span>Built on bridged INIT · No token launch</span>
-        <span>© Ori — all quiet.</span>
+      <footer className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+        <p className="font-mono text-xs text-[#52525B]">
+          Built on bridged INIT · No token launch · © Ori
+        </p>
       </footer>
-    </div>
+    </main>
   )
 }
 
-/* ─────────────────────────────────────────────────────────────── */
+/* ───────────────── Inline-SVG glyphs ───────────────── */
 
-function StatTile({ k, v }: { k: string; v: string }) {
+function ArrowRightGlyph() {
   return (
-    <div className="px-5 py-4">
-      <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-ink-3">{k}</div>
-      <div className="mt-1.5 font-mono text-[12.5px] text-ink">{v}</div>
-    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
   )
 }
 
-type FeatureIcon = 'chat' | 'wallet' | 'bot' | 'gift' | 'shield'
-
-function Feature({ icon, label, body }: { icon: FeatureIcon; label: string; body: string }) {
+function MailGlyph() {
   return (
-    <div>
-      <FeatureGlyph kind={icon} />
-      <h3 className="mt-3 font-display font-bold text-[16px] text-ink leading-tight">{label}</h3>
-      <p className="mt-2 text-[13px] text-ink-3 leading-[1.55]">{body}</p>
-    </div>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
   )
 }
 
-/**
- * Tiny inline-SVG glyph set for the feature row. Rendered server-safe (no
- * Phosphor / lucide → avoids the createContext SSR gotcha) and stroked in
- * the brand accent so they read as a coherent set.
- */
-function FeatureGlyph({ kind }: { kind: FeatureIcon }) {
-  const stroke = 'var(--color-accent)'
-  const common = {
-    width: 24,
-    height: 24,
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke,
-    strokeWidth: 1.6,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-  }
+function SparkGlyph() {
   return (
-    <span className="block" aria-hidden>
-      {kind === 'chat' && (
-        <svg {...common}>
-          <path d="M4 5h16v11H8l-4 4z" />
-        </svg>
-      )}
-      {kind === 'wallet' && (
-        <svg {...common}>
-          <rect x="3" y="6" width="18" height="13" rx="1.5" />
-          <path d="M3 9h18" />
-          <circle cx="17" cy="14" r="1.2" fill={stroke} />
-        </svg>
-      )}
-      {kind === 'bot' && (
-        <svg {...common}>
-          <rect x="4" y="7" width="16" height="11" rx="2" />
-          <path d="M12 7V4" />
-          <circle cx="12" cy="3" r="0.9" fill={stroke} />
-          <circle cx="9" cy="12.5" r="1" fill={stroke} />
-          <circle cx="15" cy="12.5" r="1" fill={stroke} />
-        </svg>
-      )}
-      {kind === 'gift' && (
-        <svg {...common}>
-          <rect x="3.5" y="9" width="17" height="11" rx="1" />
-          <path d="M3.5 13h17" />
-          <path d="M12 9v11" />
-          <path d="M12 9c-2-3-6-3-6 0 0 1.5 1.5 2 6 0z" />
-          <path d="M12 9c2-3 6-3 6 0 0 1.5-1.5 2-6 0z" />
-        </svg>
-      )}
-      {kind === 'shield' && (
-        <svg {...common}>
-          <path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6z" />
-          <path d="M9 12l2 2 4-4" />
-        </svg>
-      )}
-    </span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m12 3-1.9 5.8L4 10l5.8 1.9L12 18l1.9-6L20 10l-6.1-1.2Z" />
+      <path d="M5 3v4" />
+      <path d="M19 17v4" />
+      <path d="M3 5h4" />
+      <path d="M17 19h4" />
+    </svg>
   )
+}
+
+function WalletGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" />
+      <path d="M3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2H17a2 2 0 0 1 0-4h4V9a2 2 0 0 0-2-2H5a2 2 0 0 1 0-4Z" />
+    </svg>
+  )
+}
+
+function FeatureGlyph({ kind }: { kind: 'chat' | 'wallet' | 'bot' | 'gift' | 'shield' }) {
+  const c = { width: 28, height: 28, viewBox: '0 0 24 24', fill: 'none', stroke: '#0022FF', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  if (kind === 'chat')   return <svg {...c}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+  if (kind === 'wallet') return <svg {...c}><rect width="20" height="14" x="2" y="5" rx="2" /><path d="M2 10h20" /></svg>
+  if (kind === 'bot')    return <svg {...c}><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></svg>
+  if (kind === 'gift')   return <svg {...c}><rect x="3" y="8" width="18" height="13" rx="0" /><path d="M3 12h18" /><path d="M12 8v13" /><path d="M19 12v9H5v-9" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>
+  return <svg {...c}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /></svg>
 }
 
 /**
- * HeroCard — replaces the prototype's 3D coin+bubble image with a coded
- * composition: soft gradient stage + a tilted chat bubble with the
- * landing message. Sits inside the bordered hero card frame.
+ * HeroArt — coded illustration for the hero card. Replaces the Emergent
+ * CDN image. Soft warm gradient stage + a small "send" speech bubble +
+ * an offset payment chip. No image dependency.
  */
-function HeroCard() {
+function HeroArt() {
   return (
-    <div className="relative h-[300px] sm:h-[340px] bg-white overflow-hidden flex items-center justify-center">
-      {/* abstract stage gradient behind the bubble — replaces the image */}
-      <div className="absolute inset-0" style={{
-        background: 'radial-gradient(ellipse 70% 60% at 60% 55%, #F8F4E3 0%, #FFFFFF 70%)',
-      }} />
-
-      {/* coin / wordmark blob */}
-      <div className="absolute left-[28%] top-[42%] -translate-y-1/2 w-24 h-24 rounded-full bg-gradient-to-br from-[#F4C95D] via-[#E8B23B] to-[#C48E1A] shadow-lg" />
+    <div className="relative aspect-square w-full bg-white" style={{
+      background: 'radial-gradient(ellipse 70% 60% at 60% 55%, #FFF1D0 0%, #FFFFFF 70%)',
+    }}>
+      {/* coin / wordmark */}
+      <div className="absolute left-[28%] top-[42%] -translate-y-1/2 w-28 h-28 rounded-full bg-gradient-to-br from-[#FFD66B] via-[#E8B23B] to-[#B07A12] shadow-[6px_6px_0px_0px_rgba(0,0,0,0.08)]" />
 
       {/* speech bubble */}
-      <div className="absolute right-[12%] top-[28%] bg-white border border-[var(--color-line)] rounded-2xl rounded-br-sm p-3.5 max-w-[200px] shadow-sm">
-        <div className="font-mono text-[10px] tracking-[0.10em] uppercase text-ink-3">mira.init · 09:18</div>
-        <div className="mt-1.5 text-[13px] text-ink leading-[1.4]">
+      <div className="absolute right-[10%] top-[24%] border border-black bg-white p-3 max-w-[210px] shadow-[4px_4px_0px_0px_rgba(0,34,255,1)]">
+        <p className="font-mono text-[10px] uppercase tracking-[0.10em] text-[#52525B]">mira.init · 09:18</p>
+        <p className="mt-1.5 text-[13px] leading-snug">
           Send 5 INIT to nova.init for the demo deck preview?
-        </div>
+        </p>
+      </div>
+
+      {/* settlement chip */}
+      <div className="absolute bottom-[10%] right-[10%] border border-black bg-[#0A0A0A] px-3 py-2 text-white shadow-[4px_4px_0px_0px_rgba(0,34,255,1)]">
+        <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/60">Sent · mira.init</p>
+        <p className="mt-1 font-mono tnum text-base font-bold">5.00 INIT</p>
       </div>
 
       {/* dot accent */}
-      <span className="absolute top-5 right-5 w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
+      <span className="absolute top-4 right-4 h-1.5 w-1.5 bg-[#0022FF]" />
     </div>
   )
 }
