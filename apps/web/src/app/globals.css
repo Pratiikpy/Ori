@@ -16,76 +16,59 @@
      ================================================================= */
 
   /* Canvas + elevated bg (device screen, window interior) */
-  --color-background:       #07070a;     /* was #08090a */
-  --color-bg-2:             #0b0b10;     /* NEW — device-screen + window tone */
-  --color-surface-1:        #0b0b10;     /* alias of bg-2 */
-  --color-surface-2:        #191a1b;
-  --color-surface-3:        #28282c;
+  --color-background:       #000000;     /* True Apple Black */
+  --color-bg-2:             rgba(255, 255, 255, 0.02);
+  --color-surface-1:        rgba(255, 255, 255, 0.04);
+  --color-surface-2:        rgba(255, 255, 255, 0.08);
+  --color-surface-3:        rgba(255, 255, 255, 0.12);
 
-  /* --color-muted: the reference has no "muted" concept; it uses
-     surface-2 (white @ 4%) for card tops and surface-3 (white @ 7%)
-     for hover. Keeping our alias for back-compat; value is surface-3
-     so bg-muted/X0 renders visibly on all screens. */
-  --color-muted:            #28282c;
+  --color-muted:            rgba(255, 255, 255, 0.08);
 
-  /* Ink — opacity-based on #f4f4f6, ported from the reference.
-     Reference uses 0.38 for --ink-3, which falls below WCAG 2.1 AA
-     contrast on #07070a bg for 11px eyebrow text (~3.5:1 vs target 4.5:1).
-     Bumped to 0.50 so eyebrows + tertiary text pass AA; the visual
-     shift is minor (still clearly a tertiary tier).  --ink-4 stays at
-     0.22 — it's only used on quaternary chrome where the muted look
-     is structural, never on body copy. */
-  --color-foreground:       #f4f4f6;                          /* was #f7f8f8 */
-  --color-ink-2:            rgba(244, 244, 246, 0.66);        /* was 0.62 — small AA bump */
-  --color-ink-3:            rgba(244, 244, 246, 0.50);        /* was 0.38 — AA fix */
-  --color-ink-4:            rgba(244, 244, 246, 0.45);        /* was 0.22 → 0.30 → 0.45 for normal-text AA on dark bg */
-  --color-muted-foreground: rgba(244, 244, 246, 0.50);        /* alias of ink-3 */
+  /* Deep white for spatial contrast */
+  --color-foreground:       #ffffff;
+  --color-ink-2:            rgba(255, 255, 255, 0.70);
+  --color-ink-3:            rgba(255, 255, 255, 0.50);
+  --color-ink-4:            rgba(255, 255, 255, 0.30);
+  --color-muted-foreground: rgba(255, 255, 255, 0.50);
 
-  /* Accent — reference uses "soft electric indigo" + dark ink ON accent.
-     This is the single biggest visible shift: our indigo #5e6ad2 was
-     too muted. #6c7bff is brighter, more blue-shifted, and the reference's
-     signature move is using dark ink (#0a0a12) on indigo buttons — NOT
-     white — which looks far more refined. */
-  --color-primary:            #6c7bff;     /* was #5e6ad2 */
-  --color-primary-foreground: #0a0a12;     /* was #ffffff  — dark ink on accent */
-  --color-primary-bright:     #8a95ff;     /* was #7170ff  */
-  --color-primary-hover:      #a6afff;
-  --color-accent:             #6c7bff;     /* alias of primary */
-  --color-accent-2:           #8a95ff;
-  --color-accent-ink:         #0a0a12;     /* dark ink token when on accent surfaces */
+  /* Accent — Minimalist Apple tint colors */
+  --color-primary:            #007aff;     /* Spatial Blue */
+  --color-primary-foreground: #ffffff;
+  --color-primary-bright:     #3395ff;
+  --color-primary-hover:      #0062cc;
+  --color-accent:             #007aff;
+  --color-accent-2:           #3395ff;
+  --color-accent-ink:         #ffffff;
 
-  /* Borders — reference has a 3-stop line ladder. Going BACK from our
-     0.09 audit bump to the reference's 0.06, because we're also raising
-     surface backgrounds in tandem so cards read via bg contrast, not
-     border strength. */
-  --color-border:            rgba(255, 255, 255, 0.06);
-  --color-border-strong:     rgba(255, 255, 255, 0.10);
-  --color-border-emphasis:   rgba(255, 255, 255, 0.16);
-  --color-line-hairline:     rgba(255, 255, 255, 0.04);
+  /* Borders — ultra thin spatial borders */
+  --color-border:            rgba(255, 255, 255, 0.08);
+  --color-border-strong:     rgba(255, 255, 255, 0.12);
+  --color-border-emphasis:   rgba(255, 255, 255, 0.18);
+  --color-line-hairline:     rgba(255, 255, 255, 0.05);
 
   /* Semantic */
-  --color-success:            #6bd0a3;
-  --color-success-foreground: #04120c;
-  --color-warning:            #e8b472;
-  --color-warning-foreground: #1a1002;
-  --color-danger:             #f56b6b;
-  --color-danger-foreground:  #1a0404;
+  --color-success:            #30d158;
+  --color-success-foreground: #000000;
+  --color-warning:            #ff9f0a;
+  --color-warning-foreground: #000000;
+  --color-danger:             #ff453a;
+  --color-danger-foreground:  #ffffff;
 
-  /* Fonts -- Geist sans + Geist Mono + Instrument Serif for editorial accents */
+  /* Fonts */
   --font-sans:  var(--font-sans);
   --font-mono:  var(--font-mono);
   --font-serif: var(--font-serif);
 
-  /* Radii -- two-tier system, no micro-rounding */
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  14px;
-  --radius-xl:  20px;
-  --radius-2xl: 28px;
-  --radius-3xl: 40px;
+  /* Radii -- Massive rounding for fluidity */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+  --radius-2xl: 32px;
+  --radius-3xl: 48px;
 
-  /* Motion */
-  --ease:        cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* Motion - Organic spring physics */
+  --ease:        cubic-bezier(0.25, 1.0, 0.25, 1.0); /* Softer spring */
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -183,16 +166,9 @@ body {
 .anim-motion-slide { animation: ori-motion-slide 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite; }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   AMBIENT BACKDROP
-   Three stacked radial gradients + a tiny-star field. Same trick as your
-   Ori.html landing — deliberately subtle so it reads as atmosphere, not
-   decoration. Pointer-events: none so nothing is ever unclickable.
-
-   Two intensities:
-     .backdrop-stars       — landing. Full strength, readable as "view".
-     .backdrop-stars-quiet — inner pages. ~40% intensity, reads as "room".
-                             Content gets more visual weight; the brand
-                             signature still persists after sign-in.
+   AMBIENT BACKDROP - Spatial Aura
+   Replaced stars with massive, elegant, slow-moving blurred orbs of color
+   to create a glassmorphic background that feels like VisionOS.
    ────────────────────────────────────────────────────────────────────────── */
 .backdrop-stars::before,
 .backdrop-stars::after,
@@ -200,46 +176,32 @@ body {
 .backdrop-stars-quiet::after {
   content: '';
   position: fixed;
-  inset: 0;
+  inset: -200px; /* Oversized to allow smooth bleeding edges */
   pointer-events: none;
   z-index: 0;
 }
+
 .backdrop-stars::before {
   background:
-    radial-gradient(ellipse 1200px 600px at 50% -10%, rgba(113, 112, 255, 0.10), transparent 60%),
-    radial-gradient(ellipse 900px 700px at 90% 40%, rgba(94, 106, 210, 0.06), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 10% 80%, rgba(255, 255, 255, 0.025), transparent 60%);
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(0, 122, 255, 0.15), transparent 70%),
+    radial-gradient(ellipse 60% 80% at 90% 40%, rgba(88, 86, 214, 0.15), transparent 70%),
+    radial-gradient(ellipse 70% 70% at 10% 80%, rgba(52, 199, 89, 0.08), transparent 70%);
+  filter: blur(140px);
 }
 .backdrop-stars::after {
-  opacity: 0.65;
-  background-image:
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.5) 0.5px, transparent 1px),
-    radial-gradient(circle at 75% 15%, rgba(255, 255, 255, 0.4) 0.5px, transparent 1px),
-    radial-gradient(circle at 45% 70%, rgba(255, 255, 255, 0.35) 0.5px, transparent 1px),
-    radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.5) 0.5px, transparent 1px),
-    radial-gradient(circle at 10% 55%, rgba(255, 255, 255, 0.3) 0.5px, transparent 1px),
-    radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.35) 0.5px, transparent 1px);
-  background-size: 1400px 900px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(100px);
 }
 
-/* Inner-page variant — same geometry, lower intensity so content reads as
-   the foreground. Gradients lifted toward the top so the content column
-   gets a cleaner canvas; stars dimmed to ~38%. */
 .backdrop-stars-quiet::before {
   background:
-    radial-gradient(ellipse 1400px 500px at 50% -20%, rgba(113, 112, 255, 0.055), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 95% 20%, rgba(94, 106, 210, 0.035), transparent 60%);
+    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(0, 122, 255, 0.08), transparent 60%),
+    radial-gradient(ellipse 60% 80% at 95% 20%, rgba(88, 86, 214, 0.06), transparent 60%);
+  filter: blur(100px);
 }
 .backdrop-stars-quiet::after {
-  opacity: 0.38;
-  background-image:
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.4) 0.5px, transparent 1px),
-    radial-gradient(circle at 75% 15%, rgba(255, 255, 255, 0.32) 0.5px, transparent 1px),
-    radial-gradient(circle at 45% 70%, rgba(255, 255, 255, 0.28) 0.5px, transparent 1px),
-    radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.4) 0.5px, transparent 1px),
-    radial-gradient(circle at 10% 55%, rgba(255, 255, 255, 0.25) 0.5px, transparent 1px),
-    radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.28) 0.5px, transparent 1px);
-  background-size: 1600px 1100px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(120px);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -271,43 +233,40 @@ body {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   CARD PANEL — the default inner-page content surface.
-
-   Post-audit: inner pages were rendering with bg-muted/40 (~1.5% effective
-   contrast with canvas) + border-border at 6% white — on non-retina screens
-   these both vanished. .card-panel is the canonical "readable card" surface:
-   3% white wash + 13% white border. Pair with .panel-hover for interactive
-   cards. Use directly on static info cards.
+   CARD PANEL — Spatial Flat Look
+   A frosted glass effect with absolute minimal borders, perfect for MacOS.
    ────────────────────────────────────────────────────────────────────────── */
 .card-panel {
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-lg);
+  background-color: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.3);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   PANEL HOVER
-   Linear-style: subtle border-brighten + almost-imperceptible surface lift
-   + inset hairline ring. Apply with `.panel-hover` on anything card-like
-   that should feel interactive (clickable cards, group-hover targets).
+   PANEL HOVER — Spatial Lift
+   Beautiful smooth shadow elevation, very slight scale.
    ────────────────────────────────────────────────────────────────────────── */
 .panel-hover {
   transition:
-    background-color 180ms var(--ease-out),
-    border-color 180ms var(--ease-out),
-    box-shadow 240ms var(--ease-out),
-    transform 240ms var(--ease-out);
+    background-color 0.4s cubic-bezier(0.25, 1.0, 0.25, 1.0),
+    border-color 0.4s cubic-bezier(0.25, 1.0, 0.25, 1.0),
+    box-shadow 0.4s cubic-bezier(0.25, 1.0, 0.25, 1.0),
+    transform 0.4s cubic-bezier(0.25, 1.0, 0.25, 1.0);
 }
 .panel-hover:hover {
-  background-color: rgba(255, 255, 255, 0.035);
-  border-color: var(--color-border-strong);
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 8px 32px -12px rgba(113, 112, 255, 0.12);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 12px 40px -12px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
 }
-/* Active/pressed state — tiny inward push so it feels tactile. */
+/* Active/pressed state — push in deeply */
 .panel-hover:active {
-  transform: translateY(0.5px);
+  transform: translateY(2px) scale(0.98);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

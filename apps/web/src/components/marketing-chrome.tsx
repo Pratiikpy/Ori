@@ -21,16 +21,8 @@ export function MarketingTopbar({
   active?: string
 }) {
   return (
-    <header
-      className="sticky top-0 z-30 border-b border-[var(--color-line-hairline)]"
-      style={{
-        backdropFilter: 'blur(20px) saturate(1.4)',
-        WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-        background:
-          'linear-gradient(180deg, rgba(7, 7, 10, 0.86) 0%, rgba(7, 7, 10, 0.6) 100%)',
-      }}
-    >
-      <div className="shell flex items-center justify-between h-14">
+    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center w-full px-4 pointer-events-none">
+      <div className="flex items-center justify-between h-[56px] w-full max-w-4xl px-6 rounded-full border border-white/10 backdrop-blur-3xl bg-black/30 shadow-2xl transition-all pointer-events-auto">
         <Link
           href="/"
           className="flex items-center gap-2.5 group"

@@ -27,8 +27,8 @@ export function Header({ title }: { title?: string }) {
   const displayName = username ?? (initiaAddress ? shortenAddress(initiaAddress) : null)
 
   return (
-    <header className="sticky top-0 z-20 border-b border-[var(--color-line-hairline)] backdrop-blur-xl bg-background/70 safe-area-top">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 flex items-center gap-6 h-14">
+    <header className="sticky top-4 z-50 safe-area-top flex justify-center w-full px-4 mb-6 transition-all duration-500">
+      <div className="flex items-center gap-6 h-[56px] px-6 w-full max-w-5xl rounded-full border border-[var(--color-border-strong)] backdrop-blur-3xl bg-white/5 shadow-2xl">
         <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="Ori home">
           <svg viewBox="0 0 24 24" className="h-6 w-6 text-foreground" aria-hidden>
             <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="1.25" fill="none" />
@@ -77,10 +77,10 @@ export function Header({ title }: { title?: string }) {
               title={autoSignEnabled ? 'Auto-sign on — payments are invisible' : 'Enable auto-sign'}
               onClick={() => void (autoSignEnabled ? disable() : enable())}
               className={
-                'inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-[11.5px] font-medium border transition ' +
+                'inline-flex items-center gap-1.5 rounded-full px-4 h-8 text-[11.5px] font-medium border transition-colors ' +
                 (autoSignEnabled
-                  ? 'bg-[var(--color-primary)]/15 border-[var(--color-primary)]/40 text-[var(--color-primary-bright)]'
-                  : 'bg-white/[0.04] border-border text-ink-3 hover:text-foreground hover:border-[var(--color-border-strong)]')
+                  ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white shadow-md shadow-primary/20'
+                  : 'bg-white/[0.04] border-white/10 text-ink-3 hover:text-foreground hover:border-white/20')
               }
             >
               {autoSignEnabled ? <Zap className="w-3.5 h-3.5" /> : <ZapOff className="w-3.5 h-3.5" />}

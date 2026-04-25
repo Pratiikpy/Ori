@@ -275,15 +275,15 @@ export function ChatComposer({
   }
 
   return (
-    <div className="border-t border-border safe-area-bottom">
+    <div className="mx-4 mb-4 safe-area-bottom rounded-[32px] border border-border backdrop-blur-3xl bg-white/5 shadow-2xl p-1 transition-all duration-300">
       {showPay && (
         <div className="px-3 pt-3">
           <div
             className={
-              'rounded-2xl border p-3 ' +
+              'rounded-[24px] border p-4 backdrop-blur-xl ' +
               (payMode === 'pay'
-                ? 'border-primary/40 bg-primary/10'
-                : 'border-warning/40 bg-warning/10')
+                ? 'border-primary/30 bg-primary/10'
+                : 'border-warning/30 bg-warning/10')
             }
           >
             <div className="flex items-center justify-between">
@@ -373,16 +373,16 @@ export function ChatComposer({
         </div>
       )}
 
-      <div className="flex items-end gap-2 p-3">
+      <div className="flex items-end gap-2 p-2">
         <button
           type="button"
           onClick={() => setShowPay((v) => !v)}
           aria-label="Pay"
           className={
-            'w-10 h-10 rounded-full flex-none inline-flex items-center justify-center transition ' +
+            'w-10 h-10 rounded-full flex-none inline-flex items-center justify-center transition-all duration-300 ' +
             (showPay
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted border border-border text-muted-foreground hover:text-foreground')
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+              : 'bg-white/5 hover:bg-white/10 text-white/50 hover:text-white')
           }
         >
           <DollarSign className="w-5 h-5" />
@@ -393,7 +393,7 @@ export function ChatComposer({
           onClick={() =>
             window.open(`/gift/new?to=${encodeURIComponent(recipientAddress)}`, '_self')
           }
-          className="w-10 h-10 rounded-full flex-none inline-flex items-center justify-center bg-muted border border-border text-muted-foreground hover:text-foreground"
+          className="w-10 h-10 rounded-full flex-none inline-flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
         >
           <Gift className="w-5 h-5" />
         </button>
@@ -401,7 +401,7 @@ export function ChatComposer({
           type="button"
           aria-label="Propose wager"
           onClick={onOpenWager}
-          className="w-10 h-10 rounded-full flex-none inline-flex items-center justify-center bg-muted border border-border text-muted-foreground hover:text-foreground"
+          className="w-10 h-10 rounded-full flex-none inline-flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
         >
           <Scale className="w-5 h-5" />
         </button>
@@ -409,7 +409,7 @@ export function ChatComposer({
           type="button"
           aria-label="Split bill"
           onClick={onOpenSplit}
-          className="w-10 h-10 rounded-full flex-none inline-flex items-center justify-center bg-muted border border-border text-muted-foreground hover:text-foreground"
+          className="w-10 h-10 rounded-full flex-none inline-flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
         >
           <Split className="w-5 h-5" />
         </button>
@@ -425,7 +425,7 @@ export function ChatComposer({
           }}
           placeholder="Message"
           rows={1}
-          className="flex-1 max-h-32 resize-none rounded-2xl bg-muted border border-border px-3 py-2 focus:outline-none focus:border-primary"
+          className="flex-1 max-h-32 resize-none rounded-[24px] bg-transparent hover:bg-white/5 px-4 py-2.5 text-[15px] focus:outline-none focus:bg-white/5 transition-colors placeholder:text-white/30 text-white"
         />
 
         <button
@@ -433,7 +433,7 @@ export function ChatComposer({
           disabled={!text.trim() || sending}
           onClick={handleSend}
           aria-label="Send message"
-          className="w-10 h-10 rounded-full flex-none bg-primary text-primary-foreground inline-flex items-center justify-center disabled:opacity-50"
+          className="w-10 h-10 rounded-full flex-none bg-primary text-primary-foreground inline-flex items-center justify-center disabled:opacity-50 transition-all duration-300 hover:scale-105 active:scale-95 shadow-md shadow-primary/20"
         >
           {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
         </button>

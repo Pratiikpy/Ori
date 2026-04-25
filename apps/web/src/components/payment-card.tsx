@@ -49,20 +49,20 @@ export function PaymentCard({ data }: { data: PaymentCardData }) {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 320, damping: 26, mass: 0.9 }}
       className={
-        'relative rounded-2xl px-4 py-3 max-w-[82%] break-words ' +
+        'relative rounded-[32px] px-6 py-5 max-w-[85%] break-words backdrop-blur-2xl shadow-2xl ' +
         (isSent
-          ? 'ml-auto bg-primary/15 border border-primary/30'
-          : 'bg-success/15 border border-success/30')
+          ? 'ml-auto bg-primary/10 border border-primary/20'
+          : 'bg-success/10 border border-success/20')
       }
     >
       {celebrate && !prefersReducedMotion && <ConfettiBurst />}
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+      <div className="flex items-center justify-between gap-3 opacity-80">
+        <span className="text-[11px] font-medium uppercase tracking-widest">
           {isSent ? 'You paid' : 'You received'}
         </span>
-        <Check className={isSent ? 'w-4 h-4 text-primary' : 'w-4 h-4 text-success'} />
+        <Check className={isSent ? 'w-4 h-4 text-primary-bright' : 'w-4 h-4 text-success'} />
       </div>
-      <div className="mt-1 text-2xl font-bold">{display}</div>
+      <div className="mt-2 text-3xl font-semibold tracking-tight">{display}</div>
       {data.memo && <div className="mt-1 text-sm opacity-90">{data.memo}</div>}
       {scanUrl && (
         <a

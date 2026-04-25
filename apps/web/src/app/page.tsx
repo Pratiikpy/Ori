@@ -45,14 +45,14 @@ function SectionHead({
   sub: string
 }) {
   return (
-    <header className="reveal max-w-3xl">
-      <div className="font-mono uppercase text-[12px] tracking-[0.14em] text-ink-3">
+    <header className="reveal max-w-4xl mx-auto text-center flex flex-col items-center">
+      <div className="font-mono uppercase text-[13px] tracking-[0.2em] text-[#007aff] bg-[#007aff]/10 px-5 py-1.5 rounded-full backdrop-blur-md border border-[#007aff]/20 mb-2 shadow-lg shadow-blue-500/10">
         {eyebrow}
       </div>
-      <h2 className="mt-4 text-[clamp(32px,5vw,56px)] leading-[1.05] tracking-[-0.02em] text-foreground">
+      <h2 className="mt-6 text-[clamp(40px,6vw,72px)] leading-[1.05] tracking-[-0.03em] font-medium text-foreground">
         {title}
       </h2>
-      <p className="mt-5 text-[15px] leading-[1.6] text-ink-2">{sub}</p>
+      <p className="mt-6 text-[18px] md:text-[20px] leading-[1.6] text-white/60 max-w-2xl">{sub}</p>
     </header>
   )
 }
@@ -77,7 +77,7 @@ export default function LandingPage() {
           {/* 01 · Capabilities */}
           <section
             id="capabilities"
-            className="shell pt-[clamp(72px,12vw,140px)] pb-[clamp(72px,12vw,140px)]"
+            className="shell pt-[clamp(120px,18vw,240px)] pb-[clamp(100px,15vw,200px)]"
           >
             <SectionHead
               eyebrow="01 · Capabilities"
@@ -89,7 +89,7 @@ export default function LandingPage() {
               }
               sub="Eight primitives. No feature menu. Everything Ori does, it does from a single conversation."
             />
-            <div className="mt-14">
+            <div className="mt-20">
               <CapabilitiesGrid />
             </div>
           </section>
@@ -97,7 +97,7 @@ export default function LandingPage() {
           {/* 02 · Flow */}
           <section
             id="flow"
-            className="shell pb-[clamp(72px,12vw,140px)]"
+            className="shell pb-[clamp(120px,18vw,240px)]"
           >
             <SectionHead
               eyebrow="02 · Flow"
@@ -108,7 +108,7 @@ export default function LandingPage() {
               }
               sub="Three surfaces. One continuous thought."
             />
-            <div className="mt-14">
+            <div className="mt-20">
               <FlowStage />
             </div>
           </section>
@@ -116,7 +116,7 @@ export default function LandingPage() {
           {/* 03 · Creators */}
           <section
             id="agents"
-            className="shell pb-[clamp(72px,12vw,140px)]"
+            className="shell pb-[clamp(120px,18vw,240px)]"
           >
             <SectionHead
               eyebrow="03 · Creators"
@@ -127,7 +127,7 @@ export default function LandingPage() {
               }
               sub="Linktree, Patreon, and Stripe in one page that lives on the chain."
             />
-            <div className="mt-14 max-w-xl mx-auto">
+            <div className="mt-20 max-w-2xl mx-auto">
               <CreatorProfile />
             </div>
           </section>
@@ -135,7 +135,7 @@ export default function LandingPage() {
           {/* 04 · Philosophy */}
           <section
             id="philosophy"
-            className="shell pb-[clamp(72px,12vw,140px)]"
+            className="shell pb-[clamp(120px,18vw,240px)] flex flex-col items-center text-center"
           >
             <Philosophy />
           </section>
@@ -143,7 +143,7 @@ export default function LandingPage() {
           {/* 05 · System */}
           <section
             id="system"
-            className="shell pb-[clamp(72px,12vw,140px)]"
+            className="shell pb-[clamp(120px,18vw,240px)] flex flex-col items-center"
           >
             <SystemGrid />
           </section>
