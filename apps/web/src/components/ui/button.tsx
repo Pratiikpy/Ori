@@ -19,6 +19,7 @@
  * for desktop pointer; mobile gets the active-scale only.
  */
 import * as React from 'react'
+import Link from 'next/link'
 import { Icon, type IconName } from './icon'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger'
@@ -27,8 +28,12 @@ type Size = 'sm' | 'md' | 'lg'
 // Icon props accept either IconName (new system) OR ReactNode (legacy callers
 // pass JSX like <Sparkles />). Aliases `leftIcon` / `rightIcon` are kept for
 // backwards compat with the legacy pages restored from /_legacy.
+//
+// `href` makes the Button polymorphic — render as a Next <Link> when set, so
+// legacy callsites like <Button href="/paywall/new">New paywall</Button> keep
+// working. External hrefs (http*) still go through Link.
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
   variant?: Variant
   size?: Size
   loading?: boolean
@@ -39,6 +44,10 @@ export interface ButtonProps
   /** @deprecated alias for trailingIcon — keeps legacy pages building */
   rightIcon?: IconName | React.ReactNode
   fullWidth?: boolean
+  /** When set, renders as a Next.js Link instead of a <button> */
+  href?: string
+  /** native button type, when not rendering as link */
+  type?: 'button' | 'submit' | 'reset'
 }
 
 const VARIANT_STYLES: Record<Variant, string> = {
@@ -76,6 +85,8 @@ export function Button({
   rightIcon,
   fullWidth,
   disabled,
+  href,
+  type = 'button',
   className = '',
   children,
   ...rest
@@ -83,24 +94,21 @@ export function Button({
   const isDisabled = disabled || loading
   const lead = leadingIcon ?? leftIcon
   const trail = trailingIcon ?? rightIcon
-  return (
-    <button
-      type="button"
-      disabled={isDisabled}
-      className={[
-        'inline-flex items-center justify-center rounded-full font-medium',
-        'transition-[background-color,transform,opacity] duration-150',
-        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
-        'will-change-transform cursor-pointer',
-        VARIANT_STYLES[variant],
-        SIZE_STYLES[size],
-        fullWidth ? 'w-full' : '',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      {...rest}
-    >
+  const cls = [
+    'inline-flex items-center justify-center rounded-full font-medium',
+    'transition-[background-color,transform,opacity] duration-150',
+    'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
+    'will-change-transform cursor-pointer',
+    VARIANT_STYLES[variant],
+    SIZE_STYLES[size],
+    fullWidth ? 'w-full' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const inner = (
+    <>
       {loading ? (
         <Icon name="spinner" size={16} className="animate-spin" />
       ) : (
@@ -108,6 +116,44 @@ export function Button({
       )}
       <span>{children}</span>
       {!loading && renderIcon(trail)}
+    </>
+  )
+
+  // Polymorphic: render as Link when href is provided
+  if (href && !isDisabled) {
+    const isExternal = /^https?:\/\//.test(href)
+    if (isExternal) {
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cls}
+          {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+        >
+          {inner}
+        </a>
+      )
+    }
+    return (
+      <Link
+        href={href}
+        className={cls}
+        {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+      >
+        {inner}
+      </Link>
+    )
+  }
+
+  return (
+    <button
+      type={type}
+      disabled={isDisabled}
+      className={cls}
+      {...rest}
+    >
+      {inner}
     </button>
   )
 }
