@@ -16,7 +16,7 @@
  * exactly which Move function would be called next without lying about
  * whether the tx hit the chain.
  */
-import type { ActionDef } from '@/components/ui/action-card'
+import type { ActionDef } from '@/components/actions/action-card'
 import { msgSendPayment, msgTip } from '@/lib/contracts'
 
 // Loose shape — useInterwovenKit() exposes ~20 methods with their own

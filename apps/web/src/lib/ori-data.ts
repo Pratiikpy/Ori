@@ -7,7 +7,7 @@
  * The form values get dispatched through runAction() to the matching
  * Move function.
  */
-import type { ActionDef } from '@/components/ui/action-card'
+import type { ActionDef } from '@/components/actions/action-card'
 
 interface TabSection {
   id: string
