@@ -3,21 +3,22 @@
 /**
  * OriShell — brutalist app chrome (sidebar + topbar + mobile bottom nav).
  *
- * Verbatim port of ui-ref-orii/frontend/src/components/OriShell.jsx with:
- *   - NavLink → Link, useLocation → usePathname, <Outlet /> → {children}
- *   - Sidebar wallet card pulls real address + .init username from
- *     useInterwovenKit() + useUsernameQuery() (the wallet provider chain
- *     is mounted by the (ori) layout, so these hooks resolve here).
- *   - Disconnect button calls InterwovenKit's disconnect().
+ * Layout from ui-ref-orii/frontend/src/components/OriShell.jsx, all data
+ * sourced from real wallet hooks + backend:
+ *   - initiaAddress, isConnected, openConnect, disconnect from useInterwovenKit
+ *   - .init username from useUsernameQuery (resolves on connect)
+ *   - trust score from useTrustScore (the `/v1/profiles/:address/trust-score`
+ *     endpoint), shown only when connected
  *
- * Balance still comes from the mock until a chain-balance fetcher exists.
- * (TODO: real balance via the bank/move modules.)
+ * No mock-data fallbacks. When disconnected, the sidebar wallet card shows
+ * "Not connected" + a primary connect button; the topbar trust/agent badges
+ * are hidden entirely. The agent-cap topbar pill is also hidden because no
+ * `agent_policy.move` view function is exposed yet (would be a fake number).
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
-  Bot,
   CircleDollarSign,
   Compass,
   Gamepad2,
@@ -29,7 +30,8 @@ import {
 import { useInterwovenKit, useUsernameQuery } from '@initia/interwovenkit-react'
 
 import { Button } from '@/components/ui/button'
-import { currentUser, navItems } from '@/data/ori-data'
+import { navItems } from '@/data/ori-data'
+import { useTrustScore } from '@/hooks/use-trust-score'
 
 function shortenAddress(address: string | undefined | null): string {
   if (!address) return '—'
@@ -57,12 +59,19 @@ export function OriShell({
     navItems.find((item) => pathname.includes(item.id)) ?? navItems[0]
   const { initiaAddress, isConnected, openConnect, disconnect } =
     useInterwovenKit()
-  const usernameQuery = useUsernameQuery(initiaAddress || undefined)
+  const usernameQuery = useUsernameQuery(
+    isConnected ? initiaAddress || undefined : undefined,
+  )
+  const trustQuery = useTrustScore(isConnected ? initiaAddress : null)
+
   const username = usernameQuery.data
-  const handle = username ? `${username}.init` : currentUser.handle
-  const address = isConnected ? shortenAddress(initiaAddress) : currentUser.address
-  // TODO: real balance via bank/move balance fetcher; mock until then.
-  const balance = currentUser.balance
+  // Display values — only shown when connected. No mock fallbacks.
+  const handle = isConnected
+    ? username
+      ? `${username}.init`
+      : shortenAddress(initiaAddress)
+    : null
+  const addressDisplay = isConnected ? shortenAddress(initiaAddress) : null
 
   return (
     <div
@@ -126,43 +135,47 @@ export function OriShell({
                 className="flex items-center gap-2 text-sm font-bold"
                 data-testid="sidebar-wallet-label"
               >
-                <Wallet className="h-4 w-4" /> Simulated wallet
+                <Wallet className="h-4 w-4" /> Wallet
               </div>
-              <p
-                className="mt-3 font-mono text-sm"
-                data-testid="sidebar-wallet-handle"
-              >
-                {handle}
-              </p>
-              <p
-                className="font-mono text-xs text-[#52525B]"
-                data-testid="sidebar-wallet-address"
-              >
-                {address}
-              </p>
-              <p
-                className="mt-3 font-mono text-lg font-bold"
-                data-testid="sidebar-wallet-balance"
-              >
-                {balance}
-              </p>
               {isConnected ? (
-                <Button
-                  onClick={() => disconnect()}
-                  variant="outline"
-                  className="mt-4 w-full rounded-none border-black hover:bg-black hover:text-white"
-                  data-testid="disconnect-wallet-button"
-                >
-                  Disconnect
-                </Button>
+                <>
+                  <p
+                    className="mt-3 font-mono text-sm"
+                    data-testid="sidebar-wallet-handle"
+                  >
+                    {handle}
+                  </p>
+                  <p
+                    className="font-mono text-xs text-[#52525B]"
+                    data-testid="sidebar-wallet-address"
+                  >
+                    {addressDisplay}
+                  </p>
+                  <Button
+                    onClick={() => disconnect()}
+                    variant="outline"
+                    className="mt-4 w-full rounded-none border-black hover:bg-black hover:text-white"
+                    data-testid="disconnect-wallet-button"
+                  >
+                    Disconnect
+                  </Button>
+                </>
               ) : (
-                <Button
-                  onClick={() => openConnect()}
-                  className="mt-4 w-full rounded-none bg-[#0022FF] text-white hover:bg-[#0019CC]"
-                  data-testid="connect-wallet-button"
-                >
-                  Connect wallet
-                </Button>
+                <>
+                  <p
+                    className="mt-3 font-mono text-sm text-[#52525B]"
+                    data-testid="sidebar-wallet-status-disconnected"
+                  >
+                    Not connected
+                  </p>
+                  <Button
+                    onClick={() => openConnect()}
+                    className="mt-4 w-full rounded-none bg-[#0022FF] text-white hover:bg-[#0019CC]"
+                    data-testid="connect-wallet-button"
+                  >
+                    Connect wallet
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -190,24 +203,23 @@ export function OriShell({
                 : `${active.label} surface`}
             </h1>
           </div>
-          <div
-            className="hidden items-center gap-3 sm:flex"
-            data-testid="topbar-policy-summary"
-          >
-            <span
-              className="flex items-center gap-2 border border-black/10 px-3 py-2 text-sm"
-              data-testid="topbar-trust-score"
+          {isConnected && trustQuery.data ? (
+            <div
+              className="hidden items-center gap-3 sm:flex"
+              data-testid="topbar-policy-summary"
             >
-              <ShieldCheck className="h-4 w-4 text-[#0022FF]" /> Trust{' '}
-              {currentUser.trust}
-            </span>
-            <span
-              className="flex items-center gap-2 border border-black/10 px-3 py-2 text-sm"
-              data-testid="topbar-agent-cap"
-            >
-              <Bot className="h-4 w-4 text-[#0022FF]" /> {currentUser.agentCap}
-            </span>
-          </div>
+              <span
+                className="flex items-center gap-2 border border-black/10 px-3 py-2 text-sm"
+                data-testid="topbar-trust-score"
+              >
+                <ShieldCheck className="h-4 w-4 text-[#0022FF]" /> Trust{' '}
+                {trustQuery.data.score}
+                <span className="font-mono text-[10px] text-[#52525B]">
+                  /{trustQuery.data.maxScore}
+                </span>
+              </span>
+            </div>
+          ) : null}
         </div>
       </header>
 
