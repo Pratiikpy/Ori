@@ -67,18 +67,18 @@ export default function LandingPage() {
                 Renaming both labels and IDs would break every deep-link
                 already in the wild (twitter cards, docs, etc.). */}
             <nav className="hidden md:flex items-center gap-7 text-[13px] text-ink-3">
-              <a href="#capabilities" className="hover:text-foreground transition">
+              <Link href="/capabilities" className="hover:text-foreground transition">
                 Capabilities
-              </a>
-              <a href="#flow" className="hover:text-foreground transition">
+              </Link>
+              <Link href="/flow" className="hover:text-foreground transition">
                 Flow
-              </a>
-              <a href="#agents" className="hover:text-foreground transition">
+              </Link>
+              <Link href="/creators" className="hover:text-foreground transition">
                 Creators
-              </a>
-              <a href="#philosophy" className="hover:text-foreground transition">
+              </Link>
+              <Link href="/system" className="hover:text-foreground transition">
                 System
-              </a>
+              </Link>
             </nav>
 
             <HeaderConnectPill />
@@ -476,27 +476,28 @@ export default function LandingPage() {
                   <FooterCol
                     title="Product"
                     links={[
-                      { label: 'Capabilities', href: '#capabilities' },
-                      { label: 'Flow', href: '#flow' },
-                      { label: 'Agents', href: '#agents' },
-                      { label: 'Philosophy', href: '#philosophy' },
+                      { label: 'Capabilities', href: '/capabilities' },
+                      { label: 'Flow', href: '/flow' },
+                      { label: 'Creators', href: '/creators' },
+                      { label: 'System', href: '/system' },
                     ]}
                   />
                   <FooterCol
                     title="Develop"
                     links={[
-                      { label: 'MCP server', href: '/agents/mcp' },
+                      { label: 'MCP server', href: '/ask' },
                       { label: 'A2A protocol', href: '/.well-known/agent.json' },
-                      { label: 'Paywall API', href: '/docs/paywall' },
-                      { label: 'GitHub', href: 'https://github.com/' },
+                      { label: 'Paywall API', href: '/paywall/new' },
+                      { label: 'GitHub', href: 'https://github.com/Pratiikpy/Ori' },
                     ]}
                   />
                   <FooterCol
-                    title="Legal"
+                    title="App"
                     links={[
-                      { label: 'Privacy', href: '/legal/privacy' },
-                      { label: 'Terms', href: '/legal/terms' },
-                      { label: 'Keys', href: '/legal/keys' },
+                      { label: 'Today', href: '/today' },
+                      { label: 'Create', href: '/create' },
+                      { label: 'Predict', href: '/predict' },
+                      { label: 'Settings', href: '/settings' },
                     ]}
                   />
                 </div>
