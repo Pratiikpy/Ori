@@ -80,7 +80,8 @@ export const Button = forwardRef<HTMLButtonElement, UiButtonProps>(function Butt
   )
 
   if ('href' in rest && typeof rest.href === 'string') {
-    const { href, target, rel, disabled, ...anchor } = rest as LinkProps
+    const linkRest = rest as unknown as LinkProps
+    const { href, target, rel, disabled } = linkRest
     if (disabled) {
       return (
         <span className={cn(classes, 'pointer-events-none opacity-50')} aria-disabled>
@@ -89,18 +90,19 @@ export const Button = forwardRef<HTMLButtonElement, UiButtonProps>(function Butt
       )
     }
     return (
-      <Link href={href} target={target} rel={rel} className={classes} {...(anchor as object)}>
+      <Link href={href} target={target} rel={rel} className={classes}>
         {content}
       </Link>
     )
   }
 
+  const buttonRest = rest as unknown as ButtonHTMLAttributes<HTMLButtonElement>
   return (
     <button
       ref={ref}
       className={classes}
-      disabled={loading || (rest as ButtonProps).disabled}
-      {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+      disabled={loading || buttonRest.disabled}
+      {...buttonRest}
     >
       {content}
     </button>
