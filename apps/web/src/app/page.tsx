@@ -203,6 +203,7 @@ export default function LandingPage() {
               <div className="grid md:grid-cols-2 gap-4 md:gap-5">
                 <Panel path="/send" right="kp.send" big>
                   <PanelBody
+                    big
                     title={
                       <>
                         <span className="font-serif">Pay</span> without leaving the chat.
@@ -216,6 +217,7 @@ export default function LandingPage() {
 
                 <Panel path="/identity" right="id.graph" big>
                   <PanelBody
+                    big
                     title={
                       <>
                         One name, <span className="font-serif">everywhere</span>.
@@ -611,20 +613,20 @@ function Panel({
   return (
     <article
       className={
-        'reveal panel-hover rounded-2xl border border-border bg-white/[0.02] overflow-hidden flex flex-col ' +
-        (big ? 'md:min-h-[380px]' : 'md:min-h-[260px]')
+        'reveal panel-hover rounded-2xl border border-border bg-white/[0.02] overflow-hidden flex flex-col h-full ' +
+        (big ? 'md:min-h-[380px]' : 'md:min-h-[420px]')
       }
     >
-      <div className="flex items-center justify-between px-4 h-10 border-b border-[var(--color-line-hairline)] text-[11px] font-mono text-ink-3">
+      <div className="flex items-center justify-between px-4 h-10 border-b border-[var(--color-line-hairline)] text-[11px] font-mono text-ink-3 shrink-0">
         <div className="flex items-center gap-2.5">
           <span className="flex gap-1">
             <span className="block h-2 w-2 rounded-full bg-white/10" />
             <span className="block h-2 w-2 rounded-full bg-white/10" />
             <span className="block h-2 w-2 rounded-full bg-white/10" />
           </span>
-          <span>{path}</span>
+          <span className="truncate">{path}</span>
         </div>
-        <span className="text-ink-4">{right}</span>
+        <span className="text-ink-4 truncate ml-2">{right}</span>
       </div>
       {children}
     </article>
@@ -634,16 +636,28 @@ function Panel({
 function PanelBody({
   title,
   text,
+  big,
   children,
 }: {
   title: React.ReactNode
   text: React.ReactNode
+  /** Set on the 2-col big tiles. Big tiles use text-left/viz-right; narrow
+      3-col tiles always stack so the viz never collides with the title. */
+  big?: boolean
   children?: React.ReactNode
 }) {
-  // Reference panel-body .h: 22px, font-weight 400, -0.02em, line-height 1.15.
   return (
-    <div className="flex flex-col md:flex-row gap-6 md:gap-8 p-7 md:p-7 flex-1">
-      <div className="md:max-w-[52%] flex flex-col justify-center">
+    <div
+      className={
+        'flex-1 flex gap-6 p-7 ' +
+        (big ? 'flex-col md:flex-row md:gap-8' : 'flex-col')
+      }
+    >
+      <div
+        className={
+          'flex flex-col justify-center ' + (big ? 'md:max-w-[52%]' : '')
+        }
+      >
         <h3
           className="leading-[1.15] text-foreground"
           style={{ fontSize: '22px', fontWeight: 400, letterSpacing: '-0.02em' }}
@@ -657,7 +671,11 @@ function PanelBody({
           {text}
         </p>
       </div>
-      {children && <div className="flex-1 flex items-center justify-center">{children}</div>}
+      {children && (
+        <div className="flex-1 min-w-0 flex items-center justify-center">
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -921,7 +939,7 @@ function IdentityViz() {
 
 function GiftViz() {
   return (
-    <div className="rounded-xl border border-border bg-white/[0.03] p-5 w-full max-w-[240px] text-center">
+    <div className="rounded-xl border border-border bg-white/[0.03] p-5 w-full max-w-[300px] text-center">
       <div className="inline-block text-[10px] uppercase tracking-[0.16em] text-ink-3 font-mono">
         For you
       </div>
@@ -935,7 +953,7 @@ function GiftViz() {
 
 function TerminalViz() {
   return (
-    <div className="rounded-xl border border-border bg-black/50 p-4 w-full max-w-[280px] text-[11.5px] font-mono leading-[1.7]">
+    <div className="rounded-xl border border-border bg-black/50 p-4 w-full max-w-[320px] text-[11.5px] font-mono leading-[1.7]">
       <div>
         <span className="text-ink-4">›</span> tip alice.init 5 ORI
         <span className="text-ink-4"> — "great stream"</span>
@@ -950,7 +968,7 @@ function TerminalViz() {
 
 function StreamViz() {
   return (
-    <div className="rounded-xl border border-border bg-white/[0.03] p-4 w-full max-w-[260px] text-[12px]">
+    <div className="rounded-xl border border-border bg-white/[0.03] p-4 w-full max-w-[300px] text-[12px]">
       <Row l="per second" v="$0.0139" />
       <Row l="elapsed" v="00:48:12" />
       <div className="mt-3 h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
@@ -974,7 +992,7 @@ function Row({ l, v }: { l: string; v: string }) {
 
 function PredictViz() {
   return (
-    <div className="rounded-xl border border-border bg-white/[0.03] p-4 w-full max-w-[260px]">
+    <div className="rounded-xl border border-border bg-white/[0.03] p-4 w-full max-w-[300px]">
       <div className="flex items-center justify-between text-[11px] font-mono text-ink-3">
         <span>BTC / USD</span>
         <span className="tnum">98,214</span>
@@ -994,7 +1012,7 @@ function PredictViz() {
 
 function PaywallViz() {
   return (
-    <div className="rounded-xl border border-border bg-white/[0.03] p-4 w-full max-w-[260px]">
+    <div className="rounded-xl border border-border bg-white/[0.03] p-4 w-full max-w-[300px]">
       <div className="text-[11px] uppercase tracking-[0.14em] text-ink-3 font-mono">
         Locked · research/slow-rain
       </div>
@@ -1012,7 +1030,7 @@ function PaywallViz() {
 
 function CapsViz() {
   return (
-    <div className="rounded-xl border border-border bg-white/[0.03] p-4 w-full max-w-[260px]">
+    <div className="rounded-xl border border-border bg-white/[0.03] p-4 w-full max-w-[300px]">
       <div className="flex items-center justify-between text-[11px] font-mono text-ink-3">
         <span>agent.claude</span>
         <span className="flex items-center gap-1">
@@ -1042,17 +1060,21 @@ function WindowFrame({
   title: string
   children: React.ReactNode
 }) {
+  // h-full + flex-col so 3 windows in the Flow grid stretch to equal height,
+  // with the body region growing to fill the gap between the chrome and the
+  // bottom of the tallest sibling. Each window's intrinsic content keeps its
+  // own padding/spacing — only the wrapper aligns the heights.
   return (
-    <div className="reveal rounded-2xl border border-border bg-[var(--color-surface-1)] overflow-hidden">
-      <div className="flex items-center gap-2 px-3 h-8 border-b border-[var(--color-line-hairline)]">
+    <div className="reveal rounded-2xl border border-border bg-[var(--color-surface-1)] overflow-hidden flex flex-col h-full">
+      <div className="flex items-center gap-2 px-3 h-8 border-b border-[var(--color-line-hairline)] shrink-0">
         <span className="flex gap-1">
           <span className="block h-2 w-2 rounded-full bg-white/10" />
           <span className="block h-2 w-2 rounded-full bg-white/10" />
           <span className="block h-2 w-2 rounded-full bg-white/10" />
         </span>
-        <span className="text-[11px] font-mono text-ink-3 ml-1">{title}</span>
+        <span className="text-[11px] font-mono text-ink-3 ml-1 truncate">{title}</span>
       </div>
-      <div>{children}</div>
+      <div className="flex-1 flex flex-col">{children}</div>
     </div>
   )
 }
