@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@source "../**/*.{ts,tsx,js,jsx}";
+@source "../../src/**/*.{ts,tsx,js,jsx}";
+@source "../../../src/**/*.{ts,tsx,js,jsx}";
+
 @theme {
   --color-background:             hsl(var(--background));
   --color-foreground:             hsl(var(--foreground));
@@ -34,13 +38,13 @@
 
 body {
   margin: 0;
-  font-family: "IBM Plex Sans", sans-serif;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
 }
 
 @layer base {
@@ -152,11 +156,12 @@ code {
 }
 
 .font-heading {
-  font-family: "Cabinet Grotesk", "Arial Narrow", sans-serif;
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
 }
 
 .font-mono {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
 }
 
 html {
