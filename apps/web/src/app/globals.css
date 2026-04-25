@@ -63,10 +63,12 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Heavy display headings — Archivo Black via next/font CSS var. */
+/* Heavy display headings — Cabinet Grotesk (Fontshare, loaded via <link>
+   in layout.tsx <head>). Archivo Black is the next/font fallback so the
+   page never renders in browser-default sans even before CG hydrates. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 400; /* Archivo Black ships only 400 */
+  font-family: 'Cabinet Grotesk', var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900;
   letter-spacing: -0.02em;
   color: #0A0A0A;
 }
@@ -82,9 +84,10 @@ h1, h2, h3, h4, h5, h6 {
   font-feature-settings: 'tnum';
 }
 
-/* Family utility classes — alias next/font CSS vars. */
-.font-display { font-family: var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif; font-weight: 400; }
-.font-heavy   { font-family: var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif; font-weight: 400; }
+/* Family utility classes — Cabinet Grotesk for display, with Archivo
+   Black via next/font as fallback. */
+.font-display { font-family: 'Cabinet Grotesk', var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif; font-weight: 900; }
+.font-heavy   { font-family: 'Cabinet Grotesk', var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif; font-weight: 900; }
 .font-mono    { font-family: var(--font-mono-fallback),  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; }
 
 .eyebrow {

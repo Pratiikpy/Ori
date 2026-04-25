@@ -74,6 +74,16 @@ export default function RootLayout({
       lang="en"
       className={`${heavy.variable} ${body.variable} ${mono.variable} antialiased`}
     >
+      <head>
+        {/* Cabinet Grotesk (Fontshare CDN) — the prototype's heading face.
+            Loaded via <link> tag (not @import url() in CSS) so it doesn't
+            trip Lightning CSS / Tailwind v4's @import ordering rule. */}
+        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&display=swap"
+        />
+      </head>
       <body
         className="min-h-dvh bg-white text-[#0A0A0A]"
         style={{ fontFamily: 'var(--font-body-fallback), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif' }}
