@@ -14,18 +14,12 @@ import { Crown, LogOut, Plus, UserPlus, Users, X } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
 import { PageHeader, Serif } from '@/components/page-header'
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  EmptyState,
-  Eyebrow,
-  Field,
-  Input,
-  Pill,
-  Reveal,
-} from '@/components/ui'
+import { EmptyState } from '@/components/empty-state'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import { ORI_CHAIN_ID } from '@/lib/chain-config'
 import {
@@ -211,62 +205,68 @@ export default function SquadsPage() {
         />
 
         <div className="grid md:grid-cols-2 gap-4">
-          <Reveal>
-            <Card>
-              <CardHeader>
-                <Eyebrow>Create a squad</Eyebrow>
-              </CardHeader>
-              <CardBody className="space-y-4">
-                <Field label="Squad name">
-                  <Input
-                    placeholder="the-lisbon-team"
-                    value={squadName}
-                    onChange={(e) => setSquadName(e.target.value)}
-                    maxLength={40}
-                  />
-                </Field>
-                <Button
-                  onClick={() => void create()}
-                  loading={busy === 'create'}
-                  className="w-full"
-                  leftIcon={<Plus className="w-4 h-4" />}
-                >
-                  Create
-                </Button>
-              </CardBody>
-            </Card>
-          </Reveal>
+          <Card>
+            <CardHeader>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+                Create a squad
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="squad-name">Squad name</Label>
+                <Input
+                  id="squad-name"
+                  placeholder="the-lisbon-team"
+                  value={squadName}
+                  onChange={(e) => setSquadName(e.target.value)}
+                  maxLength={40}
+                />
+              </div>
+              <Button
+                onClick={() => void create()}
+                disabled={busy === 'create'}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4" />
+                Create
+              </Button>
+            </CardContent>
+          </Card>
 
-          <Reveal delay={80}>
-            <Card>
-              <CardHeader>
-                <Eyebrow>Join by ID</Eyebrow>
-              </CardHeader>
-              <CardBody className="space-y-4">
-                <Field label="Squad ID">
-                  <Input
-                    placeholder="e.g. 42"
-                    value={joinId}
-                    onChange={(e) => setJoinId(e.target.value.replace(/[^0-9]/g, ''))}
-                    className="font-mono"
-                  />
-                </Field>
-                <Button
-                  variant="secondary"
-                  onClick={() => void join()}
-                  loading={busy === 'join'}
-                  className="w-full"
-                  leftIcon={<UserPlus className="w-4 h-4" />}
-                >
-                  Join
-                </Button>
-              </CardBody>
-            </Card>
-          </Reveal>
+          <Card>
+            <CardHeader>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+                Join by ID
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="squad-join">Squad ID</Label>
+                <Input
+                  id="squad-join"
+                  placeholder="e.g. 42"
+                  value={joinId}
+                  onChange={(e) => setJoinId(e.target.value.replace(/[^0-9]/g, ''))}
+                  className="font-mono"
+                />
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => void join()}
+                disabled={busy === 'join'}
+                className="w-full"
+              >
+                <UserPlus className="w-4 h-4" />
+                Join
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <section className="space-y-4">
-          <Eyebrow>Squads you’re in</Eyebrow>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+            Squads you’re in
+          </div>
           {items.length === 0 ? (
             <Card>
               <EmptyState
@@ -285,23 +285,23 @@ export default function SquadsPage() {
                         #{s.squadId}
                       </span>
                       {s.role === 'leader' ? (
-                        <Pill tone="accent">
+                        <Badge variant="secondary">
                           <Crown className="w-3 h-3" />
                           leader
-                        </Pill>
+                        </Badge>
                       ) : (
-                        <Pill>member</Pill>
+                        <Badge variant="outline">member</Badge>
                       )}
                     </div>
                     <h3 className="mt-1 text-[15px] font-medium truncate">{s.name}</h3>
                   </div>
                   {s.role === 'leader' ? (
                     <Button
-                      variant="danger"
+                      variant="destructive"
                       size="sm"
                       onClick={() => void disband(s)}
-                      leftIcon={<X className="w-3.5 h-3.5" />}
                     >
+                      <X className="w-3.5 h-3.5" />
                       Disband
                     </Button>
                   ) : (
@@ -309,8 +309,8 @@ export default function SquadsPage() {
                       variant="secondary"
                       size="sm"
                       onClick={() => void leave(s)}
-                      leftIcon={<LogOut className="w-3.5 h-3.5" />}
                     >
+                      <LogOut className="w-3.5 h-3.5" />
                       Leave
                     </Button>
                   )}

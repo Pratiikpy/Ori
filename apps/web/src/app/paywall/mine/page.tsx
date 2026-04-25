@@ -17,14 +17,10 @@ import { Copy, ExternalLink, Lock, Plus, X } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
 import { PageHeader, Serif } from '@/components/page-header'
-import {
-  Button,
-  Card,
-  EmptyState,
-  Eyebrow,
-  Pill,
-  Reveal,
-} from '@/components/ui'
+import { EmptyState } from '@/components/empty-state'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import {
   ORI_CHAIN_ID,
@@ -128,9 +124,14 @@ export default function MyPaywallsPage() {
         />
 
         <div className="flex items-center justify-between">
-          <Eyebrow>{items.length} total</Eyebrow>
-          <Button href="/paywall/new" size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>
-            New paywall
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+            {items.length} total
+          </div>
+          <Button asChild size="sm">
+            <Link href="/paywall/new">
+              <Plus className="w-3.5 h-3.5" />
+              New paywall
+            </Link>
           </Button>
         </div>
 
@@ -141,12 +142,11 @@ export default function MyPaywallsPage() {
               title="No paywalls yet"
               description="Wrap any URL in a one-time purchase. Agents and humans pay the same way."
               action={
-                <Button
-                  href="/paywall/new"
-                  size="md"
-                  leftIcon={<Plus className="w-3.5 h-3.5" />}
-                >
-                  Create your first
+                <Button asChild>
+                  <Link href="/paywall/new">
+                    <Plus className="w-3.5 h-3.5" />
+                    Create your first
+                  </Link>
                 </Button>
               }
             />
@@ -158,74 +158,73 @@ export default function MyPaywallsPage() {
             {items.map((p) => {
               const payUrl = `${APP_URL}/paywall/${p.id}/pay`
               return (
-                <Reveal key={p.id}>
-                  <Card className="p-5 space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-mono uppercase tracking-[0.12em] text-ink-3">
-                            #{p.id}
-                          </span>
-                          {p.active ? (
-                            <Pill tone="ok">active</Pill>
-                          ) : (
-                            <Pill>inactive</Pill>
-                          )}
-                        </div>
-                        <h3 className="mt-1.5 text-[16px] font-medium truncate">
-                          {p.title}
-                        </h3>
-                        <Link
-                          href={p.resourceUri}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-1 block font-mono text-[12px] text-ink-3 hover:text-ink-2 truncate"
-                        >
-                          {p.resourceUri}
-                        </Link>
+                <Card key={p.id} className="p-5 space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-mono uppercase tracking-[0.12em] text-ink-3">
+                          #{p.id}
+                        </span>
+                        {p.active ? (
+                          <Badge>active</Badge>
+                        ) : (
+                          <Badge variant="secondary">inactive</Badge>
+                        )}
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="font-mono text-[20px] tabular-nums text-foreground">
-                          {fromBaseUnits(BigInt(p.price))}
-                        </div>
-                        <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-ink-3">
-                          {ORI_SYMBOL}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => void copy(p.id)}
-                        leftIcon={<Copy className="w-3.5 h-3.5" />}
-                      >
-                        Copy link
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        href={payUrl}
+                      <h3 className="mt-1.5 text-[16px] font-medium truncate">
+                        {p.title}
+                      </h3>
+                      <Link
+                        href={p.resourceUri}
                         target="_blank"
-                        rightIcon={<ExternalLink className="w-3.5 h-3.5" />}
+                        rel="noreferrer"
+                        className="mt-1 block font-mono text-[12px] text-ink-3 hover:text-ink-2 truncate"
                       >
-                        Preview
-                      </Button>
-                      {p.active && (
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          className="ml-auto"
-                          onClick={() => void deactivate(p.id)}
-                          leftIcon={<X className="w-3.5 h-3.5" />}
-                        >
-                          Deactivate
-                        </Button>
-                      )}
+                        {p.resourceUri}
+                      </Link>
                     </div>
-                  </Card>
-                </Reveal>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-[20px] tabular-nums text-foreground">
+                        {fromBaseUnits(BigInt(p.price))}
+                      </div>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-ink-3">
+                        {ORI_SYMBOL}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void copy(p.id)}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      Copy link
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                    >
+                      <a href={payUrl} target="_blank" rel="noreferrer">
+                        Preview
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </Button>
+                    {p.active && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="ml-auto"
+                        onClick={() => void deactivate(p.id)}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Deactivate
+                      </Button>
+                    )}
+                  </div>
+                </Card>
               )
             })}
           </div>

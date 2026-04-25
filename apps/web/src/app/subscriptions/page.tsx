@@ -9,12 +9,11 @@
  *     N periods. Cancel any time. Caller permissionless release_period after
  *     the period ends.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
 import {
   CalendarClock,
-  Loader2,
   Repeat,
   Sparkles,
   Users,
@@ -23,19 +22,13 @@ import {
 
 import { AppShell } from '@/components/app-shell'
 import { PageHeader, Serif } from '@/components/page-header'
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Chip,
-  EmptyState,
-  Eyebrow,
-  Field,
-  Input,
-  Pill,
-  Reveal,
-} from '@/components/ui'
+import { EmptyState } from '@/components/empty-state'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import { useResolve } from '@/hooks/use-resolve'
 import {
@@ -299,64 +292,74 @@ export default function SubscriptionsPage() {
 
         {tab === 'subscribe' && (
           <>
-            <Reveal>
-              <Card>
-                <CardHeader>
-                  <Eyebrow>Subscribe to a creator</Eyebrow>
-                </CardHeader>
-                <CardBody className="space-y-5">
-                  <Field label="Creator" hint=".init name or init1… address">
-                    <Input
-                      placeholder="mira.init"
-                      value={creatorInput}
-                      onChange={(e) => setCreatorInput(e.target.value)}
-                      className="font-mono"
-                    />
-                    {resolved && (
-                      <div className="mt-1.5 text-[12px] text-[var(--color-success)]">
-                        Resolved → {resolved.initName ?? resolved.initiaAddress}
-                      </div>
-                    )}
-                  </Field>
-
-                  <Field label="Periods" hint="How many periods to prepay">
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setPeriods(Math.max(1, periods - 1))}
-                      >
-                        −
-                      </Button>
-                      <div className="flex-1 text-center font-mono text-[22px] tabular-nums">
-                        {periods}
-                      </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setPeriods(periods + 1)}
-                      >
-                        +
-                      </Button>
+            <Card>
+              <CardHeader>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+                  Subscribe to a creator
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="creator-input">Creator</Label>
+                  <Input
+                    id="creator-input"
+                    placeholder="mira.init"
+                    value={creatorInput}
+                    onChange={(e) => setCreatorInput(e.target.value)}
+                    className="font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    .init name or init1… address
+                  </p>
+                  {resolved && (
+                    <div className="mt-1.5 text-[12px] text-[var(--color-success)]">
+                      Resolved → {resolved.initName ?? resolved.initiaAddress}
                     </div>
-                  </Field>
+                  )}
+                </div>
 
-                  <Button
-                    onClick={() => void subscribe()}
-                    disabled={!resolved || periods < 1}
-                    loading={subBusy}
-                    size="lg"
-                    className="w-full"
-                    rightIcon={<Repeat className="w-4 h-4" />}
-                  >
-                    {subBusy ? 'Subscribing…' : 'Subscribe'}
-                  </Button>
-                </CardBody>
-              </Card>
-            </Reveal>
+                <div className="space-y-2">
+                  <Label>Periods</Label>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setPeriods(Math.max(1, periods - 1))}
+                    >
+                      −
+                    </Button>
+                    <div className="flex-1 text-center font-mono text-[22px] tabular-nums">
+                      {periods}
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setPeriods(periods + 1)}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    How many periods to prepay
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => void subscribe()}
+                  disabled={!resolved || periods < 1 || subBusy}
+                  size="lg"
+                  className="w-full"
+                >
+                  {subBusy ? 'Subscribing…' : 'Subscribe'}
+                  <Repeat className="w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
 
             <section className="space-y-3">
-              <Eyebrow>Active subscriptions</Eyebrow>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+                Active subscriptions
+              </div>
               {subs.length === 0 ? (
                 <Card>
                   <EmptyState
@@ -379,23 +382,23 @@ export default function SubscriptionsPage() {
                               `${s.creator.slice(0, 10)}…${s.creator.slice(-4)}`}
                           </div>
                         </div>
-                        <Pill tone="accent">{s.periods} period{s.periods === 1 ? '' : 's'}</Pill>
+                        <Badge variant="secondary">{s.periods} period{s.periods === 1 ? '' : 's'}</Badge>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="secondary"
                           size="sm"
                           onClick={() => void release(s)}
-                          leftIcon={<CalendarClock className="w-3.5 h-3.5" />}
                         >
+                          <CalendarClock className="w-3.5 h-3.5" />
                           Release period
                         </Button>
                         <Button
-                          variant="danger"
+                          variant="destructive"
                           size="sm"
                           onClick={() => void cancel(s)}
-                          leftIcon={<X className="w-3.5 h-3.5" />}
                         >
+                          <X className="w-3.5 h-3.5" />
                           Cancel
                         </Button>
                       </div>
@@ -408,82 +411,92 @@ export default function SubscriptionsPage() {
         )}
 
         {tab === 'plan' && (
-          <Reveal>
-            {myPlan ? (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Eyebrow>My plan</Eyebrow>
-                    <Pill tone="ok">active</Pill>
+          myPlan ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+                    My plan
                   </div>
-                </CardHeader>
-                <CardBody className="space-y-5">
-                  <div className="grid grid-cols-2 gap-4 font-mono">
-                    <Metric
-                      label="price / period"
-                      value={`${fromBaseUnits(BigInt(myPlan.price))} ${ORI_SYMBOL}`}
-                    />
-                    <Metric
-                      label="period"
-                      value={
-                        PERIOD_PRESETS.find((p) => p.seconds === myPlan.periodSeconds)
-                          ?.label ?? `${myPlan.periodSeconds}s`
-                      }
-                    />
+                  <Badge>active</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid grid-cols-2 gap-4 font-mono">
+                  <Metric
+                    label="price / period"
+                    value={`${fromBaseUnits(BigInt(myPlan.price))} ${ORI_SYMBOL}`}
+                  />
+                  <Metric
+                    label="period"
+                    value={
+                      PERIOD_PRESETS.find((p) => p.seconds === myPlan.periodSeconds)
+                        ?.label ?? `${myPlan.periodSeconds}s`
+                    }
+                  />
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={() => void deactivatePlan()}
+                  disabled={planBusy}
+                  className="w-full"
+                >
+                  <X className="w-4 h-4" />
+                  Deactivate plan
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+                  Register a plan
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="plan-price">{`Price per period (${ORI_SYMBOL})`}</Label>
+                  <Input
+                    id="plan-price"
+                    placeholder="0"
+                    inputMode="decimal"
+                    value={planPrice}
+                    onChange={(e) => setPlanPrice(e.target.value.replace(/[^0-9.]/g, ''))}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Period</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {PERIOD_PRESETS.map((p) => (
+                      <button
+                        key={p.seconds}
+                        type="button"
+                        onClick={() => setPlanPeriod(p.seconds)}
+                        className={cn(
+                          'inline-flex items-center rounded-md border px-3 py-1 text-xs font-medium transition-colors cursor-pointer',
+                          planPeriod === p.seconds
+                            ? 'border-transparent bg-primary text-primary-foreground'
+                            : 'border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground'
+                        )}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
                   </div>
-                  <Button
-                    variant="danger"
-                    onClick={() => void deactivatePlan()}
-                    loading={planBusy}
-                    className="w-full"
-                    leftIcon={<X className="w-4 h-4" />}
-                  >
-                    Deactivate plan
-                  </Button>
-                </CardBody>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <Eyebrow>Register a plan</Eyebrow>
-                </CardHeader>
-                <CardBody className="space-y-5">
-                  <Field label={`Price per period (${ORI_SYMBOL})`}>
-                    <Input
-                      placeholder="0"
-                      inputMode="decimal"
-                      value={planPrice}
-                      onChange={(e) => setPlanPrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                      className="font-mono"
-                    />
-                  </Field>
-                  <Field label="Period">
-                    <div className="flex flex-wrap gap-2">
-                      {PERIOD_PRESETS.map((p) => (
-                        <Chip
-                          key={p.seconds}
-                          selected={planPeriod === p.seconds}
-                          onClick={() => setPlanPeriod(p.seconds)}
-                        >
-                          {p.label}
-                        </Chip>
-                      ))}
-                    </div>
-                  </Field>
-                  <Button
-                    onClick={() => void registerPlan()}
-                    disabled={!planPrice}
-                    loading={planBusy}
-                    size="lg"
-                    className="w-full"
-                    rightIcon={<Sparkles className="w-4 h-4" />}
-                  >
-                    {planBusy ? 'Registering…' : 'Register plan'}
-                  </Button>
-                </CardBody>
-              </Card>
-            )}
-          </Reveal>
+                </div>
+                <Button
+                  onClick={() => void registerPlan()}
+                  disabled={!planPrice || planBusy}
+                  size="lg"
+                  className="w-full"
+                >
+                  {planBusy ? 'Registering…' : 'Register plan'}
+                  <Sparkles className="w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          )
         )}
       </div>
     </AppShell>
