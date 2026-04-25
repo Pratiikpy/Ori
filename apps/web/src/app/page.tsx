@@ -6,9 +6,9 @@
  * Honest and minimal — we don't have product photos, so the hero "image"
  * is a static composition of what payment-in-chat actually looks like.
  *
- * Server component. The CTA + nav use `useInterwovenKit` so they have to
- * live inside `LandingShell` (which is `'use client'`). Everything else
- * is pure markup, no client JS.
+ * Pure Server Component. No client JS on this route — landing chrome,
+ * hero composition, capability cards, and flow steps are all static
+ * markup. Wallet state lives behind the /onboard CTA, not on landing.
  */
 import { LandingShell } from '@/components/layout/landing-shell'
 import { Icon } from '@/components/ui/icon'

@@ -1,21 +1,23 @@
-'use client'
-
 /**
  * LandingShell — wraps the public marketing page.
  *
  * Different chrome from AppShell: a full-width sticky topbar with the
  * brand + a single "Open the app" CTA, no sidebar. Same ambient bg so
  * the visual continuity carries from landing → signed-in app.
+ *
+ * Pure shared component (no 'use client'). The CTA always links to
+ * /onboard — that page auto-bounces signed-in users to /today, so we
+ * don't need wallet context at this layer. Keeping LandingShell free
+ * of client-only hooks lets statically-rendered routes (notably
+ * not-found) import it without dragging the InterwovenKit/wagmi SSR
+ * graph into their build-time eval.
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { Icon } from '@/components/ui/icon'
 
 export function LandingShell({ children }: { children: React.ReactNode }) {
-  const { initiaAddress } = useInterwovenKit()
-  // After sign-in we send the user to /today; before, /onboard.
-  const ctaHref = initiaAddress ? '/today' : '/onboard'
+  const ctaHref = '/onboard'
 
   return (
     <div className="relative min-h-dvh bg-ambient">
