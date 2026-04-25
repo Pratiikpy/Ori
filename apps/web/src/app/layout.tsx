@@ -1,39 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { IBM_Plex_Sans, JetBrains_Mono, Archivo_Black } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
-
-/**
- * Ori type system — Emergent prototype parity.
- *
- *   • Archivo Black  — heavy display headings (font-heading / font-heavy)
- *   • IBM Plex Sans  — body / UI text
- *   • JetBrains Mono — addresses, amounts, oracle ticker rows
- *
- * Cabinet Grotesk (the prototype's exact heading face) is loaded from
- * Fontshare via @import in globals.css. Archivo Black is the next/font/google
- * fallback if Cabinet Grotesk fails to load.
- */
-const heavy = Archivo_Black({
-  variable: '--font-heavy-fallback',
-  subsets: ['latin'],
-  weight: '400',
-  display: 'swap',
-})
-
-const body = IBM_Plex_Sans({
-  variable: '--font-body-fallback',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-})
-
-const mono = JetBrains_Mono({
-  variable: '--font-mono-fallback',
-  subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'Ori — chat that pays',
@@ -70,27 +37,21 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${heavy.variable} ${body.variable} ${mono.variable} antialiased`}
-    >
+    <html lang="en">
       <head>
-        {/* Cabinet Grotesk (Fontshare CDN) — the prototype's heading face.
-            Loaded via <link> tag (not @import url() in CSS) so it doesn't
-            trip Lightning CSS / Tailwind v4's @import ordering rule. */}
         <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
           href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&display=swap"
         />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap"
+        />
       </head>
-      <body
-        className="min-h-dvh bg-white text-[#0A0A0A]"
-        style={{ fontFamily: 'var(--font-body-fallback), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif' }}
-      >
-        <a href="#main-content" className="skip-to-content">
-          Skip to content
-        </a>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>
