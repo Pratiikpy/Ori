@@ -48,6 +48,10 @@ export interface ButtonProps
   href?: string
   /** native button type, when not rendering as link */
   type?: 'button' | 'submit' | 'reset'
+  /** anchor target — only meaningful when href is set */
+  target?: string
+  /** anchor rel — only meaningful when href is set */
+  rel?: string
 }
 
 const VARIANT_STYLES: Record<Variant, string> = {
@@ -86,6 +90,8 @@ export function Button({
   fullWidth,
   disabled,
   href,
+  target,
+  rel,
   type = 'button',
   className = '',
   children,
@@ -121,13 +127,13 @@ export function Button({
 
   // Polymorphic: render as Link when href is provided
   if (href && !isDisabled) {
-    const isExternal = /^https?:\/\//.test(href)
+    const isExternal = /^https?:\/\//.test(href) || target === '_blank'
     if (isExternal) {
       return (
         <a
           href={href}
-          target="_blank"
-          rel="noopener noreferrer"
+          target={target ?? '_blank'}
+          rel={rel ?? 'noopener noreferrer'}
           className={cls}
           {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
         >
@@ -138,6 +144,8 @@ export function Button({
     return (
       <Link
         href={href}
+        target={target}
+        rel={rel}
         className={cls}
         {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
       >
