@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { LandingShell } from '@/components/layout/landing-shell'
-import { GlassCard, Icon } from '@/components/ui'
+import { GlassCard } from '@/components/ui/glass-card'
+import { InfoIcon } from '@/components/ui/static-icons'
 
 export default function NotFound() {
   return (
@@ -8,7 +9,7 @@ export default function NotFound() {
       <section className="mx-auto w-full max-w-md px-5 py-20 text-center">
         <GlassCard padding="lg">
           <div className="mx-auto w-14 h-14 rounded-full bg-white/80 border border-black/5 inline-flex items-center justify-center mb-5">
-            <Icon name="info" size={24} className="text-ink-3" />
+            <InfoIcon size={24} className="text-ink-3" />
           </div>
           <h1 className="text-[32px] font-display font-medium text-ink leading-tight tracking-[-0.02em]">
             Off the grid.

@@ -11,8 +11,11 @@
  * markup. Wallet state lives behind the /onboard CTA, not on landing.
  */
 import { LandingShell } from '@/components/layout/landing-shell'
-import { Icon } from '@/components/ui/icon'
 import { Eyebrow } from '@/components/ui/eyebrow'
+import {
+  ArrowRightIcon,
+  CheckIcon,
+} from '@/components/ui/static-icons'
 import Link from 'next/link'
 
 export default function LandingPage() {
@@ -52,7 +55,7 @@ export default function LandingPage() {
                 className="rounded-full h-12 px-7 bg-[#1D1D1F] text-white text-[15px] font-medium inline-flex items-center gap-2 hover:bg-black active:scale-[0.97] transition"
               >
                 Open the app
-                <Icon name="arrow-right" size={16} />
+                <ArrowRightIcon size={16} />
               </Link>
               <a
                 href="#capabilities"
@@ -241,7 +244,7 @@ export default function LandingPage() {
               className="rounded-full h-14 px-8 bg-[#1D1D1F] text-white text-[16px] font-medium inline-flex items-center gap-2 hover:bg-black active:scale-[0.97] transition"
             >
               Get started
-              <Icon name="arrow-right" size={18} />
+              <ArrowRightIcon size={18} />
             </Link>
           </div>
         </div>
@@ -380,7 +383,7 @@ function HeroCard() {
             </div>
             <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-ink-3 font-mono">
               <span className="inline-flex h-3.5 w-3.5 rounded-full bg-[#34C759] items-center justify-center">
-                <Icon name="check" size={9} weight="bold" className="text-white" />
+                <CheckIcon size={9} className="text-white" />
               </span>
               Landed · 97ms · 0x4a…b3c2
             </div>
