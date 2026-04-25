@@ -43,7 +43,7 @@ const PRINCIPLES: readonly Principle[] = [
 
 export function Philosophy() {
   return (
-    <section id="philosophy" className="shell pt-16 pb-24">
+    <section className="shell pt-16 pb-24">
       <Reveal>
         <SectionHead
           eyebrow="04 · Philosophy"

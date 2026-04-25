@@ -47,15 +47,18 @@ export function WinSend() {
         </div>
       </div>
 
-      {/* Keypad — embedded with 16px horizontal padding to match reference */}
-      <div className="grid grid-cols-3 gap-1.5 px-4 pb-4">
+      {/* Keypad — buttons (was <div>) so each key is keyboard-reachable
+          and announced as a button to AT. The visual is identical. */}
+      <div className="grid grid-cols-3 gap-1.5 px-4 pb-4" role="group" aria-label="Numeric keypad">
         {KEYS.map((k) => (
-          <div
+          <button
+            type="button"
             key={k}
-            className="aspect-[1.9/1] rounded-lg bg-white/[0.03] border border-border flex items-center justify-center text-[15px] font-mono"
+            aria-label={k === '⌫' ? 'Backspace' : k === '.' ? 'Decimal point' : `Number ${k}`}
+            className="aspect-[1.9/1] rounded-lg bg-white/[0.03] border border-border flex items-center justify-center text-[15px] font-mono cursor-default hover:bg-white/[0.05] transition"
           >
             {k}
-          </div>
+          </button>
         ))}
       </div>
 

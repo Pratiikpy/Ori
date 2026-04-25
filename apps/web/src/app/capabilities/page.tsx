@@ -125,7 +125,7 @@ function PrimitiveCard({ num, module, icon: Icon, title, blurb, href }: Primitiv
 
 export default function CapabilitiesPage() {
   return (
-    <main className="relative min-h-dvh backdrop-stars">
+    <main id="main-content" className="relative min-h-dvh backdrop-stars">
       <MarketingTopbar active="/capabilities" />
       <div className="relative z-10">
         {/* Hero */}

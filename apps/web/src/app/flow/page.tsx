@@ -109,7 +109,7 @@ function StepRow({ s }: { s: Step }) {
 
 export default function FlowPage() {
   return (
-    <main className="relative min-h-dvh backdrop-stars">
+    <main id="main-content" className="relative min-h-dvh backdrop-stars">
       <MarketingTopbar active="/flow" />
       <div className="relative z-10">
         {/* Hero */}

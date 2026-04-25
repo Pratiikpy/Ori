@@ -7,7 +7,7 @@ import { Reveal, SectionHead, Serif } from '@/components/ui'
 
 export function SystemGrid() {
   return (
-    <section id="system" className="shell pt-16 pb-24">
+    <section className="shell pt-16 pb-24">
       <Reveal>
         <SectionHead
           eyebrow="05 · System"

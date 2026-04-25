@@ -8,7 +8,7 @@ import { NetworkSVG } from '@/components/icons'
 
 export function CapabilitiesGrid() {
   return (
-    <section id="capabilities" className="shell pt-16 pb-24">
+    <section className="shell pt-16 pb-24">
       <Reveal>
         <SectionHead
           eyebrow="01 · Capabilities"

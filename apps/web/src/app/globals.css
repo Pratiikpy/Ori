@@ -262,6 +262,14 @@ body {
   transform: translateY(0);
 }
 
+/* If JS is disabled or the IntersectionObserver never fires, every
+   `.reveal` element would stay invisible and the LCP would never
+   complete. Force visibility for no-script users + as a safety net.
+   Per Phase 6 critique perf P0-2 / A2. */
+@media (scripting: none) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    CARD PANEL — the default inner-page content surface.
 

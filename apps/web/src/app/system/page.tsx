@@ -117,7 +117,7 @@ function StackCard({ label, value }: StackItem) {
 
 export default function SystemPage() {
   return (
-    <main className="relative min-h-dvh backdrop-stars">
+    <main id="main-content" className="relative min-h-dvh backdrop-stars">
       <MarketingTopbar active="/system" />
       <div className="relative z-10">
         {/* Hero */}

@@ -9,7 +9,7 @@ import { WinSend } from './WinSend'
 
 export function FlowStage() {
   return (
-    <section id="flow" className="shell pt-20 pb-24">
+    <section className="shell pt-20 pb-24">
       <Reveal>
         <SectionHead
           eyebrow="02 · Flow"

@@ -52,7 +52,7 @@ const FEATURES: FeatureBlurb[] = [
 
 export default function CreatorsPage() {
   return (
-    <main className="relative min-h-dvh backdrop-stars">
+    <main id="main-content" className="relative min-h-dvh backdrop-stars">
       <MarketingTopbar active="/creators" />
       <div className="relative z-10">
         {/* Hero */}

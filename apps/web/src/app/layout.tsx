@@ -71,6 +71,13 @@ export default function RootLayout({
       className={`${sans.variable} ${mono.variable} ${serif.variable} dark antialiased`}
     >
       <body className="min-h-dvh bg-background text-foreground font-sans">
+        {/* Skip-to-content — required for keyboard-only users so they can
+            bypass the topbar nav and land on the page content. The visual
+            chrome is in globals.css → `.skip-to-content`; it appears only
+            when this <a> receives focus. */}
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
         <Providers>
           {children}
           <InstallPrompt />

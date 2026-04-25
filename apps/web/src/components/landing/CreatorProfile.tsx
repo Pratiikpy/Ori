@@ -172,13 +172,17 @@ function LinkRows() {
 }
 
 function LtLink({ children }: { children: ReactNode }) {
+  // Demo Linktree row — these aren't real destinations, so render as
+  // <button type="button"> for keyboard reachability + click affordance
+  // without producing a "broken link" via <a> with no href.
   return (
-    <a
-      className="block text-center px-4.5 py-3.5 border border-border rounded-xl bg-white/[0.022] text-foreground text-[14px] hover:border-ink-3 hover:bg-white/[0.04] hover:-translate-y-px transition will-change-transform cursor-pointer"
+    <button
+      type="button"
+      className="block w-full text-center px-4.5 py-3.5 border border-border rounded-xl bg-white/[0.022] text-foreground text-[14px] hover:border-ink-3 hover:bg-white/[0.04] hover:-translate-y-px transition will-change-transform cursor-pointer"
       style={{ padding: '14px 18px' }}
     >
       {children}
-    </a>
+    </button>
   )
 }
 
@@ -203,17 +207,22 @@ function TabItem({
   children: ReactNode
   active?: boolean
 }) {
+  // Tabs are interactive UI — must be <button>, not <span>, so they're
+  // keyboard-reachable and screen readers announce them as buttons.
   return (
-    <span
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
       className={
-        'pb-3 pt-2.5 text-[13px] cursor-pointer border-b-[1.5px] transition-colors ' +
+        'pb-3 pt-2.5 text-[13px] cursor-pointer border-b-[1.5px] transition-colors bg-transparent ' +
         (active
           ? 'text-foreground border-foreground'
           : 'text-ink-3 border-transparent hover:text-foreground')
       }
     >
       {children}
-    </span>
+    </button>
   )
 }
 

@@ -25,7 +25,10 @@ export function AppShell({
     <div className="relative min-h-dvh flex flex-col backdrop-stars-quiet">
       <div className="relative z-10 flex flex-col flex-1">
         <Header title={title} />
-        <main className="flex-1 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 pb-24 lg:pb-8">
+        <main
+          id="main-content"
+          className="flex-1 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 pb-24 lg:pb-8"
+        >
           {children}
         </main>
         {!hideNav && <BottomNav />}

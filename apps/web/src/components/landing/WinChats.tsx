@@ -77,33 +77,43 @@ export function WinChats() {
       </div>
       <ul className="flex-1">
         {CHATS.map((c) => (
-          <li
-            key={c.n}
-            className={
-              'flex items-center gap-3 px-3 py-2.5 border-t border-[var(--color-line-hairline)] ' +
-              (c.active ? 'bg-white/[0.03]' : '')
-            }
-          >
-            <span
-              className="h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-medium text-black shrink-0"
-              style={{ background: c.g }}
+          <li key={c.n}>
+            {/* Each chat row is interactive — render as <button> so keyboard
+                users can tab through and screen readers announce them as
+                buttons. Visual is identical to the prior <li> styling. */}
+            <button
+              type="button"
+              aria-label={`Open chat with ${c.n}`}
+              className={
+                'w-full text-left flex items-center gap-3 px-3 py-2.5 border-t border-[var(--color-line-hairline)] hover:bg-white/[0.04] transition ' +
+                (c.active ? 'bg-white/[0.03]' : '')
+              }
             >
-              {c.a}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[13px] font-medium truncate">{c.n}</span>
-                <span className="text-[10.5px] text-ink-4 font-mono shrink-0">
-                  {c.t}
-                </span>
-              </div>
-              <div className="text-[11.5px] text-ink-3 truncate">{c.p}</div>
-            </div>
-            {c.b ? (
-              <span className="tabular-nums h-5 min-w-5 px-1 rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-[10.5px] font-medium flex items-center justify-center font-mono">
-                {c.b}
+              <span
+                aria-hidden
+                className="h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-medium text-black shrink-0"
+                style={{ background: c.g }}
+              >
+                {c.a}
               </span>
-            ) : null}
+              <span className="flex-1 min-w-0">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[13px] font-medium truncate">{c.n}</span>
+                  <span className="text-[10.5px] text-ink-4 font-mono shrink-0">
+                    {c.t}
+                  </span>
+                </span>
+                <span className="block text-[11.5px] text-ink-3 truncate">{c.p}</span>
+              </span>
+              {c.b ? (
+                <span
+                  aria-label={`${c.b} unread`}
+                  className="tabular-nums h-5 min-w-5 px-1 rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-[10.5px] font-medium flex items-center justify-center font-mono"
+                >
+                  {c.b}
+                </span>
+              ) : null}
+            </button>
           </li>
         ))}
       </ul>

@@ -60,7 +60,7 @@ function SectionHead({
 export default function LandingPage() {
   return (
     <ScrollReveal>
-      <main className="relative min-h-dvh backdrop-stars overflow-x-hidden">
+      <main id="main-content" className="relative min-h-dvh backdrop-stars overflow-x-hidden">
         <MarketingTopbar active="/" />
 
         <div className="relative z-10">
