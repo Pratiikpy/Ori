@@ -5,8 +5,11 @@
 import * as React from 'react'
 import { Icon, type IconName } from './icon'
 
+// Accept either an IconName (new) or a ReactNode (legacy pages pass JSX icons
+// like <Sparkles />). Detected at runtime: strings → Phosphor Icon, anything
+// else → render as-is.
 export interface EmptyStateProps {
-  icon?: IconName
+  icon?: IconName | React.ReactNode
   title: React.ReactNode
   description?: React.ReactNode
   action?: React.ReactNode
@@ -30,7 +33,11 @@ export function EmptyState({
         .join(' ')}
     >
       <div className="w-14 h-14 rounded-full bg-white/80 border border-black/5 inline-flex items-center justify-center mb-5 shadow-sm">
-        <Icon name={icon} size={24} className="text-ink-2" />
+        {typeof icon === 'string' ? (
+          <Icon name={icon as IconName} size={24} className="text-ink-2" />
+        ) : (
+          <span className="text-ink-2 inline-flex">{icon}</span>
+        )}
       </div>
       <h3 className="text-[20px] font-display font-medium text-ink leading-tight">
         {title}
