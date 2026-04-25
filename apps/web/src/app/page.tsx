@@ -98,7 +98,12 @@ export default function LandingPage() {
               paddingBottom: '72px',
             }}
           >
-            <div className="grid md:grid-cols-[1.05fr_1fr] gap-12 md:gap-16 items-start">
+            {/* Hero stays single-column until ~1024px (lg). On tablet (md)
+                the headline + device crammed into 50/50 columns and the text
+                visually overlapped the phone. Now the device only sits
+                beside the text on actual desktop widths; below that it sits
+                BELOW the copy with comfortable breathing room. */}
+            <div className="grid lg:grid-cols-[1.05fr_1fr] gap-14 lg:gap-20 items-start">
               <div className="reveal">
                 {/* Hero tag — green pulse, not indigo. Reference uses --ok
                     because the dot signals "live & healthy", not "new feature". */}
@@ -156,7 +161,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="reveal">
+              <div className="reveal flex justify-center lg:justify-end mt-6 lg:mt-0">
                 <DeviceParallax>
                   <DeviceMock />
                 </DeviceParallax>
@@ -171,7 +176,7 @@ export default function LandingPage() {
               rhythm lands cleanly regardless of grid. */}
           <section className="shell">
             <dl
-              className="reveal grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10"
+              className="reveal grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10"
               style={{
                 paddingTop: '32px',
                 paddingBottom: '32px',
@@ -199,8 +204,8 @@ export default function LandingPage() {
               sub="Eight primitives. No feature menu. Everything Ori does, it does from a single conversation."
             />
 
-            <div className="mt-14 grid gap-4 md:gap-5">
-              <div className="grid md:grid-cols-2 gap-4 md:gap-5">
+            <div className="mt-14 grid gap-4 lg:gap-5">
+              <div className="grid md:grid-cols-2 gap-4 lg:gap-5">
                 <Panel path="/send" right="kp.send" big>
                   <PanelBody
                     big
@@ -236,7 +241,7 @@ export default function LandingPage() {
                 </Panel>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4 md:gap-5">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
                 <Panel path="/gift" right="gft.create">
                   <PanelBody
                     title={
@@ -277,7 +282,7 @@ export default function LandingPage() {
                 </Panel>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4 md:gap-5">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
                 <Panel path="/predict" right="oracle.live">
                   <PanelBody
                     title={
@@ -331,7 +336,7 @@ export default function LandingPage() {
               }
               sub="Three surfaces. One continuous thought."
             />
-            <div className="mt-14 grid md:grid-cols-3 gap-4 md:gap-5">
+            <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
               <WindowChatsList />
               <WindowThread />
               <WindowSend />
@@ -349,7 +354,7 @@ export default function LandingPage() {
               }
               sub="MCP for Claude Desktop and CLI. A2A JSON-RPC for any agent over HTTP. On-chain spending caps and a kill switch only you control."
             />
-            <div className="mt-12 grid md:grid-cols-2 gap-4 md:gap-5">
+            <div className="mt-12 grid lg:grid-cols-2 gap-4 lg:gap-5">
               <div className="reveal panel-hover rounded-2xl border border-border bg-white/[0.02] p-8 md:p-10">
                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-3 font-mono">
                   <span>Claude Desktop</span>
@@ -414,7 +419,7 @@ export default function LandingPage() {
                 </>
               }
             />
-            <div className="mt-14 grid md:grid-cols-3 gap-8 md:gap-10">
+            <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
               <Principle
                 n="01"
                 h={
@@ -445,11 +450,16 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* ========== Footer ========== */}
+          {/* ========== Footer ==========
+              Old footer used a 4-column grid on md+ (4 columns at 768px =
+              ~150px each — link labels wrapped, the brand blurb collided
+              with the columns). Now: brand block sits full-width on its
+              own row up through tablet, columns ride a 3-up grid below it.
+              On lg+ the original wide layout returns. */}
           <footer className="border-t border-[var(--color-line-hairline)]">
             <div className="shell py-14 md:py-20">
-              <div className="grid md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 md:gap-14">
-                <div>
+              <div className="grid lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 lg:gap-14">
+                <div className="lg:max-w-sm">
                   <Link href="/" className="flex items-center gap-2.5">
                     <OriMark className="h-7 w-7 text-foreground" />
                     <span className="text-[15px] font-medium">
@@ -462,38 +472,45 @@ export default function LandingPage() {
                   </p>
                 </div>
 
-                <FooterCol
-                  title="Product"
-                  links={[
-                    { label: 'Capabilities', href: '#capabilities' },
-                    { label: 'Flow', href: '#flow' },
-                    { label: 'Agents', href: '#agents' },
-                    { label: 'Philosophy', href: '#philosophy' },
-                  ]}
-                />
-                <FooterCol
-                  title="Develop"
-                  links={[
-                    { label: 'MCP server', href: '/agents/mcp' },
-                    { label: 'A2A protocol', href: '/.well-known/agent.json' },
-                    { label: 'Paywall API', href: '/docs/paywall' },
-                    { label: 'GitHub', href: 'https://github.com/' },
-                  ]}
-                />
-                <FooterCol
-                  title="Legal"
-                  links={[
-                    { label: 'Privacy', href: '/legal/privacy' },
-                    { label: 'Terms', href: '/legal/terms' },
-                    { label: 'Keys', href: '/legal/keys' },
-                  ]}
-                />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-10 lg:contents">
+                  <FooterCol
+                    title="Product"
+                    links={[
+                      { label: 'Capabilities', href: '#capabilities' },
+                      { label: 'Flow', href: '#flow' },
+                      { label: 'Agents', href: '#agents' },
+                      { label: 'Philosophy', href: '#philosophy' },
+                    ]}
+                  />
+                  <FooterCol
+                    title="Develop"
+                    links={[
+                      { label: 'MCP server', href: '/agents/mcp' },
+                      { label: 'A2A protocol', href: '/.well-known/agent.json' },
+                      { label: 'Paywall API', href: '/docs/paywall' },
+                      { label: 'GitHub', href: 'https://github.com/' },
+                    ]}
+                  />
+                  <FooterCol
+                    title="Legal"
+                    links={[
+                      { label: 'Privacy', href: '/legal/privacy' },
+                      { label: 'Terms', href: '/legal/terms' },
+                      { label: 'Keys', href: '/legal/keys' },
+                    ]}
+                  />
+                </div>
               </div>
 
-              <div className="mt-14 pt-6 border-t border-[var(--color-line-hairline)] flex flex-col md:flex-row gap-3 md:gap-6 items-start md:items-center justify-between text-[12px] text-ink-4 font-mono">
-                <span>© Ori — all quiet.</span>
-                <span className="text-center">Built on bridged INIT. No token launch.</span>
-                <span className="flex items-center gap-2">
+              {/* Bottom strip — three pieces of meta. flex-wrap so the
+                  middle line breaks to its own row instead of mashing
+                  against the copyright on tablet. */}
+              <div className="mt-14 pt-6 border-t border-[var(--color-line-hairline)] flex flex-wrap gap-y-3 gap-x-6 items-center justify-between text-[12px] text-ink-4 font-mono">
+                <span className="shrink-0">© Ori — all quiet.</span>
+                <span className="order-last md:order-none w-full md:w-auto md:text-center">
+                  Built on bridged INIT. No token launch.
+                </span>
+                <span className="shrink-0 flex items-center gap-2">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
                   all systems green
                 </span>
@@ -566,7 +583,7 @@ function SectionHead({
   // -0.035em tracking. Thin-tracked Geist at 400 with serif italic accents
   // reads far more editorial than 500 — that's the reference's whole point.
   return (
-    <div className="reveal grid md:grid-cols-[1.2fr_1fr] gap-6 md:gap-14 items-end">
+    <div className="reveal grid lg:grid-cols-[1.2fr_1fr] gap-6 lg:gap-14 items-end">
       <div>
         <div
           className="text-ink-3 font-mono"
