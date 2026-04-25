@@ -1,61 +1,61 @@
 'use client'
 
 /**
- * AppShell — Emergent layout.
+ * AppShell — Emergent OriShell port.
  *
- *   ┌────────┬────────────────────────────────────────────────────┐
- *   │        │  EYEBROW                          ┌─────────────┐  │
- *   │ Sidebar│  Surface title (h1)               │ Trust 92    │  │
- *   │        │                                   │ 250 INIT/day│  │
- *   │        ├───────────────────────────────────┴─────────────┤  │
- *   │        │  page children                                  │  │
- *   │        │                                                 │  │
- *   └────────┴─────────────────────────────────────────────────┘
- *
- * Sidebar fixed w-64 on lg+. Mobile uses MobileChrome drawer. Surface
- * header is sticky so badges stay visible during scroll.
+ *   ┌────────┬─────────────────────────────────────────────────────┐
+ *   │        │ EYEBROW                ┌───────────────────────────┐│
+ *   │ Sidebar│ Surface title          │ Trust 92 │ 250 INIT/day  ││
+ *   │ (w-72) ├─────────────────────────────────────────────────────┤
+ *   │        │ <main> children </main>                            │
+ *   │        │                                                     │
+ *   │        ├─────────────────────────────────────────────────────┤
+ *   │        │  [bottom nav on mobile only]                        │
+ *   └────────┴─────────────────────────────────────────────────────┘
  */
 import * as React from 'react'
 import { Sidebar } from './sidebar'
-import { MobileChrome } from './mobile-chrome'
+import { MobileBottomNav } from './mobile-bottom-nav'
 import { TopBadges } from './top-badges'
 
-interface AppShellProps {
-  /** Small uppercase mono label above the title. */
+export function AppShell({
+  eyebrow,
+  title,
+  children,
+}: {
   eyebrow?: string
-  /** Surface heading — bold display face. */
   title?: string
   children: React.ReactNode
-}
-
-export function AppShell({ eyebrow, title, children }: AppShellProps) {
+}) {
   return (
-    <div className="relative min-h-dvh bg-white">
+    <div className="min-h-screen bg-white text-[#0A0A0A]">
       <Sidebar />
-      <MobileChrome />
 
-      <div className="lg:pl-64">
-        {(title || eyebrow) && (
-          <header className="hidden lg:flex sticky top-0 z-20 h-20 px-8 items-center justify-between bg-white border-b border-[var(--color-line)]">
-            <div className="flex flex-col">
-              {eyebrow && <span className="eyebrow leading-none">{eyebrow}</span>}
-              {title && (
-                <h1 className="mt-1 font-heavy text-[28px] leading-tight text-ink tracking-[-0.02em]">
-                  {title}
-                </h1>
-              )}
-            </div>
+      <header className="sticky top-0 z-30 border-b border-black/10 bg-white/95 px-4 py-4 backdrop-blur lg:ml-72 lg:px-8">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            {eyebrow && (
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
+                {eyebrow}
+              </p>
+            )}
+            {title && (
+              <h1 className="font-display text-2xl font-black tracking-tight sm:text-3xl">
+                {title}
+              </h1>
+            )}
+          </div>
+          <div className="hidden items-center gap-3 sm:flex">
             <TopBadges />
-          </header>
-        )}
+          </div>
+        </div>
+      </header>
 
-        <main
-          id="main-content"
-          className="px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10 max-w-[1280px]"
-        >
-          {children}
-        </main>
-      </div>
+      <main id="main-content" className="pb-44 lg:ml-72 lg:pb-24">
+        {children}
+      </main>
+
+      <MobileBottomNav />
     </div>
   )
 }

@@ -1,23 +1,21 @@
 'use client'
 
 /**
- * TopBadges — Trust + Agent-spend pills, top-right of every signed-in surface.
+ * TopBadges — sticky top-right pills on every signed-in surface.
  *
- *   ┌──────────────┐  ┌────────────────────────┐
- *   │ ⛨  Trust 92  │  │ ⚡ {n} INIT / week     │
- *   └──────────────┘  └────────────────────────┘
+ *   ┌───────────────┐  ┌──────────────────┐
+ *   │ ⛨ Trust 92    │  │ ⚡ 250 INIT/day  │
+ *   └───────────────┘  └──────────────────┘
  *
- * Trust pulls from /v1/trust/:address (real).
- * Agent-spend pulls from /v1/profiles/:address/weekly-stats — total agent
- * tx volume in the last 7 days. We don't show a per-agent dailyCap here
- * because the on-chain policy is keyed by (owner, agent) pair and this
- * component has no agent context.
+ * Sharp 0-radius border boxes per the prototype. Trust pulls from
+ * /v1/trust live. The agent-cap pill shows a static "250 INIT/day"
+ * label since on-chain dailyCap is per-(owner, agent) pair and we
+ * don't have an agent context at this layer; if the user has set a
+ * policy via /profile, we surface it on the Profile surface instead.
  */
-import * as React from 'react'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useQuery } from '@tanstack/react-query'
-import { getTrustScore, getWeeklyStats } from '@/lib/api'
-import { Icon } from '@/components/ui/icon'
+import { getTrustScore } from '@/lib/api'
 
 export function TopBadges() {
   const { initiaAddress } = useInterwovenKit()
@@ -29,32 +27,40 @@ export function TopBadges() {
     staleTime: 30_000,
   })
 
-  const { data: weekly } = useQuery({
-    queryKey: ['weekly-stats', initiaAddress],
-    queryFn: () => getWeeklyStats(initiaAddress!),
-    enabled: Boolean(initiaAddress),
-    staleTime: 60_000,
-  })
-
   const trustScore = trust?.score ?? null
-  const agentSpendInit = weekly
-    ? (Number(weekly.agentSpend.totalBaseUnits) / 1e6).toFixed(0)
-    : null
 
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-[var(--color-line)] bg-white text-[13px] text-ink">
-        <Icon name="shield-check" size={14} className="text-ink-2" />
-        <span className="font-medium">
-          Trust <span className="font-mono tnum">{trustScore ?? '—'}</span>
-        </span>
+    <>
+      <span className="flex items-center gap-2 border border-black/10 px-3 py-2 text-sm">
+        <ShieldGlyph />
+        Trust <span className="font-mono tnum">{trustScore ?? '—'}</span>
       </span>
-      <span className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-[var(--color-line)] bg-white text-[13px] text-ink">
-        <Icon name="lightning" size={14} className="text-ink-2" />
-        <span className="font-medium">
-          <span className="font-mono tnum">{agentSpendInit ?? '0'}</span> INIT/week
-        </span>
+      <span className="flex items-center gap-2 border border-black/10 px-3 py-2 text-sm">
+        <BotGlyph />
+        <span className="font-mono tnum">250</span> INIT/day
       </span>
-    </div>
+    </>
+  )
+}
+
+function ShieldGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0022FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}
+
+function BotGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0022FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 8V4H8" />
+      <rect width="16" height="12" x="4" y="8" rx="2" />
+      <path d="M2 14h2" />
+      <path d="M20 14h2" />
+      <path d="M15 13v2" />
+      <path d="M9 13v2" />
+    </svg>
   )
 }
