@@ -1,17 +1,32 @@
 'use client'
 
 /**
- * Profile page — verbatim port of ui-ref-orii/frontend/src/pages/Profile.jsx.
+ * Profile page — wired to real backend endpoints + Move msg helpers.
  *
- * Real wiring (TODO):
- *   currentUser → useInterwovenKit() initiaAddress + useResolve() name.
- *   authorizedAgents → agent_policy.move query for the connected user.
- *   profileActions → profile_registry.move + reputation.move msg helpers.
- *   achievements / quests → on-chain badge + quest progression queries.
- *   privacy / push toggles → profile_registry.move privacy field +
- *     /v1/push/subscribe endpoint.
+ * Visual baseline: ui-ref-orii/frontend/src/pages/Profile.jsx (preserved).
+ *
+ * Wired:
+ *   • Identity card           → useProfile + useFollowStats + useTrustScore
+ *   • Authorized agents list  → useAgentActionsByOwner (distinct agentAddr)
+ *   • Achievements card       → useBadges
+ *   • Quests card             → useQuests
+ *   • Merchant + links card   → profile.links (chip if empty)
+ *   • Notifications           → useAutoSign for one-tap toggle
+ *   • Identity tab actions    → msgCreateProfile, msgUpdateBio, msgUpdateLinks,
+ *                                msgSetSlug, msgSetEncryptionPubkey,
+ *                                msgUpdatePrivacy, msgFollow, msgUnfollow
+ *   • Agent policy tab        → msgSetAgentPolicy, msgRevokeAgent
+ *   • Settings tab            → agent-card link to /.well-known/agent.json
+ *   • Privacy switch          → msgUpdatePrivacy on toggle
+ *   • Agent policy slider     → msgSetAgentPolicy on commit (requires agent addr)
+ *
+ * Stubs (toast + chip — no helper or no endpoint):
+ *   • Reputation tab actions  (no msg helpers)
+ *   • Agent policy kill switch (no helper)
+ *   • Settings push subscribe/delete (browser permission complexity)
+ *   • Phone push toggle
  */
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   BadgeCheck,
   Bell,
@@ -21,28 +36,463 @@ import {
   Store,
   Trophy,
 } from 'lucide-react'
+import { useInterwovenKit } from '@initia/interwovenkit-react'
+import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ActionCard, ActionDialog, type Action, type ActionRecord } from '@/components/action-dialog'
 import {
-  achievements,
-  authorizedAgents,
-  currentUser,
-  profileActions,
-  quests,
-} from '@/data/ori-data'
+  ActionCard,
+  ActionDialog,
+  type Action,
+  type ActionRecord,
+} from '@/components/action-dialog'
+import { profileActions } from '@/data/ori-data'
+
+import { useProfile, useBadges } from '@/hooks/use-profile'
+import { useQuests } from '@/hooks/use-quests'
+import { useTrustScore } from '@/hooks/use-trust-score'
+import { useFollowStats } from '@/hooks/use-follows'
+import { useAgentActionsByOwner } from '@/hooks/use-agent-actions'
+import { useAutoSign } from '@/hooks/use-auto-sign'
+
+import {
+  msgCreateProfile,
+  msgUpdateBio,
+  msgUpdateAvatar,
+  msgUpdateLinks,
+  msgSetSlug,
+  msgSetEncryptionPubkey,
+  msgUpdatePrivacy,
+  msgFollow,
+  msgUnfollow,
+  msgSetAgentPolicy,
+  msgRevokeAgent,
+} from '@/lib/contracts'
+import {
+  ORI_CHAIN_ID,
+  ORI_DECIMALS,
+  GAS_LIMITS,
+} from '@/lib/chain-config'
+import { sendTx, buildAutoSignFee, friendlyError } from '@/lib/tx'
+
+/**
+ * Optional default agent address for the policy slider commit. If unset, the
+ * slider commit shows a "Select an agent first." toast — explicit form fields
+ * for the agent address arrive via the Identity action grid (`set-agent-policy`).
+ */
+const DEFAULT_AGENT_ADDRESS =
+  process.env.NEXT_PUBLIC_ORI_DEFAULT_AGENT_ADDRESS ?? ''
+
+function shortenAddress(address: string | undefined | null): string {
+  if (!address) return '—'
+  if (address.length <= 16) return address
+  return `${address.slice(0, 8)}...${address.slice(-4)}`
+}
+
+/**
+ * Convert a human INIT amount (e.g. "250") to base units (umin) using the
+ * configured decimals. Returns 0n on parse failure.
+ */
+function initToBaseUnits(amount: number | string): bigint {
+  const s = String(amount)
+  if (!/^\d+(\.\d+)?$/.test(s)) return 0n
+  const [whole = '0', frac = ''] = s.split('.')
+  const fracPadded = (frac + '0'.repeat(ORI_DECIMALS)).slice(0, ORI_DECIMALS)
+  return BigInt(whole) * 10n ** BigInt(ORI_DECIMALS) + BigInt(fracPadded || '0')
+}
+
+type AnyMsg = ReturnType<typeof msgUpdateBio>
 
 export default function ProfilePage() {
+  const kit = useInterwovenKit()
+  const { initiaAddress, isConnected, openConnect } = kit
+  const { isEnabled: autoSignEnabled, enable: enableAutoSign, disable: disableAutoSign } =
+    useAutoSign()
+
+  // Backend reads (all gated by `enabled: Boolean(address)` in the hook).
+  const profile = useProfile(initiaAddress)
+  const followStats = useFollowStats(initiaAddress)
+  const trustScore = useTrustScore(initiaAddress)
+  const badges = useBadges(initiaAddress)
+  const quests = useQuests(initiaAddress)
+  const agentActions = useAgentActionsByOwner(initiaAddress)
+
+  // Local UI state.
   const [modalAction, setModalAction] = useState<Action | null>(null)
   const [recentAction, setRecentAction] = useState<ActionRecord | null>(null)
-  const [privacy, setPrivacy] = useState(true)
-  const [pushEnabled, setPushEnabled] = useState(true)
-  const [autoSign, setAutoSign] = useState(false)
+  const [privateFollows, setPrivateFollows] = useState(true)
+  const [pushEnabled, setPushEnabled] = useState(false)
   const [agentLimit, setAgentLimit] = useState<number[]>([250])
+  const [busy, setBusy] = useState(false)
 
+  // Derived identity.
+  const handle = useMemo(() => {
+    if (profile.data?.initName) return `${profile.data.initName}.init`
+    return shortenAddress(initiaAddress)
+  }, [profile.data?.initName, initiaAddress])
+
+  const bio = profile.data?.bio || '—'
+  const addressDisplay = shortenAddress(initiaAddress)
+  const followersDisplay =
+    followStats.data?.followersCount !== undefined ? followStats.data.followersCount : '—'
+  const followingDisplay =
+    followStats.data?.followingCount !== undefined ? followStats.data.followingCount : '—'
+  const trustDisplay = trustScore.data
+    ? `${trustScore.data.score}/${trustScore.data.maxScore}`
+    : '—'
+
+  // Distinct agents derived from this user's MCP action log.
+  const distinctAgents = useMemo(() => {
+    const rows = agentActions.data?.entries ?? []
+    const seen = new Set<string>()
+    const out: { agentAddr: string; lastTool: string; lastAt: string }[] = []
+    for (const row of rows) {
+      if (seen.has(row.agentAddr)) continue
+      seen.add(row.agentAddr)
+      out.push({
+        agentAddr: row.agentAddr,
+        lastTool: row.toolName,
+        lastAt: row.createdAt,
+      })
+    }
+    return out
+  }, [agentActions.data])
+
+  /** Send a single Move msg via auto-sign or InterwovenKit drawer. */
+  const submitMsg = async (msg: AnyMsg, label: string, gasLimit: number = GAS_LIMITS.simpleTx) => {
+    if (!isConnected || !initiaAddress) {
+      void openConnect()
+      return
+    }
+    setBusy(true)
+    try {
+      await sendTx(kit, {
+        chainId: ORI_CHAIN_ID,
+        messages: [msg],
+        autoSign: autoSignEnabled,
+        fee: autoSignEnabled ? buildAutoSignFee(gasLimit) : undefined,
+      })
+      toast.success(`${label} submitted`)
+    } catch (e) {
+      toast.error(friendlyError(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** Slider commit: requires agent address. */
+  const handleAgentLimitCommit = async (value: number[]) => {
+    if (!isConnected || !initiaAddress) {
+      void openConnect()
+      return
+    }
+    if (!DEFAULT_AGENT_ADDRESS) {
+      toast.message('Select an agent first.', {
+        description:
+          'Use the "Set agent spending policy" action in the Agent policy tab to enter an agent address.',
+      })
+      return
+    }
+    const cap = initToBaseUnits(value[0] ?? 0)
+    const msg = msgSetAgentPolicy({
+      sender: initiaAddress,
+      agent: DEFAULT_AGENT_ADDRESS,
+      dailyCap: cap,
+    })
+    await submitMsg(msg, 'Agent policy update')
+  }
+
+  /** Privacy switch: flips whitelistOnly (per spec). */
+  const handlePrivacyToggle = async (next: boolean) => {
+    setPrivateFollows(next)
+    if (!isConnected || !initiaAddress) {
+      void openConnect()
+      return
+    }
+    const msg = msgUpdatePrivacy(
+      initiaAddress,
+      profile.data?.hideBalance ?? false,
+      profile.data?.hideActivity ?? false,
+      next,
+    )
+    await submitMsg(msg, 'Privacy update')
+  }
+
+  /** One-tap auto-sign toggle wired to InterwovenKit. */
+  const handleAutoSignToggle = async (next: boolean) => {
+    try {
+      if (next) await enableAutoSign()
+      else await disableAutoSign()
+    } catch (e) {
+      toast.error(friendlyError(e))
+    }
+  }
+
+  /**
+   * Map an action.id from the static profileActions catalogue to the helper
+   * that builds its msg. The ActionDialog collects free-text fields, so we
+   * do best-effort string parsing for vector inputs.
+   */
+  const dispatchAction = async (action: Action, values: Record<string, string>) => {
+    if (!isConnected || !initiaAddress) {
+      void openConnect()
+      return
+    }
+
+    // First field value (for single-arg helpers).
+    const fieldEntries = Object.entries(values)
+    const firstValue = fieldEntries[0]?.[1] ?? ''
+    const secondValue = fieldEntries[1]?.[1] ?? ''
+
+    try {
+      switch (action.id) {
+        // ---------- identity tab ----------
+        case 'create-profile': {
+          const links = secondValue
+            ? secondValue.split(',').map((s) => s.trim()).filter(Boolean)
+            : []
+          await submitMsg(
+            msgCreateProfile(initiaAddress, firstValue, '', links, links),
+            'Profile created',
+            GAS_LIMITS.mediumTx,
+          )
+          return
+        }
+        case 'update-bio-avatar-links': {
+          // Heuristic: if the value looks like a URL, treat as avatar update;
+          // if it has commas, treat as links update; otherwise a bio update.
+          if (firstValue.includes(',')) {
+            const links = firstValue.split(',').map((s) => s.trim()).filter(Boolean)
+            await submitMsg(
+              msgUpdateLinks(initiaAddress, links, links),
+              'Links updated',
+            )
+          } else if (/^https?:\/\//i.test(firstValue)) {
+            await submitMsg(msgUpdateAvatar(initiaAddress, firstValue), 'Avatar updated')
+          } else {
+            await submitMsg(msgUpdateBio(initiaAddress, firstValue), 'Bio updated')
+          }
+          return
+        }
+        case 'set-slug': {
+          await submitMsg(msgSetSlug(initiaAddress, firstValue), 'Slug set')
+          return
+        }
+        case 'set-encryption-pubkey': {
+          // Accept hex (with or without 0x) or base64-ish; minimal validation.
+          let bytes: Uint8Array
+          const hex = firstValue.startsWith('0x') ? firstValue.slice(2) : firstValue
+          if (/^[0-9a-fA-F]+$/.test(hex) && hex.length === 64) {
+            bytes = new Uint8Array(
+              hex.match(/.{2}/g)!.map((b) => parseInt(b, 16)),
+            )
+          } else {
+            toast.error('Encryption pubkey must be 32 bytes (64 hex chars).')
+            return
+          }
+          await submitMsg(
+            msgSetEncryptionPubkey(initiaAddress, bytes),
+            'Encryption pubkey set',
+          )
+          return
+        }
+        case 'update-privacy-settings': {
+          // Best-effort: read three booleans (true/yes/1) from first three fields.
+          const toBool = (s: string) => /^(1|true|yes|y|on)$/i.test(s.trim())
+          const [a, b, c] = fieldEntries.map(([, v]) => toBool(v))
+          await submitMsg(
+            msgUpdatePrivacy(initiaAddress, Boolean(a), Boolean(b), Boolean(c)),
+            'Privacy updated',
+          )
+          return
+        }
+        case 'follow-user': {
+          if (!firstValue) {
+            toast.error('Enter an address to follow.')
+            return
+          }
+          await submitMsg(
+            msgFollow({ follower: initiaAddress, target: firstValue }),
+            'Followed',
+          )
+          return
+        }
+        case 'unfollow-user': {
+          if (!firstValue) {
+            toast.error('Enter an address to unfollow.')
+            return
+          }
+          await submitMsg(
+            msgUnfollow({ follower: initiaAddress, target: firstValue }),
+            'Unfollowed',
+          )
+          return
+        }
+
+        // ---------- agent policy tab ----------
+        case 'set-agent-policy': {
+          if (!firstValue) {
+            toast.error('Enter an agent address.')
+            return
+          }
+          const cap = initToBaseUnits(secondValue || '0')
+          await submitMsg(
+            msgSetAgentPolicy({
+              sender: initiaAddress,
+              agent: firstValue,
+              dailyCap: cap,
+            }),
+            'Agent policy set',
+          )
+          return
+        }
+        case 'revoke-agent': {
+          if (!firstValue) {
+            toast.error('Enter an agent address.')
+            return
+          }
+          await submitMsg(
+            msgRevokeAgent({ sender: initiaAddress, agent: firstValue }),
+            'Agent revoked',
+          )
+          return
+        }
+        case 'agent-kill-switch': {
+          // STUB: no helper yet.
+          toast.message('Kill switch coming soon', {
+            description: 'agent_policy.move kill-switch helper not exposed yet.',
+          })
+          return
+        }
+
+        // ---------- settings tab ----------
+        case 'push-subscribe':
+        case 'push-delete': {
+          // STUB: PWA push subscription (browser PermissionAPI complexity).
+          toast.message('Push notifications coming soon', {
+            description:
+              'PWA push registration will be wired once the service-worker handshake lands.',
+          })
+          return
+        }
+        case 'agent-card': {
+          if (typeof window !== 'undefined') {
+            window.open(
+              `${window.location.origin}/.well-known/agent.json`,
+              '_blank',
+              'noopener,noreferrer',
+            )
+          }
+          return
+        }
+
+        // ---------- reputation tab ----------
+        case 'thumbs-up':
+        case 'thumbs-down':
+        case 'retract-vote':
+        case 'attest-signed-claim': {
+          // STUB: no msg helpers in lib/contracts.ts for reputation.move.
+          toast.message('Reputation actions coming soon', {
+            description: 'reputation.move msg helpers not yet exposed.',
+          })
+          return
+        }
+
+        default: {
+          toast.message(`${action.title} not yet wired`, {
+            description: `Action id: ${action.id}`,
+          })
+        }
+      }
+    } catch (e) {
+      toast.error(friendlyError(e))
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Disconnected shell
+  // -----------------------------------------------------------------------
+  if (!isConnected) {
+    return (
+      <section className="p-4 sm:p-6 lg:p-8" data-testid="profile-page">
+        <div
+          className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_420px]"
+          data-testid="profile-header-grid"
+        >
+          <div
+            className="border border-black/10 bg-[#F5F5F5] p-6"
+            data-testid="profile-identity-card"
+          >
+            <p
+              className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]"
+              data-testid="profile-overline"
+            >
+              Profile registry
+            </p>
+            <h2
+              className="mt-3 font-heading text-5xl font-black tracking-tighter"
+              data-testid="profile-handle"
+            >
+              Connect wallet
+            </h2>
+            <p
+              className="mt-4 max-w-2xl text-sm leading-6 text-[#52525B]"
+              data-testid="profile-bio"
+            >
+              Sign in to view your profile, badges, quests, and agent policy.
+            </p>
+            <Button
+              onClick={() => void openConnect()}
+              className="mt-6 rounded-none bg-[#0022FF] hover:bg-[#0019CC]"
+              data-testid="profile-connect-cta"
+            >
+              Connect wallet
+            </Button>
+          </div>
+          <div
+            className="border border-black bg-black p-6 text-white"
+            data-testid="agent-policy-card"
+          >
+            <Bot className="h-7 w-7 text-[#0022FF]" />
+            <h3
+              className="mt-5 font-heading text-3xl font-black tracking-tight"
+              data-testid="agent-policy-title"
+            >
+              MCP agent policy
+            </h3>
+            <p className="mt-2 text-sm text-white/70" data-testid="agent-policy-copy">
+              Connect your wallet to manage agent caps, revoke access, and
+              configure privacy.
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4"
+          data-testid="profile-secondary-grid"
+        >
+          {(['achievements', 'quests', 'links-merchant', 'notifications'] as const).map((slot) => (
+            <article
+              key={slot}
+              className="border border-black/10 bg-white p-6"
+              data-testid={`${slot}-card`}
+            >
+              <p className="font-mono text-xs uppercase text-[#52525B]">{slot}</p>
+              <p className="mt-3 text-sm text-[#52525B]">Connect wallet to view.</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  // -----------------------------------------------------------------------
+  // Connected shell
+  // -----------------------------------------------------------------------
   return (
     <section className="p-4 sm:p-6 lg:p-8" data-testid="profile-page">
       <div
@@ -63,13 +513,13 @@ export default function ProfilePage() {
             className="mt-3 font-heading text-5xl font-black tracking-tighter"
             data-testid="profile-handle"
           >
-            {currentUser.handle}
+            {handle}
           </h2>
           <p
             className="mt-4 max-w-2xl text-sm leading-6 text-[#52525B]"
             data-testid="profile-bio"
           >
-            {currentUser.bio}
+            {bio}
           </p>
           <div
             className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4"
@@ -78,29 +528,30 @@ export default function ProfilePage() {
             <div className="border border-black/10 bg-white p-4" data-testid="profile-address-box">
               <p className="text-xs uppercase tracking-[0.18em] text-[#52525B]">Address</p>
               <p className="mt-2 font-mono text-sm" data-testid="profile-address">
-                {currentUser.address}
+                {addressDisplay}
               </p>
             </div>
             <div className="border border-black/10 bg-white p-4" data-testid="profile-followers-box">
               <p className="text-xs uppercase tracking-[0.18em] text-[#52525B]">Followers</p>
               <p className="mt-2 font-mono text-lg font-black" data-testid="profile-followers">
-                {currentUser.followers}
+                {followersDisplay}
               </p>
             </div>
             <div className="border border-black/10 bg-white p-4" data-testid="profile-following-box">
               <p className="text-xs uppercase tracking-[0.18em] text-[#52525B]">Following</p>
               <p className="mt-2 font-mono text-lg font-black" data-testid="profile-following">
-                {currentUser.following}
+                {followingDisplay}
               </p>
             </div>
             <div className="border border-black/10 bg-white p-4" data-testid="profile-trust-box">
               <p className="text-xs uppercase tracking-[0.18em] text-[#52525B]">Trust</p>
               <p className="mt-2 font-mono text-lg font-black" data-testid="profile-trust">
-                {currentUser.trust}/100
+                {trustDisplay}
               </p>
             </div>
           </div>
         </div>
+
         <div
           className="border border-black bg-black p-6 text-white"
           data-testid="agent-policy-card"
@@ -123,11 +574,21 @@ export default function ProfilePage() {
             <Slider
               value={agentLimit}
               onValueChange={setAgentLimit}
+              onValueCommit={handleAgentLimitCommit}
               max={500}
               step={10}
+              disabled={busy}
               className="[&_[role=slider]]:rounded-none [&_[role=slider]]:bg-white"
               data-testid="agent-limit-slider"
             />
+            {!DEFAULT_AGENT_ADDRESS && (
+              <p
+                className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-white/50"
+                data-testid="agent-limit-chip"
+              >
+                Select an agent in the Agent policy tab to commit
+              </p>
+            )}
           </div>
           <div
             className="mt-6 flex items-center justify-between border border-white/20 p-4"
@@ -137,42 +598,66 @@ export default function ProfilePage() {
               <ShieldCheck className="h-4 w-4" /> Private follows
             </span>
             <Switch
-              checked={privacy}
-              onCheckedChange={setPrivacy}
+              checked={privateFollows}
+              onCheckedChange={handlePrivacyToggle}
+              disabled={busy}
               className="data-[state=checked]:bg-[#0022FF]"
               data-testid="privacy-switch"
             />
           </div>
+          <p
+            className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-white/40"
+            data-testid="privacy-chip"
+          >
+            Saves on next tx
+          </p>
+
           <div className="mt-4 space-y-3" data-testid="authorized-agent-list">
-            {authorizedAgents.map((agent) => (
+            {agentActions.isLoading && (
+              <p
+                className="font-mono text-xs text-white/60"
+                data-testid="authorized-agent-loading"
+              >
+                Loading agents…
+              </p>
+            )}
+            {!agentActions.isLoading && distinctAgents.length === 0 && (
+              <p
+                className="font-mono text-xs text-white/60"
+                data-testid="authorized-agent-empty"
+              >
+                No agents yet
+              </p>
+            )}
+            {distinctAgents.map((agent) => (
               <div
-                key={agent.id}
+                key={agent.agentAddr}
                 className="border border-white/20 p-4"
-                data-testid={`profile-authorized-agent-${agent.id}`}
+                data-testid={`profile-authorized-agent-${agent.agentAddr}`}
               >
                 <p
                   className="font-heading text-lg font-bold"
-                  data-testid={`profile-authorized-agent-name-${agent.id}`}
+                  data-testid={`profile-authorized-agent-name-${agent.agentAddr}`}
                 >
-                  {agent.name}
+                  Authorized agent
                 </p>
                 <p
                   className="font-mono text-xs text-white/60"
-                  data-testid={`profile-authorized-agent-address-${agent.id}`}
+                  data-testid={`profile-authorized-agent-address-${agent.agentAddr}`}
                 >
-                  {agent.address}
+                  {shortenAddress(agent.agentAddr)}
                 </p>
                 <p
                   className="mt-2 font-mono text-xs text-[#00C566]"
-                  data-testid={`profile-authorized-agent-status-${agent.id}`}
+                  data-testid={`profile-authorized-agent-status-${agent.agentAddr}`}
                 >
-                  {agent.status}
+                  Active via MCP
                 </p>
                 <p
                   className="mt-3 text-xs text-white/70"
-                  data-testid={`profile-authorized-agent-methods-${agent.id}`}
+                  data-testid={`profile-authorized-agent-methods-${agent.agentAddr}`}
                 >
-                  Allowed: {agent.methods.join(', ')}
+                  Last tool: {agent.lastTool}
                 </p>
               </div>
             ))}
@@ -184,6 +669,7 @@ export default function ProfilePage() {
         className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4"
         data-testid="profile-secondary-grid"
       >
+        {/* Achievements */}
         <article
           className="border border-black/10 bg-white p-6"
           data-testid="achievements-card"
@@ -196,29 +682,44 @@ export default function ProfilePage() {
             Achievements
           </h3>
           <div className="mt-4 space-y-3">
-            {achievements.map((badge) => (
-              <div
-                key={badge.id}
-                className="border border-black/10 p-3"
-                data-testid={`achievement-${badge.id}`}
+            {badges.isLoading && (
+              <p
+                className="font-mono text-xs text-[#52525B]"
+                data-testid="achievements-loading"
               >
-                <p
-                  className="flex items-center gap-2 font-semibold"
-                  data-testid={`achievement-name-${badge.id}`}
+                Loading badges…
+              </p>
+            )}
+            {!badges.isLoading && (badges.data?.length ?? 0) === 0 && (
+              <p
+                className="font-mono text-xs text-[#52525B]"
+                data-testid="achievements-empty"
+              >
+                No badges yet — keep playing.
+              </p>
+            )}
+            {(badges.data ?? []).map((badge) => {
+              const id = `${badge.badgeType}-${badge.level}`
+              return (
+                <div
+                  key={id}
+                  className="border border-black/10 p-3"
+                  data-testid={`achievement-${id}`}
                 >
-                  <BadgeCheck className="h-4 w-4 text-[#0022FF]" />
-                  {badge.name}
-                </p>
-                <p
-                  className="mt-1 text-sm text-[#52525B]"
-                  data-testid={`achievement-detail-${badge.id}`}
-                >
-                  {badge.detail}
-                </p>
-              </div>
-            ))}
+                  <p
+                    className="flex items-center gap-2 font-semibold"
+                    data-testid={`achievement-name-${id}`}
+                  >
+                    <BadgeCheck className="h-4 w-4 text-[#0022FF]" />
+                    {badge.badgeType} L{badge.level}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         </article>
+
+        {/* Quests */}
         <article
           className="border border-black/10 bg-white p-6"
           data-testid="quests-card"
@@ -230,24 +731,59 @@ export default function ProfilePage() {
           >
             Quests
           </h3>
+          {quests.data && (
+            <p
+              className="mt-2 font-mono text-xs text-[#52525B]"
+              data-testid="quests-summary"
+            >
+              Level {quests.data.level} · {quests.data.totalXp} XP
+            </p>
+          )}
           <div className="mt-4 space-y-4">
-            {quests.map((quest, index) => (
-              <div key={quest} data-testid={`quest-${index}`}>
-                <div className="mb-2 flex justify-between text-sm">
-                  <span data-testid={`quest-title-${index}`}>{quest}</span>
-                  <span className="font-mono" data-testid={`quest-progress-${index}`}>
-                    {index + 1}/3
-                  </span>
+            {quests.isLoading && (
+              <p className="font-mono text-xs text-[#52525B]" data-testid="quests-loading">
+                Loading quests…
+              </p>
+            )}
+            {!quests.isLoading && (quests.data?.entries.length ?? 0) === 0 && (
+              <p className="font-mono text-xs text-[#52525B]" data-testid="quests-empty">
+                No active quests.
+              </p>
+            )}
+            {(quests.data?.entries ?? []).map((quest, index) => {
+              const pct =
+                quest.threshold > 0
+                  ? Math.min(100, (quest.progress / quest.threshold) * 100)
+                  : 0
+              return (
+                <div key={quest.id} data-testid={`quest-${index}`}>
+                  <div className="mb-2 flex justify-between text-sm">
+                    <span data-testid={`quest-title-${index}`}>{quest.title}</span>
+                    <span
+                      className="font-mono"
+                      data-testid={`quest-progress-${index}`}
+                    >
+                      {quest.progress}/{quest.threshold}
+                    </span>
+                  </div>
+                  <Progress
+                    value={pct}
+                    className="rounded-none bg-black/10"
+                    data-testid={`quest-progress-bar-${index}`}
+                  />
+                  <p
+                    className="mt-1 font-mono text-[11px] text-[#52525B]"
+                    data-testid={`quest-xp-${index}`}
+                  >
+                    +{quest.xp} XP
+                  </p>
                 </div>
-                <Progress
-                  value={(index + 1) * 28}
-                  className="rounded-none bg-black/10"
-                  data-testid={`quest-progress-bar-${index}`}
-                />
-              </div>
-            ))}
+              )
+            })}
           </div>
         </article>
+
+        {/* Merchant + links */}
         <article
           className="border border-black/10 bg-white p-6"
           data-testid="links-merchant-card"
@@ -259,20 +795,43 @@ export default function ProfilePage() {
           >
             Merchant + links
           </h3>
-          {['ori.app/mira', 'x402 merchant ready', 'A2A agent card online'].map((link) => (
-            <Button
-              key={link}
-              variant="ghost"
-              className="mt-3 h-auto w-full justify-start rounded-none border border-black/10 px-3 py-3 hover:bg-black hover:text-white"
-              data-testid={`merchant-link-${link
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')}`}
-            >
-              <LinkIcon className="h-4 w-4" />
-              {link}
-            </Button>
-          ))}
+          {(profile.data?.links?.length ?? 0) === 0 ? (
+            <>
+              <Button
+                variant="ghost"
+                disabled
+                className="mt-3 h-auto w-full justify-start rounded-none border border-black/10 px-3 py-3"
+                data-testid="merchant-link-placeholder"
+              >
+                <LinkIcon className="h-4 w-4" />
+                No links yet
+              </Button>
+              <p
+                className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]"
+                data-testid="merchant-coming-soon-chip"
+              >
+                Coming soon
+              </p>
+            </>
+          ) : (
+            (profile.data!.links).map((link, idx) => (
+              <Button
+                key={`${link.label}-${idx}`}
+                variant="ghost"
+                asChild
+                className="mt-3 h-auto w-full justify-start rounded-none border border-black/10 px-3 py-3 hover:bg-black hover:text-white"
+                data-testid={`merchant-link-${idx}`}
+              >
+                <a href={link.url} target="_blank" rel="noreferrer noopener">
+                  <LinkIcon className="h-4 w-4" />
+                  {link.label}
+                </a>
+              </Button>
+            ))
+          )}
         </article>
+
+        {/* Notifications */}
         <article
           className="border border-black/10 bg-white p-6"
           data-testid="notifications-card"
@@ -294,11 +853,23 @@ export default function ProfilePage() {
               </span>
               <Switch
                 checked={pushEnabled}
-                onCheckedChange={setPushEnabled}
+                onCheckedChange={(next) => {
+                  setPushEnabled(next)
+                  toast.message('Push notifications coming soon', {
+                    description:
+                      'PWA push registration ships with the service-worker handshake.',
+                  })
+                }}
                 className="data-[state=checked]:bg-[#0022FF]"
                 data-testid="push-notification-switch"
               />
             </div>
+            <p
+              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]"
+              data-testid="push-coming-soon-chip"
+            >
+              Coming soon
+            </p>
             <div
               className="flex items-center justify-between border border-black/10 p-3"
               data-testid="auto-sign-row"
@@ -307,8 +878,8 @@ export default function ProfilePage() {
                 One-tap auto-sign
               </span>
               <Switch
-                checked={autoSign}
-                onCheckedChange={setAutoSign}
+                checked={autoSignEnabled}
+                onCheckedChange={handleAutoSignToggle}
                 className="data-[state=checked]:bg-[#0022FF]"
                 data-testid="auto-sign-switch"
               />
@@ -336,39 +907,60 @@ export default function ProfilePage() {
             </TabsTrigger>
           ))}
         </TabsList>
-        {profileActions.map((section) => (
-          <TabsContent
-            key={section.id}
-            value={section.id}
-            className="mt-4"
-            data-testid={`profile-tab-content-${section.id}`}
-          >
-            <div
-              className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-              data-testid={`profile-actions-grid-${section.id}`}
+        {profileActions.map((section) => {
+          const isStubSection = section.id === 'reputation'
+          return (
+            <TabsContent
+              key={section.id}
+              value={section.id}
+              className="mt-4"
+              data-testid={`profile-tab-content-${section.id}`}
             >
-              {section.actions.map((action) => (
-                <ActionCard
-                  key={action.id}
-                  scope={`profile-${section.id}`}
-                  action={action as Action}
-                  onOpen={setModalAction}
-                />
-              ))}
-            </div>
-          </TabsContent>
-        ))}
+              {isStubSection && (
+                <p
+                  className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]"
+                  data-testid={`profile-tab-chip-${section.id}`}
+                >
+                  Coming soon — reputation.move helpers not yet exposed.
+                </p>
+              )}
+              <div
+                className={`grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 ${
+                  isStubSection ? 'pointer-events-none opacity-50' : ''
+                }`}
+                data-testid={`profile-actions-grid-${section.id}`}
+              >
+                {section.actions.map((action) => (
+                  <ActionCard
+                    key={action.id}
+                    scope={`profile-${section.id}`}
+                    action={action as Action}
+                    onOpen={setModalAction}
+                  />
+                ))}
+              </div>
+            </TabsContent>
+          )
+        })}
       </Tabs>
 
       {recentAction && (
-        <p className="mt-6 font-mono text-sm text-[#0022FF]" data-testid="profile-recent-action">
-          {recentAction.title} simulated.
+        <p
+          className="mt-6 font-mono text-sm text-[#0022FF]"
+          data-testid="profile-recent-action"
+        >
+          {recentAction.title} dispatched.
         </p>
       )}
+
       <ActionDialog
         action={modalAction}
         onClose={() => setModalAction(null)}
-        onComplete={setRecentAction}
+        onComplete={(record) => {
+          setRecentAction(record)
+          // Fire-and-forget — UI already closed, errors surface via toast.
+          void dispatchAction(record, record.values)
+        }}
       />
     </section>
   )
