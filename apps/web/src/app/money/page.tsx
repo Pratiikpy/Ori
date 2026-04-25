@@ -20,7 +20,7 @@ import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useQuery } from '@tanstack/react-query'
 import { AppShell } from '@/components/layout/app-shell'
 import { FlowCard } from '@/components/ui/flow-card'
-import { getPortfolio, getSponsorStatus, getAgentPolicy, getUserAgentActions } from '@/lib/api'
+import { getPortfolio, getSponsorStatus, getWeeklyStats } from '@/lib/api'
 import { Icon } from '@/components/ui/icon'
 
 type Tab = 'payments' | 'gifts' | 'streams' | 'subscriptions' | 'paywalls' | 'sponsor'
@@ -51,10 +51,13 @@ export default function MoneyPage() {
     staleTime: 60_000,
   })
 
-  const totalInit = portfolio?.totals?.totalSent ?? 0
-  const totalUsdc = 0 // placeholder — backend doesn't surface USDC yet
-  const streamsCount = portfolio?.streams?.length ?? 0
-  const paywallSales = portfolio?.paywalls?.length ?? 0
+  // INIT has 6 decimals on Initia. Volumes from API come as raw base-unit strings.
+  const tipsReceivedInit = Number(portfolio?.stats?.tipsReceivedVolume ?? '0') / 1e6
+  const tipsGivenInit    = Number(portfolio?.stats?.tipsGivenVolume    ?? '0') / 1e6
+  const totalInit  = tipsReceivedInit + tipsGivenInit
+  const paymentsSent     = portfolio?.stats?.paymentsSent     ?? 0
+  const paymentsReceived = portfolio?.stats?.paymentsReceived ?? 0
+  const tipsCount        = portfolio?.stats?.tipsReceived     ?? 0
 
   return (
     <AppShell eyebrow="Money" title="Money surface">
@@ -88,10 +91,10 @@ export default function MoneyPage() {
 
       {/* STAT ROW */}
       <section className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatTile label="INIT"     value={`$${fmt(totalInit)}`}     delta="+8.2%" trendUp />
-        <StatTile label="USDC"     value={`$${fmt(totalUsdc)}`}     delta="+0.0%" />
-        <StatTile label="Streams"  value={streamsCount.toString()}  delta={`${streamsCount} active`} />
-        <StatTile label="Paywalls" value={paywallSales.toString()}  delta={`${paywallSales} sales`} trendUp />
+        <StatTile label="Tips received" value={`${fmt(tipsReceivedInit)} INIT`} delta={`${tipsCount} tips`} />
+        <StatTile label="Tips given"    value={`${fmt(tipsGivenInit)} INIT`}    delta="" />
+        <StatTile label="Sent"          value={paymentsSent.toString()}         delta={`${paymentsSent} tx`} />
+        <StatTile label="Received"      value={paymentsReceived.toString()}     delta={`${paymentsReceived} tx`} trendUp />
       </section>
 
       {/* TABS */}
@@ -177,9 +180,9 @@ export default function MoneyPage() {
             <FlowCard
               module="sponsor.api"
               title="Claim seed payment"
-              description={sponsor?.seedClaimable ? 'You qualify — 5 INIT to your wallet.' : 'Sponsor not configured or already claimed.'}
+              description={sponsor?.enabled ? `Sponsor active — up to ${(sponsor.seedAmountUmin / 1e6).toFixed(2)} INIT.` : 'Sponsor not enabled in this environment.'}
               href="/onboard"
-              ctaLabel={sponsor?.seedClaimable ? 'Claim now' : 'View status'}
+              ctaLabel={sponsor?.enabled ? 'Claim now' : 'View status'}
             />
             <FlowCard
               module="sponsor.api"
@@ -197,33 +200,30 @@ export default function MoneyPage() {
 /* ─────────────────────────────────────────────────────────────────── */
 
 function CapBlock({ address }: { address: string | null }) {
-  const { data: policy } = useQuery({
-    queryKey: ['agent-policy', address],
-    queryFn: () => getAgentPolicy(address!),
+  // Weekly agent spend rolls up activity even before a per-agent policy is
+  // configured. The actual on-chain dailyCap requires (owner, agent) pair —
+  // we don't show that here because /money has no agent context.
+  const { data: weekly } = useQuery({
+    queryKey: ['weekly-stats', address],
+    queryFn: () => getWeeklyStats(address!),
     enabled: Boolean(address),
-    staleTime: 30_000,
-  })
-  const { data: actions } = useQuery({
-    queryKey: ['agent-actions', address],
-    queryFn: () => getUserAgentActions(address!),
-    enabled: Boolean(address),
-    staleTime: 30_000,
+    staleTime: 60_000,
   })
 
-  const cap = policy?.dailyCap ?? null
-  const usedToday = actions?.usedToday ?? null
-  const pct = cap && usedToday != null ? Math.min(100, (Number(usedToday) / Number(cap)) * 100) : 0
+  const spentBaseUnits = weekly?.agentSpend?.totalBaseUnits ?? '0'
+  const spentInit = Number(spentBaseUnits) / 1e6 // INIT has 6 decimals
+  const txCount = weekly?.agentSpend?.txCount ?? 0
 
   return (
     <>
       <div className="mt-3 font-mono tnum text-[26px] leading-tight text-ink">
-        {cap != null ? `${cap} INIT` : '— INIT'}
+        {spentInit.toFixed(2)} INIT
       </div>
       <div className="mt-auto h-1.5 rounded-full bg-[var(--color-bg-muted)] overflow-hidden">
-        <div className="h-full bg-[var(--color-ink)]" style={{ width: `${pct}%` }} />
+        <div className="h-full bg-[var(--color-ink)]" style={{ width: `${Math.min(100, spentInit / 250 * 100)}%` }} />
       </div>
       <span className="mt-2 text-[11.5px] text-ink-3 font-mono">
-        {usedToday != null && cap != null ? `${usedToday} / ${cap} INIT used today` : 'No agent policy yet'}
+        {txCount} tx this week · agent spend
       </span>
     </>
   )

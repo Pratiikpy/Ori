@@ -36,9 +36,9 @@ export default function ExplorePage() {
     <AppShell eyebrow="Explore" title="Explore surface">
       {/* DISCOVER COLUMNS */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <DiscoverColumn title="Recent" items={recent.data ?? []} loading={recent.isLoading} format="event" />
-        <DiscoverColumn title="Top Creators" items={top.data ?? []} loading={top.isLoading} format="creator" />
-        <DiscoverColumn title="Rising" items={rising.data ?? []} loading={rising.isLoading} format="creator" />
+        <DiscoverColumn title="Recent"       items={recent.data ?? []} loading={recent.isLoading} />
+        <DiscoverColumn title="Top Creators" items={top.data    ?? []} loading={top.isLoading} />
+        <DiscoverColumn title="Rising"       items={rising.data ?? []} loading={rising.isLoading} />
       </section>
 
       {/* TABS */}
@@ -83,12 +83,10 @@ function DiscoverColumn({
   title,
   items,
   loading,
-  format,
 }: {
   title: string
-  items: Array<{ address?: string; username?: string | null; subject?: string; predicate?: string }>
+  items: Array<{ address: string; initName: string | null }>
   loading: boolean
-  format: 'event' | 'creator'
 }) {
   return (
     <div className="border border-[var(--color-line)] rounded-md p-5 bg-white min-h-[280px]">
@@ -103,14 +101,12 @@ function DiscoverColumn({
         {!loading && items.length === 0 && (
           <li className="text-[13px] text-ink-3">No data yet.</li>
         )}
-        {!loading && items.map((item, i) => (
+        {!loading && items.map((item) => (
           <li
-            key={i}
+            key={item.address}
             className="h-10 px-3 rounded-md border border-[var(--color-line)] flex items-center font-mono text-[13px] text-ink"
           >
-            {format === 'event'
-              ? `${item.username ?? short(item.address)} ${item.predicate ?? 'opened a flow'}`
-              : (item.username ?? short(item.address))}
+            {item.initName ?? short(item.address)}
           </li>
         ))}
       </ul>
@@ -124,9 +120,9 @@ function LeaderboardsTab() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <RankedList title="Top creators" items={creators.data ?? []} unit="sales" />
-      <RankedList title="Top tippers" items={tippers.data ?? []} unit="INIT" />
-      <RankedList title="Creator top tippers" items={tippers.data?.slice(0, 3) ?? []} unit="INIT" />
+      <RankedList title="Top creators"        items={creators.data ?? []}              unit="tips" field="tipsReceived" />
+      <RankedList title="Top tippers"          items={tippers.data ?? []}               unit="tips" field="tipsGiven" />
+      <RankedList title="Creator top tippers"  items={tippers.data?.slice(0, 3) ?? []}  unit="count" field="tipCount" />
     </div>
   )
 }
@@ -135,10 +131,20 @@ function RankedList({
   title,
   items,
   unit,
+  field,
 }: {
   title: string
-  items: Array<{ address?: string; username?: string | null; total?: bigint | number }>
+  items: Array<{
+    rank?: number
+    address: string
+    initName: string | null
+    tipsReceived?: number
+    tipsGiven?: number
+    tipCount?: number
+    volume?: string
+  }>
   unit: string
+  field: 'tipsReceived' | 'tipsGiven' | 'tipCount'
 }) {
   return (
     <div className="border border-[var(--color-line)] rounded-md p-5 bg-white min-h-[200px]">
@@ -146,12 +152,12 @@ function RankedList({
       <ol className="flex flex-col gap-1.5 font-mono text-[13px]">
         {items.length === 0 && <li className="text-ink-3">No data yet.</li>}
         {items.map((item, i) => (
-          <li key={i} className="flex items-center justify-between">
+          <li key={item.address} className="flex items-center justify-between">
             <span className="text-ink">
-              {i + 1}. {item.username ?? short(item.address)}
+              {i + 1}. {item.initName ?? short(item.address)}
             </span>
             <span className="text-ink-3 tnum">
-              {Number(item.total ?? 0).toLocaleString()} {unit}
+              {(item[field] ?? 0).toLocaleString()} {unit}
             </span>
           </li>
         ))}

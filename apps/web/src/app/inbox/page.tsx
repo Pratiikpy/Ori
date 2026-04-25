@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { Icon } from '@/components/ui/icon'
-import { getActivityFeed, getAgentActions } from '@/lib/api'
+import { getActivityFeed, getUserAgentActions } from '@/lib/api'
 
 interface ThreadStub {
   identifier: string
@@ -38,23 +38,31 @@ export default function InboxPage() {
   })
 
   const agentActions = useQuery({
-    queryKey: ['agent-actions-global'],
-    queryFn: () => getAgentActions(),
+    queryKey: ['user-agent-actions', initiaAddress],
+    queryFn: () => getUserAgentActions(initiaAddress!),
+    enabled: Boolean(initiaAddress),
     staleTime: 30_000,
   })
 
-  // Build thread list from activity
+  // Build thread list from activity entries. ActivityEntry has a `kind` and
+  // a counterparty (e.g. `from` / `to`). We accept any string field that
+  // looks like an address to seed thread stubs.
   const threads = React.useMemo<ThreadStub[]>(() => {
     const seen = new Set<string>()
     const out: ThreadStub[] = []
-    for (const ev of activity.data?.items ?? []) {
-      const counter = (ev as { counterAddress?: string }).counterAddress
+    for (const ev of activity.data?.entries ?? []) {
+      const e = ev as Record<string, unknown>
+      const counter =
+        (typeof e.counterAddress === 'string' && e.counterAddress) ||
+        (typeof e.from === 'string' && e.from) ||
+        (typeof e.to === 'string' && e.to) ||
+        null
       if (counter && !seen.has(counter)) {
         seen.add(counter)
         out.push({
           identifier: counter,
           title: short(counter),
-          preview: (ev as { kind?: string }).kind ?? 'event',
+          preview: typeof e.kind === 'string' ? e.kind : 'event',
           unread: 0,
         })
       }
@@ -63,7 +71,7 @@ export default function InboxPage() {
     return out
   }, [activity.data])
 
-  const recentAgentAction = agentActions.data?.items?.[0]
+  const recentAgentAction = agentActions.data?.entries?.[0]
 
   return (
     <AppShell eyebrow="Inbox" title="Chat wallet control room">
@@ -167,10 +175,10 @@ export default function InboxPage() {
             {recentAgentAction ? (
               <div className="mt-3 border border-[var(--color-line)] rounded-md p-3">
                 <div className="font-mono text-[11px] text-[var(--color-accent)]">
-                  {(recentAgentAction as { tool?: string }).tool ?? 'ori.action'}
+                  {recentAgentAction.toolName}
                 </div>
-                <div className="mt-1 text-[13px] font-medium text-ink">
-                  {(recentAgentAction as { summary?: string }).summary ?? 'Recent agent activity'}
+                <div className="mt-1 text-[13px] font-medium text-ink capitalize">
+                  {recentAgentAction.status} · {short(recentAgentAction.agentAddr)}
                 </div>
               </div>
             ) : (

@@ -151,10 +151,14 @@ function OracleRow({ pair }: { pair: string }) {
     queryFn: () => getOraclePrice(pair),
     refetchInterval: 5_000,
   })
+  // OraclePrice.price is a string (raw integer); divide by 10**decimals.
+  const display = data
+    ? (Number(data.price) / 10 ** data.decimals).toFixed(2)
+    : null
   return (
     <li className="flex items-center justify-between">
       <span className="text-ink-3">{pair}</span>
-      <span className="tnum text-ink">${data?.price?.toFixed(2) ?? '—'}</span>
+      <span className="tnum text-ink">${display ?? '—'}</span>
     </li>
   )
 }

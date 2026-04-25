@@ -24,10 +24,11 @@ import { FlowCard } from '@/components/ui/flow-card'
 import { Icon } from '@/components/ui/icon'
 import {
   getProfile,
+  getBadges,
   getFollowStats,
   getTrustScore,
   getQuests,
-  getAgentPolicy,
+  getWeeklyStats,
 } from '@/lib/api'
 
 type Tab = 'identity' | 'reputation' | 'policy' | 'settings'
@@ -37,10 +38,11 @@ export default function ProfilePage() {
   const [tab, setTab] = React.useState<Tab>('identity')
 
   const profile     = useQuery({ queryKey: ['profile',     initiaAddress], queryFn: () => getProfile(initiaAddress!),     enabled: Boolean(initiaAddress), staleTime: 30_000 })
+  const badges      = useQuery({ queryKey: ['badges',      initiaAddress], queryFn: () => getBadges(initiaAddress!),      enabled: Boolean(initiaAddress), staleTime: 30_000 })
   const followStats = useQuery({ queryKey: ['follow-stats',initiaAddress], queryFn: () => getFollowStats(initiaAddress!), enabled: Boolean(initiaAddress), staleTime: 30_000 })
   const trust       = useQuery({ queryKey: ['trust',       initiaAddress], queryFn: () => getTrustScore(initiaAddress!),  enabled: Boolean(initiaAddress), staleTime: 30_000 })
   const quests      = useQuery({ queryKey: ['quests',      initiaAddress], queryFn: () => getQuests(initiaAddress!),      enabled: Boolean(initiaAddress), staleTime: 30_000 })
-  const policy      = useQuery({ queryKey: ['agent-policy',initiaAddress], queryFn: () => getAgentPolicy(initiaAddress!), enabled: Boolean(initiaAddress), staleTime: 30_000 })
+  const weekly      = useQuery({ queryKey: ['weekly-stats',initiaAddress], queryFn: () => getWeeklyStats(initiaAddress!), enabled: Boolean(initiaAddress), staleTime: 60_000 })
 
   return (
     <AppShell eyebrow="Profile" title="Profile surface">
@@ -70,16 +72,21 @@ export default function ProfilePage() {
             Set spending caps, allowed methods, revoke or trigger kill switch.
           </p>
           <div className="mt-5 pt-4 border-t border-white/10">
-            <span className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-white/55">Daily cap</span>
+            <span className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-white/55">Agent spend (7d)</span>
             <div className="mt-1 font-mono tnum text-[22px]">
-              {policy.data?.dailyCap != null ? `${policy.data.dailyCap} INIT` : '— INIT'}
+              {weekly.data
+                ? `${(Number(weekly.data.agentSpend.totalBaseUnits) / 1e6).toFixed(2)} INIT`
+                : '— INIT'}
+            </div>
+            <div className="mt-1 text-[11.5px] text-white/55 font-mono">
+              {weekly.data?.agentSpend.txCount ?? 0} tx via agents
             </div>
           </div>
           <div className="mt-auto pt-4 flex items-center justify-between">
-            <span className="text-[13px]">Private follows</span>
+            <span className="text-[13px]">Whitelist-only DMs</span>
             <span className="inline-flex items-center gap-2 text-[12.5px] text-white/65">
-              <span className={`w-9 h-5 rounded-full p-0.5 ${profile.data?.privacy?.privateFollows ? 'bg-[var(--color-accent)]' : 'bg-white/20'}`}>
-                <span className={`block w-4 h-4 rounded-full bg-white transition ${profile.data?.privacy?.privateFollows ? 'translate-x-4' : 'translate-x-0'}`} />
+              <span className={`w-9 h-5 rounded-full p-0.5 ${profile.data?.whitelistOnly ? 'bg-[var(--color-accent)]' : 'bg-white/20'}`}>
+                <span className={`block w-4 h-4 rounded-full bg-white transition ${profile.data?.whitelistOnly ? 'translate-x-4' : 'translate-x-0'}`} />
               </span>
             </span>
           </div>
@@ -92,16 +99,16 @@ export default function ProfilePage() {
         <div className="border border-[var(--color-line)] rounded-md p-5 bg-white">
           <h3 className="font-display font-bold text-[18px] text-ink mb-4">★ Achievements</h3>
           <ul className="flex flex-col gap-3">
-            {(profile.data?.badges ?? []).slice(0, 3).map((b) => (
-              <li key={b.id} className="flex items-start gap-3">
+            {(badges.data ?? []).slice(0, 3).map((b) => (
+              <li key={`${b.badgeType}-${b.level}`} className="flex items-start gap-3">
                 <span className="w-7 h-7 rounded-full bg-[var(--color-accent-soft)] inline-flex items-center justify-center text-[var(--color-accent)] text-[11px] font-mono">★</span>
                 <div>
-                  <div className="text-[13.5px] font-medium text-ink">{b.title}</div>
-                  <div className="text-[12px] text-ink-3">{b.description}</div>
+                  <div className="text-[13.5px] font-medium text-ink">{badgeName(b.badgeType)}</div>
+                  <div className="text-[12px] text-ink-3">Level {b.level} · minted {new Date(b.mintedAt).toLocaleDateString()}</div>
                 </div>
               </li>
             ))}
-            {(!profile.isLoading && (profile.data?.badges ?? []).length === 0) && (
+            {(!badges.isLoading && (badges.data ?? []).length === 0) && (
               <li className="text-[13px] text-ink-3">No achievements yet — start sending tips.</li>
             )}
           </ul>
@@ -111,20 +118,20 @@ export default function ProfilePage() {
         <div className="border border-[var(--color-line)] rounded-md p-5 bg-white">
           <h3 className="font-display font-bold text-[18px] text-ink mb-4">📍 Quests</h3>
           <ul className="flex flex-col gap-3">
-            {(quests.data?.quests ?? []).slice(0, 3).map((q) => (
+            {(quests.data?.entries ?? []).slice(0, 3).map((q) => (
               <li key={q.id}>
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-ink">{q.title}</span>
                   <span className="font-mono text-ink-3 text-[12px] tnum">
-                    {q.progress}/{q.target}
+                    {q.progress}/{q.threshold}
                   </span>
                 </div>
                 <div className="mt-1.5 h-1 rounded-full bg-[var(--color-bg-muted)] overflow-hidden">
-                  <div className="h-full bg-[var(--color-ink)]" style={{ width: `${Math.min(100, (q.progress / q.target) * 100)}%` }} />
+                  <div className="h-full bg-[var(--color-ink)]" style={{ width: `${Math.min(100, (q.progress / Math.max(1, q.threshold)) * 100)}%` }} />
                 </div>
               </li>
             ))}
-            {(!quests.isLoading && (quests.data?.quests ?? []).length === 0) && (
+            {(!quests.isLoading && (quests.data?.entries ?? []).length === 0) && (
               <li className="text-[13px] text-ink-3">No active quests.</li>
             )}
           </ul>
@@ -225,4 +232,17 @@ function formatK(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}k`
   return n.toString()
+}
+
+/** Map badgeType → human label. Synced with achievement_sbt.move emit names. */
+function badgeName(type: number): string {
+  const map: Record<number, string> = {
+    0: 'First Tip',
+    1: 'Market Maker',
+    2: 'Trusted Agent',
+    3: 'Stream Veteran',
+    4: 'Paywall Sold',
+    5: 'Squad Founder',
+  }
+  return map[type] ?? `Badge #${type}`
 }
