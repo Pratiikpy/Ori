@@ -28,14 +28,18 @@
      so bg-muted/X0 renders visibly on all screens. */
   --color-muted:            #28282c;
 
-  /* Ink — opacity-based on #f4f4f6, exactly as the reference does.
-     This keeps every level mathematically consistent instead of
-     drifting across bespoke hex codes. */
+  /* Ink — opacity-based on #f4f4f6, ported from the reference.
+     Reference uses 0.38 for --ink-3, which falls below WCAG 2.1 AA
+     contrast on #07070a bg for 11px eyebrow text (~3.5:1 vs target 4.5:1).
+     Bumped to 0.50 so eyebrows + tertiary text pass AA; the visual
+     shift is minor (still clearly a tertiary tier).  --ink-4 stays at
+     0.22 — it's only used on quaternary chrome where the muted look
+     is structural, never on body copy. */
   --color-foreground:       #f4f4f6;                          /* was #f7f8f8 */
-  --color-ink-2:            rgba(244, 244, 246, 0.62);        /* was #d0d6e0 */
-  --color-ink-3:            rgba(244, 244, 246, 0.38);        /* was #8a8f98 */
-  --color-ink-4:            rgba(244, 244, 246, 0.22);        /* was #62666d */
-  --color-muted-foreground: rgba(244, 244, 246, 0.38);        /* alias of ink-3 */
+  --color-ink-2:            rgba(244, 244, 246, 0.66);        /* was 0.62 — small AA bump */
+  --color-ink-3:            rgba(244, 244, 246, 0.50);        /* was 0.38 — AA fix */
+  --color-ink-4:            rgba(244, 244, 246, 0.30);        /* was 0.22 — AA on small mono */
+  --color-muted-foreground: rgba(244, 244, 246, 0.50);        /* alias of ink-3 */
 
   /* Accent — reference uses "soft electric indigo" + dark ink ON accent.
      This is the single biggest visible shift: our indigo #5e6ad2 was

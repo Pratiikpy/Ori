@@ -1,0 +1,27 @@
+{
+  "violations": [
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+      "nodes": 13,
+      "sample": [
+        ".in.reveal > .text-\\[11px\\].tracking-\\[0\\.14em\\].uppercase",
+        ".in.reveal > .lg\\:items-end.lg\\:justify-between.lg\\:gap-16 > div > .mb-5.text-\\[11px\\].tracking-\\[0\\.14em\\]"
+      ]
+    },
+    {
+      "id": "meta-viewport",
+      "impact": "critical",
+      "help": "Zooming and scaling must not be disabled",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/meta-viewport?application=axeAPI",
+      "nodes": 1,
+      "sample": [
+        "meta[name=\"viewport\"]"
+      ]
+    }
+  ],
+  "passes": 34,
+  "incomplete": 1
+}

@@ -50,11 +50,12 @@ export const metadata: Metadata = {
   },
 }
 
+// Allow user-scaling for accessibility (axe: meta-viewport).
+// Prior version locked maximumScale=1 + userScalable=false; that's a
+// WCAG 2.1 AA failure for low-vision users who pinch-zoom.
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: '#08090a',
   viewportFit: 'cover',
 }

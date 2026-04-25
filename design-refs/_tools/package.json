@@ -1,1 +1,10 @@
-{ "name": "design-refs-tools", "private": true, "type": "module", "dependencies": { "playwright": "1.59.1" } }
+{
+  "name": "design-refs-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "playwright": "1.59.1",
+    "lighthouse": "^12.6.1",
+    "chrome-launcher": "^1.1.2"
+  }
+}

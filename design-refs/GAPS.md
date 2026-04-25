@@ -330,3 +330,21 @@ Two distinct shells in deploy: marketing shell (`/`, `/capabilities`, `/flow`, `
 ---
 
 **Total gaps: 142 · P0: 41 · P1: 64 · P2: 37 · file: `C:\Users\ritik\MINITIA\design-refs\GAPS.md`**
+
+---
+
+## Post-audit clarification (added 2026-04-25)
+
+The "routing bug" P0 finding for `/today`, `/chats`, `/settings` was a
+**false positive** caused by the audit harness having no wallet. These
+pages run a `useEffect` redirect to `/` when `!isConnected`. Headless
+Playwright captured the post-redirect landing page.
+
+**Actual behavior:** working as intended — the routes are wallet-gated.
+
+Removing these 3 from the P0 set: **41 → 38 P0**.
+
+This DOES surface a different concern: the audit harness needs a way to
+either set a session token or the routes need a "connect wallet" empty
+state visible without redirect, so unauthenticated visitors don't bounce
+to a marketing page. That's a P2 polish item — see `DEBT.md`.
