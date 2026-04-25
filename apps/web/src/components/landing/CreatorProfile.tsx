@@ -191,8 +191,9 @@ function LtLink({ children }: { children: ReactNode }) {
  * Active tab gets a foreground underline.
  */
 function ProfileTabs() {
+  // role="tablist" required so the role="tab" children pass aria-required-parent
   return (
-    <div className="mt-8 flex justify-center gap-5 border-b border-border">
+    <div role="tablist" aria-label="Profile sections" className="mt-8 flex justify-center gap-5 border-b border-border">
       <TabItem active>Recent activity</TabItem>
       <TabItem>Paywalls</TabItem>
       <TabItem>Subscribers · 128</TabItem>

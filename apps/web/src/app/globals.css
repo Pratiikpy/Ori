@@ -38,7 +38,7 @@
   --color-foreground:       #f4f4f6;                          /* was #f7f8f8 */
   --color-ink-2:            rgba(244, 244, 246, 0.66);        /* was 0.62 — small AA bump */
   --color-ink-3:            rgba(244, 244, 246, 0.50);        /* was 0.38 — AA fix */
-  --color-ink-4:            rgba(244, 244, 246, 0.30);        /* was 0.22 — AA on small mono */
+  --color-ink-4:            rgba(244, 244, 246, 0.45);        /* was 0.22 → 0.30 → 0.45 for normal-text AA on dark bg */
   --color-muted-foreground: rgba(244, 244, 246, 0.50);        /* alias of ink-3 */
 
   /* Accent — reference uses "soft electric indigo" + dark ink ON accent.
