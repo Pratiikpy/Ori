@@ -1,38 +1,35 @@
 'use client'
 
-import { Header } from './header'
-import { BottomNav } from './bottom-nav'
-
 /**
- * Shared chrome for every signed-in surface.
+ * Legacy AppShell — now a thin shim over the new app shell.
  *
- * Width is owned here, not by individual pages — pages render content;
- * this component centers it in a max-w-6xl column with consistent gutters.
- * Header is full-bleed (so the blurred sticky bar reaches edge-to-edge),
- * but its inner row is centered to the same max-width so the brand mark
- * lines up with the content column below it.
+ * Why: dozens of legacy pages import `{ AppShell }` from '@/components/app-shell'
+ * and pass `title` + `hideNav`. Rewriting all of them isn't worth it for the
+ * deadline. Instead, this file forwards to the new AppShell so every page
+ * renders under the same Apple-light chrome (sidebar + mobile drawer + ambient
+ * bg). Title is rendered as an h1 above the page body so the visual hierarchy
+ * still works. `hideNav` is intentionally ignored — the new chrome's sidebar
+ * is universally appropriate.
  */
+import { AppShell as NewAppShell } from './layout/app-shell'
+
 export function AppShell({
   title,
   children,
-  hideNav = false,
+  hideNav: _hideNav = false,
 }: {
   title?: string
   children: React.ReactNode
   hideNav?: boolean
 }) {
   return (
-    <div className="relative min-h-dvh flex flex-col backdrop-stars-quiet">
-      <div className="relative z-10 flex flex-col flex-1">
-        <Header title={title} />
-        <main
-          id="main-content"
-          className="flex-1 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 pb-24 lg:pb-8"
-        >
-          {children}
-        </main>
-        {!hideNav && <BottomNav />}
-      </div>
-    </div>
+    <NewAppShell>
+      {title && (
+        <h1 className="font-display font-medium text-ink leading-tight tracking-[-0.02em] mb-8 text-[32px] sm:text-[40px]">
+          {title}
+        </h1>
+      )}
+      {children}
+    </NewAppShell>
   )
 }
