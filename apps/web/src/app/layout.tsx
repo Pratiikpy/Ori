@@ -74,7 +74,10 @@ export default function RootLayout({
       lang="en"
       className={`${heavy.variable} ${body.variable} ${mono.variable} antialiased`}
     >
-      <body className="min-h-dvh bg-white text-[#0A0A0A]" style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <body
+        className="min-h-dvh bg-white text-[#0A0A0A]"
+        style={{ fontFamily: 'var(--font-body-fallback), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif' }}
+      >
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>

@@ -1,15 +1,11 @@
-/* @import url() must precede all other rules per CSS spec — Tailwind v4 +
-   Lightning CSS warns otherwise. Fonts go FIRST, then the framework. */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
-@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&display=swap');
 @import 'tailwindcss';
 
 /* ──────────────────────────────────────────────────────────────────────────
    ORI DESIGN SYSTEM — Emergent prototype 1:1.
 
    White canvas, ink #0A0A0A, accent #0022FF. Sharp 0-radius EVERYWHERE.
-   Cabinet Grotesk for headings, IBM Plex Sans body, JetBrains Mono numerics.
-   Hover = flat black inversion. Active card hover = chunky blue offset shadow.
+   Fonts come from next/font (layout.tsx) — IBM Plex Sans body, Archivo
+   Black headings (Cabinet Grotesk substitute), JetBrains Mono numerics.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
   /* Canvas */
@@ -28,11 +24,10 @@
   --color-line:             rgba(0, 0, 0, 0.10);
   --color-line-strong:      #0A0A0A;
 
-  /* Accent + state */
+  /* Accent */
   --color-accent:           #0022FF;
   --color-accent-hover:     #0019CC;
   --color-accent-soft:      rgba(0, 34, 255, 0.10);
-  --color-accent-text:      #FFFFFF;
 
   /* Semantic */
   --color-success:          #00C566;
@@ -40,14 +35,7 @@
   --color-warning:          #FFB800;
   --color-danger:           #DC2626;
 
-  /* Fonts (vars come from layout.tsx + Google Fonts above) */
-  --font-display: 'Cabinet Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --font-heavy:   'Cabinet Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --font-body:    'IBM Plex Sans',  ui-sans-serif, system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-
-  /* Sharp radii — prototype uses 0 EVERYWHERE. These exist only so legacy
-     callers that used `rounded-md` etc. don't visually drift. */
+  /* Sharp radii — 0 EVERYWHERE per prototype. */
   --radius-xs:   0;
   --radius-sm:   0;
   --radius-md:   0;
@@ -58,9 +46,6 @@
 
   /* Motion */
   --ease-std: cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Shadows — flat. Card-hover blue offset is hand-rolled in classes below. */
-  --shadow-card: none;
 }
 
 html {
@@ -68,81 +53,59 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color-scheme: light;
-  font-family: var(--font-body);
   text-rendering: optimizeLegibility;
 }
 
 body {
   margin: 0;
-  background: var(--color-bg);
-  color: var(--color-ink);
-  font-family: var(--font-body);
+  background: #FFFFFF;
+  color: #0A0A0A;
   overscroll-behavior-y: none;
 }
 
+/* Heavy display headings — Archivo Black via next/font CSS var. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  font-weight: 900;
+  font-family: var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400; /* Archivo Black ships only 400 */
   letter-spacing: -0.02em;
-  color: var(--color-ink);
+  color: #0A0A0A;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
    PROTOTYPE-SIGNATURE CLASSES
    ────────────────────────────────────────────────────────────────────────── */
+.shadow-blue-offset    { box-shadow: 4px 4px 0px 0px #0022FF; }
+.shadow-blue-offset-lg { box-shadow: 8px 8px 0px 0px #0022FF; }
 
-/* The chunky blue offset shadow that lifts active cards. Used on hover for
-   ActionCard and on selected thread tiles in Inbox. */
-.shadow-blue-offset {
-  box-shadow: 4px 4px 0px 0px var(--color-accent);
-}
-.shadow-blue-offset-lg {
-  box-shadow: 8px 8px 0px 0px var(--color-accent);
-}
-
-/* Mono utility */
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
 
-.font-display { font-family: var(--font-display); font-weight: 900; }
-.font-heavy   { font-family: var(--font-heavy);   font-weight: 900; }
-.font-mono    { font-family: var(--font-mono); }
+/* Family utility classes — alias next/font CSS vars. */
+.font-display { font-family: var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif; font-weight: 400; }
+.font-heavy   { font-family: var(--font-heavy-fallback), 'Archivo Black', ui-sans-serif, system-ui, sans-serif; font-weight: 400; }
+.font-mono    { font-family: var(--font-mono-fallback),  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; }
 
-/* Eyebrow — prototype uses uppercase tracked sans-serif (NOT mono) */
 .eyebrow {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.20em;
   text-transform: uppercase;
-  color: var(--color-ink-3);
+  color: #52525B;
 }
 
-/* Legacy compat — old AppShell shim still references these */
-.glass-card {
-  background: var(--color-bg-muted);
-  border: 1px solid var(--color-line);
-  border-radius: 0;
-}
-.glass-inner {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: 0;
-}
-.glass-sidebar {
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-line);
-}
-.bg-ambient {
-  background: var(--color-bg);
-}
+/* Legacy compat — older code references these. Map to new tokens. */
+.glass-card    { background: #F5F5F5; border: 1px solid rgba(0,0,0,0.10); border-radius: 0; }
+.glass-inner   { background: #FFFFFF; border: 1px solid rgba(0,0,0,0.10); border-radius: 0; }
+.glass-sidebar { background: #FFFFFF; border-right: 1px solid rgba(0,0,0,0.10); }
+.bg-ambient    { background: #FFFFFF; }
 
 /* ──────────────────────────────────────────────────────────────────────────
    FOCUS, A11Y, SCROLLBAR
    ────────────────────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid #0022FF;
   outline-offset: 2px;
 }
 
@@ -151,7 +114,7 @@ h1, h2, h3, h4, h5, h6 {
   top: -100px;
   left: 16px;
   z-index: 100;
-  background: var(--color-ink);
+  background: #0A0A0A;
   color: #fff;
   padding: 0.5rem 1rem;
   font-weight: 700;
