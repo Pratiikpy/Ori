@@ -19,21 +19,14 @@
 import type { ActionDef } from '@/components/ui/action-card'
 import { msgSendPayment, msgTip } from '@/lib/contracts'
 
-// Loose shape — useInterwovenKit() exposes ~20 methods (requestTxSync,
-// requestTxBlock, simulateTx, etc.). We only need a couple here, but
-// typing the whole bag is brittle, so we accept the full hook return
-// (any) and reach for what we use.
-//
-// In practice the call site just passes `interwoven` straight from
-// `useInterwovenKit()` and we pick the methods we need at runtime.
+// Loose shape — useInterwovenKit() exposes ~20 methods with their own
+// internal `TxRequest` / `SimulateResponse` types we don't want to
+// re-import here. We trust the runtime shape and use minimal compile-
+// time guarantees on the two fields we actually read.
 export type InterwovenSignerLike = {
   initiaAddress?: string | null
   username?: string | null
-  requestTxSync?: (req: unknown) => Promise<{ transactionHash: string }>
-  requestTxBlock?: (req: unknown) => Promise<{ transactionHash: string }>
-  // Allow anything else the hook returns — we don't constrain it here.
-  [key: string]: unknown
-}
+} & Record<string, unknown>
 
 const INIT_DECIMALS = 6
 const toBaseUnits = (initAmount: string): bigint => {
@@ -53,6 +46,22 @@ const requireConnected = (signer: InterwovenSignerLike): string => {
     throw new Error('Connect your wallet first')
   }
   return signer.initiaAddress
+}
+
+/**
+ * Dispatch a tx through the interwoven hook. The hook's `requestTxSync`
+ * accepts a TxRequest internally; we don't import that type to keep this
+ * file decoupled. Cast to a callable and call it with the message array.
+ */
+async function dispatchTx(
+  signer: InterwovenSignerLike,
+  messages: Array<{ typeUrl: string; value: unknown }>,
+): Promise<void> {
+  const fn = signer.requestTxSync as undefined | ((req: { messages: typeof messages }) => Promise<unknown>)
+  if (typeof fn !== 'function') {
+    throw new Error('Wallet not ready — please reconnect.')
+  }
+  await fn({ messages })
 }
 
 export async function runAction(
@@ -75,8 +84,7 @@ export async function runAction(
         memo,
         chatId: '',
       })
-      if (!signer.requestTxSync) throw new Error('Wallet not ready for tx')
-      await signer.requestTxSync({ messages: [msg] })
+      await dispatchTx(signer, [msg])
       return
     }
     case 'tip-creator': {
@@ -84,8 +92,7 @@ export async function runAction(
       const amount  = need(values, 'Amount')
       const message = values['Public message'] ?? ''
       const msg = msgTip({ sender, creator, amount: toBaseUnits(amount), message })
-      if (!signer.requestTxSync) throw new Error('Wallet not ready for tx')
-      await signer.requestTxSync({ messages: [msg] })
+      await dispatchTx(signer, [msg])
       return
     }
 
