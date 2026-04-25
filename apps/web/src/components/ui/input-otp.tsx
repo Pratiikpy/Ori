@@ -31,7 +31,10 @@ const InputOTPSlot = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement> & { index: number }
 >(({ index, className, ...props }, ref) => {
   const inputOTPContext = React.useContext(OTPInputContext)
-  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index]
+  // noUncheckedIndexedAccess in our tsconfig flags the bare index access;
+  // input-otp guarantees slots[index] is defined when 0 <= index < maxLength,
+  // which is the contract callers honour. Assertion matches shadcn-canonical.
+  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index]!
 
   return (
     <div
