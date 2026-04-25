@@ -1,276 +1,218 @@
 'use client'
 
 /**
- * /money — Money surface.
+ * /money — Money surface, ported 1:1 from prototype Money.jsx.
  *
- * Header layout (matches Emergent prototype):
+ * Layout:
+ *   • Top grid (4-col): black total card (col-span-2) + agent cap card +
+ *     gift visual card
+ *   • Stat row (4 tiles): Sent / Received / Tips received / Tips given
+ *   • Tabs (Payments / Gifts / Streams / Subscriptions / Paywalls / Sponsor)
+ *   • Per-tab summary banner + ActionCard grid
  *
- *   ┌─────────────────────────────────┐ ┌──────────────────────┐ ┌──────┐
- *   │ TOTAL WALLET                    │ │ AGENT DAILY CAP      │ │ image│
- *   │ 12,480.45 INIT                  │ │ 250 INIT             │ │ tile │
- *   │ description copy                │ │ ▰▰▱▱▱▱▱▱▱▱            │ │      │
- *   └─────────────────────────────────┘ └──────────────────────┘ └──────┘
- *
- * Stat row: INIT / USDC / Streams / Paywalls (4 tiles)
- * Tabs: Payments | Gifts | Streams | Subscriptions | Paywalls | Sponsor
- * Body: feature card grid (FlowCard components routing to legacy pages).
+ * No mocked numbers — the total card pulls volume from /v1/portfolio,
+ * stats use the same response, agent cap shows weekly agent spend from
+ * /v1/profiles/:address/weekly-stats, gift visual is CSS only.
  */
 import * as React from 'react'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useQuery } from '@tanstack/react-query'
 import { AppShell } from '@/components/layout/app-shell'
-import { FlowCard } from '@/components/ui/flow-card'
-import { getPortfolio, getSponsorStatus, getWeeklyStats } from '@/lib/api'
-import { Icon } from '@/components/ui/icon'
-
-type Tab = 'payments' | 'gifts' | 'streams' | 'subscriptions' | 'paywalls' | 'sponsor'
-
-const TABS: { id: Tab; label: string; subtitle: string }[] = [
-  { id: 'payments',     label: 'Payments',      subtitle: 'Send, split, and tip from chat or profile surfaces.' },
-  { id: 'gifts',        label: 'Gifts',         subtitle: 'Directed, link-based, and group-claim gift packets.' },
-  { id: 'streams',      label: 'Streams',       subtitle: 'Per-second payment streams that vest as time passes.' },
-  { id: 'subscriptions',label: 'Subscriptions', subtitle: 'Recurring creator escrow with cancel-any-time.' },
-  { id: 'paywalls',     label: 'Paywalls',      subtitle: 'On-chain content unlocks payable by humans or agents.' },
-  { id: 'sponsor',      label: 'Sponsor',       subtitle: 'Gas + .init name sponsorship for first-time users.' },
-]
+import { ActionCard, type ActionDef } from '@/components/ui/action-card'
+import { ActionDialog } from '@/components/ui/action-dialog'
+import { getPortfolio, getWeeklyStats } from '@/lib/api'
+import { moneyTabs } from '@/lib/ori-data'
 
 export default function MoneyPage() {
-  const [tab, setTab] = React.useState<Tab>('payments')
+  const [activeTab, setActiveTab]   = React.useState(moneyTabs[0]!.id)
+  const [modalAction, setModalAction] = React.useState<ActionDef | null>(null)
   const { initiaAddress } = useInterwovenKit()
 
-  const { data: portfolio } = useQuery({
+  const portfolio = useQuery({
     queryKey: ['portfolio', initiaAddress],
     queryFn: () => getPortfolio(initiaAddress!),
     enabled: Boolean(initiaAddress),
-    staleTime: 15_000,
+    staleTime: 30_000,
   })
-
-  const { data: sponsor } = useQuery({
-    queryKey: ['sponsor-status'],
-    queryFn: getSponsorStatus,
+  const weekly = useQuery({
+    queryKey: ['weekly', initiaAddress],
+    queryFn: () => getWeeklyStats(initiaAddress!),
+    enabled: Boolean(initiaAddress),
     staleTime: 60_000,
   })
 
-  // INIT has 6 decimals on Initia. Volumes from API come as raw base-unit strings.
-  const tipsReceivedInit = Number(portfolio?.stats?.tipsReceivedVolume ?? '0') / 1e6
-  const tipsGivenInit    = Number(portfolio?.stats?.tipsGivenVolume    ?? '0') / 1e6
-  const totalInit  = tipsReceivedInit + tipsGivenInit
-  const paymentsSent     = portfolio?.stats?.paymentsSent     ?? 0
-  const paymentsReceived = portfolio?.stats?.paymentsReceived ?? 0
-  const tipsCount        = portfolio?.stats?.tipsReceived     ?? 0
+  const tipsReceivedInit = Number(portfolio.data?.stats?.tipsReceivedVolume ?? '0') / 1e6
+  const tipsGivenInit    = Number(portfolio.data?.stats?.tipsGivenVolume    ?? '0') / 1e6
+  const totalInit        = tipsReceivedInit + tipsGivenInit
+  const paymentsSent     = portfolio.data?.stats?.paymentsSent ?? 0
+  const paymentsReceived = portfolio.data?.stats?.paymentsReceived ?? 0
+  const agentSpendInit   = Number(weekly.data?.agentSpend?.totalBaseUnits ?? '0') / 1e6
+  const agentTxCount     = weekly.data?.agentSpend?.txCount ?? 0
+  const dailyCapPct      = Math.min(100, (agentSpendInit / 250) * 100)
+
+  const tab = moneyTabs.find((t) => t.id === activeTab)!
 
   return (
     <AppShell eyebrow="Money" title="Money surface">
-      {/* HEADLINE STRIP */}
-      <section className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-3">
-        {/* Total wallet — black card */}
-        <div className="bg-[var(--color-ink)] text-white rounded-md p-7 min-h-[180px] flex flex-col">
-          <span className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-white/55">
-            Total wallet
-          </span>
-          <div className="mt-3 font-mono tnum text-[32px] leading-tight">
-            {fmt(totalInit)} INIT
+      <section className="p-4 sm:p-6 lg:p-8">
+        {/* Headline strip */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+          <div className="border border-black/10 bg-black p-6 text-white lg:col-span-2">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">
+              Total wallet
+            </p>
+            <h2 className="mt-4 font-mono text-4xl font-black tracking-tight">
+              {fmt(totalInit)} INIT
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-white/70">
+              Live portfolio rolls up balances, paywalls, streams, tips, subscriptions, gifts, and sponsored gas readiness.
+            </p>
           </div>
-          <p className="mt-3 text-[13.5px] text-white/65 leading-[1.55] max-w-md">
-            Live portfolio rolls up balances, paywalls, streams, tips, subscriptions, gifts, and sponsored gas readiness.
-          </p>
-        </div>
-
-        {/* Agent daily cap */}
-        <div className="border border-[var(--color-line)] rounded-md p-6 min-h-[180px] flex flex-col">
-          <div className="flex items-center gap-2 text-[12px] text-[var(--color-accent)]">
-            <Icon name="lightning" size={14} />
-            <span className="font-mono tracking-[0.12em] uppercase">Agent daily cap</span>
+          <div className="border border-black/10 bg-white p-6">
+            <RadioGlyph />
+            <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
+              Agent daily cap
+            </p>
+            <p className="mt-2 font-mono text-2xl font-black">
+              {fmt(agentSpendInit)} / 250 INIT
+            </p>
+            <div className="mt-5 h-2 w-full bg-black/10">
+              <div className="h-full bg-[#0022FF]" style={{ width: `${dailyCapPct}%` }} />
+            </div>
+            <p className="mt-2 font-mono text-xs text-[#52525B]">
+              {agentTxCount} agent tx this week
+            </p>
           </div>
-          <CapBlock address={initiaAddress ?? null} />
+          <div className="overflow-hidden border border-black/10 bg-[#F5F5F5]">
+            <GiftArt />
+          </div>
         </div>
 
-        {/* Image / accent tile */}
-        <div className="rounded-md overflow-hidden bg-gradient-to-br from-[#E0E7FF] via-[#F0F4FF] to-[#FFFFFF] min-h-[180px] border border-[var(--color-line)]" />
-      </section>
-
-      {/* STAT ROW */}
-      <section className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatTile label="Tips received" value={`${fmt(tipsReceivedInit)} INIT`} delta={`${tipsCount} tips`} />
-        <StatTile label="Tips given"    value={`${fmt(tipsGivenInit)} INIT`}    delta="" />
-        <StatTile label="Sent"          value={paymentsSent.toString()}         delta={`${paymentsSent} tx`} />
-        <StatTile label="Received"      value={paymentsReceived.toString()}     delta={`${paymentsReceived} tx`} trendUp />
-      </section>
-
-      {/* TABS */}
-      <section className="mt-8 border-b border-[var(--color-line)] flex items-center gap-1 overflow-x-auto">
-        {TABS.map((t) => {
-          const active = t.id === tab
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={[
-                'shrink-0 h-10 px-4 text-[13px] font-medium transition rounded-t-md cursor-pointer',
-                active
-                  ? 'bg-[var(--color-accent)] text-white'
-                  : 'text-ink-2 hover:text-ink hover:bg-[var(--color-surface-hover)]',
-              ].join(' ')}
-            >
-              {t.label}
-            </button>
-          )
-        })}
-      </section>
-
-      {/* SUBTITLE */}
-      <section className="mt-6 border border-[var(--color-line)] rounded-md p-5 flex items-center justify-between gap-3 bg-[var(--color-bg-muted)]">
-        <div>
-          <span className="eyebrow">{tab.toUpperCase()}</span>
-          <h2 className="mt-1 font-display font-bold text-[20px] leading-tight text-ink">
-            {TABS.find((t) => t.id === tab)?.subtitle}
-          </h2>
+        {/* Stat row */}
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <PortfolioTile label="Tips received" amount={`${fmt(tipsReceivedInit)} INIT`} sub={`${portfolio.data?.stats?.tipsReceived ?? 0} tips`} />
+          <PortfolioTile label="Tips given"    amount={`${fmt(tipsGivenInit)} INIT`}    sub="" />
+          <PortfolioTile label="Sent"          amount={paymentsSent.toString()}         sub={`${paymentsSent} tx`} />
+          <PortfolioTile label="Received"      amount={paymentsReceived.toString()}     sub={`${paymentsReceived} tx`} />
         </div>
-        <span className="hidden md:inline-flex items-center gap-1.5 text-[13px] text-[var(--color-accent)] font-medium">
-          {flowCount(tab)} flows
-          <Icon name="arrow-up" size={14} />
-        </span>
-      </section>
 
-      {/* FLOW GRID */}
-      <section className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {tab === 'payments' && (
-          <>
-            <FlowCard module="payment_router.move" title="Send payment"   description="Recipient .init or address. Amount. Memo." href="/send" />
-            <FlowCard module="payment_router.move" title="Bulk send"      description="Recipients CSV. Total amount. Split rule." href="/send/bulk" />
-            <FlowCard module="tip_jar.move"        title="Tip a creator"  description="Creator .init. Amount. Public message." href="/send" />
-          </>
-        )}
-        {tab === 'gifts' && (
-          <>
-            <FlowCard module="gift_packet.move" title="Create directed gift" description="To a specific recipient. Lockable + reclaimable." href="/gift/new" />
-            <FlowCard module="gift_packet.move" title="Create link gift"     description="Sharable claim URL — anyone with the link can redeem." href="/gift/new" />
-            <FlowCard module="gift_group.move"  title="Group gift"           description="Pool with N slots. First N claimers win." href="/gift/new" />
-            <FlowCard module="gift_box_catalog.move" title="Register gift box" description="Pre-funded gift template you can hand out." href="/gift" />
-            <FlowCard module="gift_packet.move"  title="Reclaim expired gift" description="Sweep funds back from a never-claimed gift." href="/gift" />
-          </>
-        )}
-        {tab === 'streams' && (
-          <>
-            <FlowCard module="payment_stream.move" title="Open stream"     description="Per-second payments to a recipient over a duration." href="/streams" />
-            <FlowCard module="payment_stream.move" title="Withdraw vested" description="Pull whatever has vested so far." href="/streams" />
-            <FlowCard module="payment_stream.move" title="Close stream"    description="End the stream and refund the unvested portion." href="/streams" />
-          </>
-        )}
-        {tab === 'subscriptions' && (
-          <>
-            <FlowCard module="subscription_vault.move" title="Register plan"        description="Creator-side: define price + period for subscribers." href="/subscriptions" />
-            <FlowCard module="subscription_vault.move" title="Subscribe"            description="User-side: lock funds for a recurring window." href="/subscriptions" />
-            <FlowCard module="subscription_vault.move" title="Release period"       description="Creator pulls one period's worth of escrow." href="/subscriptions" />
-            <FlowCard module="subscription_vault.move" title="Cancel subscription"  description="Stop the recurrence. Refund logic per plan." href="/subscriptions" />
-            <FlowCard module="subscription_vault.move" title="Deactivate plan"      description="Stop new subscriptions to a plan you own." href="/subscriptions" />
-          </>
-        )}
-        {tab === 'paywalls' && (
-          <>
-            <FlowCard module="paywall.move" title="Create paywall"     description="Lock content behind an INIT price tag." href="/paywall/new" />
-            <FlowCard module="paywall.move" title="Purchase paywall"   description="Pay to unlock — humans or agents." href="/paywall/mine" />
-            <FlowCard module="paywall.move" title="Deactivate paywall" description="Stop sales to one of your paywalls." href="/paywall/mine" />
-            <FlowCard module="merchant_registry.move" title="Register merchant" description="Become an x402-payable merchant." href="/paywall/mine" />
-          </>
-        )}
-        {tab === 'sponsor' && (
-          <>
-            <FlowCard
-              module="sponsor.api"
-              title="Claim seed payment"
-              description={sponsor?.enabled ? `Sponsor active — up to ${(sponsor.seedAmountUmin / 1e6).toFixed(2)} INIT.` : 'Sponsor not enabled in this environment.'}
-              href="/onboard"
-              ctaLabel={sponsor?.enabled ? 'Claim now' : 'View status'}
-            />
-            <FlowCard
-              module="sponsor.api"
-              title="Sponsored .init name"
-              description="Pre-funded username registration — first-time only."
-              href="/onboard"
-            />
-          </>
-        )}
+        {/* Tabs */}
+        <div className="mt-8">
+          <div className="flex h-auto w-full flex-wrap justify-start border border-black/10 bg-white">
+            {moneyTabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                className={[
+                  'border-r border-black/10 px-4 py-3 text-sm font-semibold transition cursor-pointer',
+                  t.id === activeTab
+                    ? 'bg-[#0022FF] text-white'
+                    : 'bg-white text-[#0A0A0A] hover:bg-[#F5F5F5]',
+                ].join(' ')}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab summary banner */}
+          <div className="mt-4 flex flex-col justify-between gap-3 border border-black/10 bg-[#F5F5F5] p-5 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">{tab.label}</p>
+              <h2 className="font-display text-2xl font-black tracking-tight sm:text-3xl">
+                {tab.summary}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-sm text-[#0022FF]">
+              {tab.actions.length} flows
+              <WalletGlyph />
+            </div>
+          </div>
+
+          {/* Action grid */}
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {tab.actions.map((action) => (
+              <ActionCard
+                key={action.id}
+                scope={`money-${tab.id}`}
+                action={action}
+                onOpen={setModalAction}
+              />
+            ))}
+          </div>
+        </div>
+
+        <ActionDialog action={modalAction} onClose={() => setModalAction(null)} />
       </section>
     </AppShell>
   )
 }
 
-/* ─────────────────────────────────────────────────────────────────── */
+/* ───────────────── Helpers ───────────────── */
 
-function CapBlock({ address }: { address: string | null }) {
-  // Weekly agent spend rolls up activity even before a per-agent policy is
-  // configured. The actual on-chain dailyCap requires (owner, agent) pair —
-  // we don't show that here because /money has no agent context.
-  const { data: weekly } = useQuery({
-    queryKey: ['weekly-stats', address],
-    queryFn: () => getWeeklyStats(address!),
-    enabled: Boolean(address),
-    staleTime: 60_000,
-  })
-
-  const spentBaseUnits = weekly?.agentSpend?.totalBaseUnits ?? '0'
-  const spentInit = Number(spentBaseUnits) / 1e6 // INIT has 6 decimals
-  const txCount = weekly?.agentSpend?.txCount ?? 0
-
+function PortfolioTile({ label, amount, sub }: { label: string; amount: string; sub: string }) {
   return (
-    <>
-      <div className="mt-3 font-mono tnum text-[26px] leading-tight text-ink">
-        {spentInit.toFixed(2)} INIT
+    <article className="border border-black/10 bg-white p-5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-display text-xl font-bold">{label}</p>
+        <span className="flex items-center gap-1 font-mono text-xs text-[#0022FF]">
+          live
+          <UpRightGlyph />
+        </span>
       </div>
-      <div className="mt-auto h-1.5 rounded-full bg-[var(--color-bg-muted)] overflow-hidden">
-        <div className="h-full bg-[var(--color-ink)]" style={{ width: `${Math.min(100, spentInit / 250 * 100)}%` }} />
-      </div>
-      <span className="mt-2 text-[11.5px] text-ink-3 font-mono">
-        {txCount} tx this week · agent spend
-      </span>
-    </>
+      <p className="mt-4 font-mono text-2xl font-black tnum">{amount}</p>
+      {sub && <p className="mt-1 font-mono text-xs text-[#52525B]">{sub}</p>}
+    </article>
   )
 }
 
-function StatTile({
-  label,
-  value,
-  delta,
-  trendUp,
-}: {
-  label: string
-  value: string
-  delta?: string
-  trendUp?: boolean
-}) {
+function fmt(n: number): string {
+  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function RadioGlyph() {
   return (
-    <div className="border border-[var(--color-line)] rounded-md bg-white p-4 min-h-[100px]">
-      <div className="flex items-start justify-between">
-        <span className="font-mono text-[11px] tracking-[0.12em] uppercase text-ink-3">
-          {label}
-        </span>
-        {delta && (
-          <span className={`font-mono text-[11px] ${trendUp ? 'text-[var(--color-success)]' : 'text-ink-3'}`}>
-            {delta}
-          </span>
-        )}
-      </div>
-      <div className="mt-3 font-mono tnum text-[22px] font-medium text-ink">
-        {value}
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0022FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+      <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" />
+      <circle cx="12" cy="12" r="2" />
+      <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5" />
+      <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
+    </svg>
+  )
+}
+
+function WalletGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <path d="M2 10h20" />
+    </svg>
+  )
+}
+
+function UpRightGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 7h10v10" />
+      <path d="M7 17 17 7" />
+    </svg>
+  )
+}
+
+/** GiftArt — replaces the prototype's external gift photo. Bold geometric
+ * gift box illustration in CSS, no image dep. */
+function GiftArt() {
+  return (
+    <div className="relative h-full min-h-48 w-full bg-gradient-to-br from-[#FFE3A1] via-[#FFF1D0] to-[#F5F5F5]">
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative">
+          <div className="h-28 w-28 border-2 border-[#0A0A0A] bg-white" />
+          <div className="absolute left-1/2 top-0 h-28 w-2 -translate-x-1/2 bg-[#0022FF]" />
+          <div className="absolute left-0 top-1/2 h-2 w-28 -translate-y-1/2 bg-[#0022FF]" />
+        </div>
       </div>
     </div>
   )
-}
-
-function fmt(n: number | bigint): string {
-  const num = typeof n === 'bigint' ? Number(n) : n
-  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function flowCount(t: Tab): number {
-  switch (t) {
-    case 'payments':      return 3
-    case 'gifts':         return 5
-    case 'streams':       return 3
-    case 'subscriptions': return 5
-    case 'paywalls':      return 4
-    case 'sponsor':       return 2
-  }
 }
