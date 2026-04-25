@@ -148,6 +148,40 @@ body {
   100% { transform: translateX(0%);  width: 20%; }
 }
 
+/* Avatar ring-pulse — used on `.avatar.ring` (active chat indicator).
+   Reference lines ~309–313. */
+@keyframes ori-ring-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 0.9; transform: scale(1.04); }
+}
+
+/* Keypad blinking cursor — 1s cycle, 50% off, 50% on.
+   Reference lines ~1014. */
+@keyframes ori-blink {
+  50% { opacity: 0; }
+}
+
+/* Pay-card spring entry — used inline by LiveDeviceChat (Framer-driven)
+   but we ship the CSS keyframe too so any non-FM use falls back cleanly.
+   Reference lines ~358–361. */
+@keyframes ori-card-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* StreamProgress bar fill — runs once on view. Reference lines ~995–998. */
+@keyframes ori-fill-up {
+  from { width: 10%; }
+  to   { width: 68%; }
+}
+
+/* Helpers so primitives can opt in via simple class names. */
+.anim-ring-pulse { animation: ori-ring-pulse 1.8s ease-in-out infinite; }
+.anim-blink      { animation: ori-blink 1s steps(2) infinite; }
+.anim-card-in    { animation: ori-card-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.anim-fill-up    { animation: ori-fill-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.anim-motion-slide { animation: ori-motion-slide 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite; }
+
 /* ──────────────────────────────────────────────────────────────────────────
    AMBIENT BACKDROP
    Three stacked radial gradients + a tiny-star field. Same trick as your
@@ -339,4 +373,23 @@ select:focus-visible,
     scroll-behavior: auto !important;
   }
   .reveal { opacity: 1; transform: none; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PRINT — minimal but coherent.
+   - Drop the ambient backdrop layers (no point on paper)
+   - Force black ink + white background for body copy
+   - Hide chrome that doesn't belong in print: nav, footer status pulse,
+     auto-sign toggle, bottom tab bar
+   - Allow link URLs to be inferred via [href] inline expansion
+   ────────────────────────────────────────────────────────────────────────── */
+@media print {
+  body { background: #fff !important; color: #111 !important; }
+  body::before, body::after { display: none !important; }
+  .backdrop-stars::before, .backdrop-stars::after,
+  .backdrop-stars-quiet::before, .backdrop-stars-quiet::after { display: none !important; }
+  nav, .topbar, footer, [data-print-hide] { display: none !important; }
+  a[href]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #555; }
+  a[href^="#"]::after, a[href^="javascript:"]::after { content: ''; }
+  .reveal { opacity: 1 !important; transform: none !important; }
 }
