@@ -19,10 +19,20 @@
 import type { ActionDef } from '@/components/ui/action-card'
 import { msgSendPayment, msgTip } from '@/lib/contracts'
 
-export interface InterwovenSignerLike {
-  initiaAddress: string | null | undefined
-  username: string | null | undefined
-  sendTx: (params: { messages: Array<{ typeUrl: string; value: unknown }> }) => Promise<{ transactionHash: string }>
+// Loose shape — useInterwovenKit() exposes ~20 methods (requestTxSync,
+// requestTxBlock, simulateTx, etc.). We only need a couple here, but
+// typing the whole bag is brittle, so we accept the full hook return
+// (any) and reach for what we use.
+//
+// In practice the call site just passes `interwoven` straight from
+// `useInterwovenKit()` and we pick the methods we need at runtime.
+export type InterwovenSignerLike = {
+  initiaAddress?: string | null
+  username?: string | null
+  requestTxSync?: (req: unknown) => Promise<{ transactionHash: string }>
+  requestTxBlock?: (req: unknown) => Promise<{ transactionHash: string }>
+  // Allow anything else the hook returns — we don't constrain it here.
+  [key: string]: unknown
 }
 
 const INIT_DECIMALS = 6
@@ -65,7 +75,8 @@ export async function runAction(
         memo,
         chatId: '',
       })
-      await signer.sendTx({ messages: [msg] })
+      if (!signer.requestTxSync) throw new Error('Wallet not ready for tx')
+      await signer.requestTxSync({ messages: [msg] })
       return
     }
     case 'tip-creator': {
@@ -73,7 +84,8 @@ export async function runAction(
       const amount  = need(values, 'Amount')
       const message = values['Public message'] ?? ''
       const msg = msgTip({ sender, creator, amount: toBaseUnits(amount), message })
-      await signer.sendTx({ messages: [msg] })
+      if (!signer.requestTxSync) throw new Error('Wallet not ready for tx')
+      await signer.requestTxSync({ messages: [msg] })
       return
     }
 
