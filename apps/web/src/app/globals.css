@@ -1,70 +1,64 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&display=swap');
 
 /* ──────────────────────────────────────────────────────────────────────────
-   ORI DESIGN SYSTEM — Emergent prototype parity.
+   ORI DESIGN SYSTEM — Emergent prototype 1:1.
 
-   Pure white canvas, pure black ink, electric blue accent. Sharp borders,
-   small radius, no glassmorphism. Heavy bold display type for headings.
-   Monospace for eyebrows + numeric values. Black solid-fill primary
-   buttons. White outlined secondary. Single visual language end-to-end.
+   White canvas, ink #0A0A0A, accent #0022FF. Sharp 0-radius EVERYWHERE.
+   Cabinet Grotesk for headings, IBM Plex Sans body, JetBrains Mono numerics.
+   Hover = flat black inversion. Active card hover = chunky blue offset shadow.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
   /* Canvas */
   --color-bg:               #FFFFFF;
-  --color-bg-muted:         #FAFAFA;
-  --color-bg-elevated:      #FFFFFF;
+  --color-bg-muted:         #F5F5F5;
   --color-surface:          #FFFFFF;
-  --color-surface-hover:    #F5F5F5;
-  --color-surface-pressed:  #EBEBEB;
 
   /* Ink */
-  --color-ink:              #0A0A0B;
-  --color-ink-2:            #404044;
-  --color-ink-3:            #6E6E76;
-  --color-ink-4:            #9C9CA3;
+  --color-ink:              #0A0A0A;
+  --color-ink-2:            #2A2A2E;
+  --color-ink-3:            #52525B;
+  --color-ink-4:            #8A8A92;
   --color-ink-5:            #C9C9CF;
 
   /* Borders */
-  --color-line:             #E5E5E7;
-  --color-line-strong:      #D4D4D8;
-  --color-line-emphasis:    #A1A1AA;
+  --color-line:             rgba(0, 0, 0, 0.10);
+  --color-line-strong:      #0A0A0A;
 
-  /* Accent — electric saturated blue (Emergent tone) */
-  --color-accent:           #1747FB;
-  --color-accent-hover:     #0F36D8;
-  --color-accent-soft:      rgba(23, 71, 251, 0.10);
+  /* Accent + state */
+  --color-accent:           #0022FF;
+  --color-accent-hover:     #0019CC;
+  --color-accent-soft:      rgba(0, 34, 255, 0.10);
   --color-accent-text:      #FFFFFF;
 
   /* Semantic */
-  --color-success:          #16A34A;
-  --color-success-soft:     rgba(22, 163, 74, 0.10);
-  --color-warning:          #B45309;
-  --color-warning-soft:     rgba(180, 83, 9, 0.10);
+  --color-success:          #00C566;
+  --color-success-bold:     #00A858;
+  --color-warning:          #FFB800;
   --color-danger:           #DC2626;
-  --color-danger-soft:      rgba(220, 38, 38, 0.10);
 
-  /* Fonts (vars come from layout.tsx) */
-  --font-display: var(--font-display);
-  --font-heavy:   var(--font-heavy);
-  --font-body:    var(--font-body);
-  --font-mono:    var(--font-mono);
+  /* Fonts (vars come from layout.tsx + Google Fonts above) */
+  --font-display: 'Cabinet Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-heavy:   'Cabinet Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body:    'IBM Plex Sans',  ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Radii — sharp / small. Cards 8-12px, pills full. */
-  --radius-xs:  4px;
-  --radius-sm:  6px;
-  --radius-md:  8px;
-  --radius-lg:  10px;
-  --radius-xl:  12px;
-  --radius-2xl: 14px;
+  /* Sharp radii — prototype uses 0 EVERYWHERE. These exist only so legacy
+     callers that used `rounded-md` etc. don't visually drift. */
+  --radius-xs:   0;
+  --radius-sm:   0;
+  --radius-md:   0;
+  --radius-lg:   0;
+  --radius-xl:   0;
+  --radius-2xl:  0;
   --radius-full: 9999px;
 
   /* Motion */
-  --ease-std:    cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-std: cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Shadows — minimal */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-lift: 0 4px 16px rgba(0, 0, 0, 0.06);
+  /* Shadows — flat. Card-hover blue offset is hand-rolled in classes below. */
+  --shadow-card: none;
 }
 
 html {
@@ -72,98 +66,67 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color-scheme: light;
-  font-family: var(--font-body), ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-family: var(--font-body);
   text-rendering: optimizeLegibility;
 }
 
 body {
+  margin: 0;
   background: var(--color-bg);
   color: var(--color-ink);
+  font-family: var(--font-body);
   overscroll-behavior-y: none;
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Headings — heavy bold display face. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display), ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: var(--font-display);
+  font-weight: 900;
   letter-spacing: -0.02em;
   color: var(--color-ink);
-  font-weight: 700;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   SHARED COMPONENT CLASSES
+   PROTOTYPE-SIGNATURE CLASSES
    ────────────────────────────────────────────────────────────────────────── */
 
-/* Surface card — sharp white, 1px border, no shadow by default. */
-.surface-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+/* The chunky blue offset shadow that lifts active cards. Used on hover for
+   ActionCard and on selected thread tiles in Inbox. */
+.shadow-blue-offset {
+  box-shadow: 4px 4px 0px 0px var(--color-accent);
+}
+.shadow-blue-offset-lg {
+  box-shadow: 8px 8px 0px 0px var(--color-accent);
 }
 
-/* Black solid pill button — primary. */
-.btn-primary {
-  background: var(--color-ink);
-  color: #FFFFFF;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
-  transition: opacity 150ms var(--ease-std), transform 150ms var(--ease-std);
-}
-.btn-primary:hover  { opacity: 0.85; }
-.btn-primary:active { transform: scale(0.98); }
-
-/* Blue accent pill button. */
-.btn-accent {
-  background: var(--color-accent);
-  color: var(--color-accent-text);
-  border-radius: var(--radius-sm);
-  font-weight: 500;
-  transition: background 150ms var(--ease-std);
-}
-.btn-accent:hover { background: var(--color-accent-hover); }
-
-/* White outlined secondary. */
-.btn-outline {
-  background: var(--color-surface);
-  color: var(--color-ink);
-  border: 1px solid var(--color-line-strong);
-  border-radius: var(--radius-sm);
-  font-weight: 500;
-  transition: background 150ms var(--ease-std);
-}
-.btn-outline:hover { background: var(--color-surface-hover); }
-
-/* Eyebrow — tiny mono uppercase tracked. Replaces the .eyebrow style. */
-.eyebrow {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-ink-3);
-}
-
-/* Tabular numerals — for INIT amounts, balances, etc. */
+/* Mono utility */
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
 
-.font-display { font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif; }
-.font-heavy   { font-family: var(--font-heavy),   ui-sans-serif, system-ui, sans-serif; font-weight: 400; }
-.font-mono    { font-family: var(--font-mono),    ui-monospace, 'SF Mono', Menlo, monospace; }
+.font-display { font-family: var(--font-display); font-weight: 900; }
+.font-heavy   { font-family: var(--font-heavy);   font-weight: 900; }
+.font-mono    { font-family: var(--font-mono); }
 
-/* Legacy compat — old code still references these. Map to new tokens. */
-.glass-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+/* Eyebrow — prototype uses uppercase tracked sans-serif (NOT mono) */
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
 }
-.glass-inner {
+
+/* Legacy compat — old AppShell shim still references these */
+.glass-card {
   background: var(--color-bg-muted);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
+}
+.glass-inner {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 0;
 }
 .glass-sidebar {
   background: var(--color-surface);
@@ -179,16 +142,6 @@ h1, h2, h3, h4, h5, h6 {
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-  border-radius: 4px;
-}
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
-[role='button']:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
 }
 
 .skip-to-content {
@@ -199,20 +152,15 @@ select:focus-visible,
   background: var(--color-ink);
   color: #fff;
   padding: 0.5rem 1rem;
-  text-decoration: none;
-  border-radius: var(--radius-md);
-  font-weight: 500;
+  font-weight: 700;
 }
 .skip-to-content:focus { top: 16px; }
 
 @media (pointer: fine) {
   ::-webkit-scrollbar       { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.18);
-    border-radius: 4px;
-  }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.28); }
+  ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.18); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.32); }
 }
 
 @media (max-width: 640px) {
@@ -221,11 +169,8 @@ select:focus-visible,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
