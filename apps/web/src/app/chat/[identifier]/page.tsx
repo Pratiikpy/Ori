@@ -15,8 +15,12 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
+import { ArrowRight, DollarSign, MessageSquare, Zap } from 'lucide-react'
+
 import { AppShell } from '@/components/layout/app-shell'
-import { Avatar, Button, GlassCard, Icon } from '@/components/ui'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { useSession } from '@/hooks/use-session'
 import { useResolve } from '@/hooks/use-resolve'
 
@@ -25,7 +29,7 @@ export default function ChatThreadPage() {
   const params = useParams<{ identifier: string }>()
   const identifier = decodeURIComponent(params.identifier ?? '')
   const { isConnected } = useInterwovenKit()
-  const { isAuthenticated, status } = useSession()
+  const { status } = useSession()
   const { data: resolved } = useResolve(identifier || null)
 
   React.useEffect(() => {
@@ -45,9 +49,11 @@ export default function ChatThreadPage() {
           className="w-10 h-10 inline-flex items-center justify-center rounded-full bg-white/60 border border-black/5 hover:bg-white/80 transition"
           aria-label="Back to chats"
         >
-          <Icon name="arrow-right" size={16} className="text-ink-2 rotate-180" />
+          <ArrowRight className="w-4 h-4 text-ink-2 rotate-180" />
         </Link>
-        <Avatar seed={counterAddr ?? identifier} initial={display[0]} size="lg" />
+        <Avatar className="w-12 h-12">
+          <AvatarFallback>{display[0]?.toUpperCase() ?? '?'}</AvatarFallback>
+        </Avatar>
         <div className="flex-1 min-w-0">
           <h1 className="text-[20px] font-display font-medium text-ink leading-tight tracking-[-0.01em] truncate">
             {display}
@@ -59,13 +65,12 @@ export default function ChatThreadPage() {
           )}
         </div>
         <Button
-          variant="primary"
           size="sm"
-          leadingIcon="dollar"
           onClick={() =>
             router.push(`/send?to=${encodeURIComponent(identifier)}`)
           }
         >
+          <DollarSign className="w-4 h-4" />
           Send
         </Button>
       </div>
@@ -114,19 +119,21 @@ function ThreadBody({ counterAddr }: { counterAddr: string | null }) {
 
   if (!data || data.messages.length === 0) {
     return (
-      <GlassCard padding="lg" className="mt-8">
-        <div className="flex flex-col items-center text-center py-6">
-          <div className="w-12 h-12 rounded-full bg-white/80 border border-black/5 inline-flex items-center justify-center mb-4">
-            <Icon name="chats" size={20} className="text-ink-3" />
+      <Card className="mt-8">
+        <CardContent className="p-8">
+          <div className="flex flex-col items-center text-center py-6">
+            <div className="w-12 h-12 rounded-full bg-white/80 border border-black/5 inline-flex items-center justify-center mb-4">
+              <MessageSquare className="w-5 h-5 text-ink-3" />
+            </div>
+            <h3 className="text-[18px] font-display font-medium text-ink leading-tight">
+              New conversation
+            </h3>
+            <p className="mt-2 max-w-sm text-[13.5px] text-ink-3 leading-[1.55]">
+              Send a payment to start the thread. Both sides see the card the moment it lands.
+            </p>
           </div>
-          <h3 className="text-[18px] font-display font-medium text-ink leading-tight">
-            New conversation
-          </h3>
-          <p className="mt-2 max-w-sm text-[13.5px] text-ink-3 leading-[1.55]">
-            Send a payment to start the thread. Both sides see the card the moment it lands.
-          </p>
-        </div>
-      </GlassCard>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -144,7 +151,7 @@ function Composer({ onSend }: { onSend: () => void }) {
           aria-label="Send payment"
           className="w-11 h-11 inline-flex items-center justify-center rounded-full bg-[#1D1D1F] text-white hover:bg-black active:scale-95 transition shrink-0"
         >
-          <Icon name="dollar" size={18} weight="bold" />
+          <DollarSign className="w-[18px] h-[18px]" strokeWidth={2.25} />
         </button>
         <div className="flex-1 px-3 text-[14px] text-ink-3">
           Tap{' '}
@@ -156,7 +163,7 @@ function Composer({ onSend }: { onSend: () => void }) {
           aria-label="Voice"
           className="w-11 h-11 inline-flex items-center justify-center rounded-full bg-black/5 text-ink-3 hover:bg-black/10 transition shrink-0"
         >
-          <Icon name="lightning" size={18} />
+          <Zap className="w-[18px] h-[18px]" />
         </button>
       </div>
     </div>

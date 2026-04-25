@@ -13,16 +13,11 @@ import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
 import { ShieldCheck, ThumbsDown, ThumbsUp, Undo2, X } from 'lucide-react'
 
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Eyebrow,
-  Field,
-  Input,
-  Textarea,
-} from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import { ORI_CHAIN_ID } from '@/lib/chain-config'
 import {
@@ -118,7 +113,9 @@ export function ReputationPanel({ target, targetDisplayName }: ReputationPanelPr
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <Eyebrow>Reputation</Eyebrow>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-mono">
+            Reputation
+          </div>
           <button
             onClick={() => setAttestOpen((v) => !v)}
             className="text-[11px] font-mono uppercase tracking-[0.12em] text-ink-3 hover:text-foreground transition"
@@ -127,76 +124,83 @@ export function ReputationPanel({ target, targetDisplayName }: ReputationPanelPr
           </button>
         </div>
       </CardHeader>
-      <CardBody className="space-y-4">
+      <CardContent className="space-y-4">
         <div className="grid grid-cols-3 gap-2">
           <Button
             variant="secondary"
             size="sm"
-            loading={busy === 'up'}
+            disabled={busy === 'up'}
             onClick={() => void doUp()}
-            leftIcon={<ThumbsUp className="w-3.5 h-3.5" />}
           >
+            <ThumbsUp className="w-3.5 h-3.5" />
             Up
           </Button>
           <Button
             variant="secondary"
             size="sm"
-            loading={busy === 'down'}
+            disabled={busy === 'down'}
             onClick={() => void doDown()}
-            leftIcon={<ThumbsDown className="w-3.5 h-3.5" />}
           >
+            <ThumbsDown className="w-3.5 h-3.5" />
             Down
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            loading={busy === 'retract'}
+            disabled={busy === 'retract'}
             onClick={() => void doRetract()}
-            leftIcon={<Undo2 className="w-3.5 h-3.5" />}
           >
+            <Undo2 className="w-3.5 h-3.5" />
             Retract
           </Button>
         </div>
 
         {attestOpen && (
           <div className="pt-2 border-t border-[var(--color-border)] space-y-3">
-            <Field label="Claim" hint="What is true about this account?">
+            <div className="space-y-2">
+              <Label htmlFor="rep-claim">Claim</Label>
               <Textarea
+                id="rep-claim"
                 maxLength={240}
                 placeholder="e.g. Delivered my commission on time in April."
                 value={claim}
                 onChange={(e) => setClaim(e.target.value)}
               />
-            </Field>
-            <Field label="Evidence URI (optional)">
+              <p className="text-xs text-muted-foreground">
+                What is true about this account?
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rep-evidence">Evidence URI (optional)</Label>
               <Input
+                id="rep-evidence"
                 placeholder="https://… or ipfs://…"
                 value={evidenceUri}
                 onChange={(e) => setEvidenceUri(e.target.value)}
                 className="font-mono text-[13px]"
               />
-            </Field>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => void doAttest()}
-                loading={busy === 'attest'}
-                leftIcon={<ShieldCheck className="w-4 h-4" />}
+                disabled={busy === 'attest'}
                 size="sm"
               >
+                <ShieldCheck className="w-4 h-4" />
                 Sign attestation
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setAttestOpen(false)}
-                leftIcon={<X className="w-3.5 h-3.5" />}
               >
+                <X className="w-3.5 h-3.5" />
                 Cancel
               </Button>
             </div>
           </div>
         )}
-      </CardBody>
+      </CardContent>
     </Card>
   )
 }

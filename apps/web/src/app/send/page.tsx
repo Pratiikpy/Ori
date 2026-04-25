@@ -12,14 +12,14 @@ import * as React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
+import { ArrowRight, CheckCircle2 } from 'lucide-react'
+
 import { AppShell } from '@/components/layout/app-shell'
-import {
-  Button,
-  GlassCard,
-  Icon,
-  Input,
-  PageHeader,
-} from '@/components/ui'
+import { PageHeader } from '@/components/page-header'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useResolve } from '@/hooks/use-resolve'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import {
@@ -99,112 +99,116 @@ export default function SendPage() {
     <AppShell>
       <PageHeader
         title="Send"
-        description="Pick a name, set an amount. Both sides see the payment card the moment it lands."
+        sub="Pick a name, set an amount. Both sides see the payment card the moment it lands."
       />
 
-      <GlassCard padding="lg" className="mt-10">
-        {/* Recipient */}
-        <Input
-          label="To"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          placeholder="alice.init or init1…"
-          mono
-          autoComplete="off"
-          autoCapitalize="off"
-        />
+      <Card className="mt-10">
+        <CardContent className="p-8">
+          {/* Recipient */}
+          <div className="space-y-2">
+            <Label htmlFor="send-to">To</Label>
+            <Input
+              id="send-to"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              placeholder="alice.init or init1…"
+              className="font-mono"
+              autoComplete="off"
+              autoCapitalize="off"
+            />
+          </div>
 
-        {/* Resolution status */}
-        <div className="mt-2 min-h-[20px] text-[12.5px]">
-          {resolving && <span className="text-ink-3">Resolving…</span>}
-          {!resolving && resolved && (
-            <span className="text-[#058A4D] inline-flex items-center gap-1.5">
-              <Icon name="check-circle" size={14} weight="fill" />
-              {displayName(resolved)} ·{' '}
-              <span className="font-mono">
-                {resolved.initiaAddress.slice(0, 12)}…
+          {/* Resolution status */}
+          <div className="mt-2 min-h-[20px] text-[12.5px]">
+            {resolving && <span className="text-ink-3">Resolving…</span>}
+            {!resolving && resolved && (
+              <span className="text-[#058A4D] inline-flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {displayName(resolved)} ·{' '}
+                <span className="font-mono">
+                  {resolved.initiaAddress.slice(0, 12)}…
+                </span>
               </span>
-            </span>
-          )}
-          {!resolving && to && !resolved && (
-            <span className="text-[#B91C1C]">
-              Could not resolve — check the .init name or address.
-            </span>
-          )}
-        </div>
-
-        {/* Amount — large numeric input */}
-        <div className="mt-6">
-          <label className="block text-[13px] font-medium text-ink-2 mb-2">
-            Amount
-          </label>
-          <div className="rounded-2xl bg-white/60 border border-black/5 px-6 py-7 text-center">
-            <div className="font-mono tnum text-ink leading-none flex items-baseline justify-center gap-2">
-              <span className="text-ink-3 text-[24px]">$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(sanitize(e.target.value))}
-                placeholder="0"
-                className="bg-transparent outline-none placeholder:text-ink-4 text-center font-mono w-full max-w-[280px]"
-                style={{ fontSize: 'clamp(40px, 8vw, 56px)', fontWeight: 500 }}
-              />
-            </div>
-            <div className="mt-2 text-[12px] font-mono text-ink-3 uppercase tracking-[0.1em]">
-              {ORI_SYMBOL}
-            </div>
-          </div>
-          {/* Quick amount chips */}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {['1', '5', '10', '25'].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setAmount(v)}
-                className="rounded-full px-3.5 h-8 bg-white/60 border border-black/5 hover:bg-white/80 active:scale-95 transition text-[12.5px] font-medium text-ink-2 hover:text-ink"
-              >
-                {v} {ORI_SYMBOL}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Optional memo */}
-        <div className="mt-6">
-          <Input
-            label="Memo (optional)"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder="thanks for the coffee"
-            maxLength={120}
-          />
-        </div>
-
-        {/* Send */}
-        <div className="mt-8">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            trailingIcon="arrow-right"
-            disabled={!canSend}
-            loading={busy}
-            onClick={handleSend}
-          >
-            {canSend && amount
-              ? `Send ${amount} ${ORI_SYMBOL}`
-              : 'Send'}
-          </Button>
-          <p className="mt-3 text-[12px] text-ink-3 text-center">
-            {autoSign ? (
-              <>Auto-sign on — no popup.</>
-            ) : (
-              <>Wallet will ask once.</>
             )}
-          </p>
-        </div>
-      </GlassCard>
+            {!resolving && to && !resolved && (
+              <span className="text-[#B91C1C]">
+                Could not resolve — check the .init name or address.
+              </span>
+            )}
+          </div>
+
+          {/* Amount — large numeric input */}
+          <div className="mt-6">
+            <label className="block text-[13px] font-medium text-ink-2 mb-2">
+              Amount
+            </label>
+            <div className="rounded-2xl bg-white/60 border border-black/5 px-6 py-7 text-center">
+              <div className="font-mono tnum text-ink leading-none flex items-baseline justify-center gap-2">
+                <span className="text-ink-3 text-[24px]">$</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(sanitize(e.target.value))}
+                  placeholder="0"
+                  className="bg-transparent outline-none placeholder:text-ink-4 text-center font-mono w-full max-w-[280px]"
+                  style={{ fontSize: 'clamp(40px, 8vw, 56px)', fontWeight: 500 }}
+                />
+              </div>
+              <div className="mt-2 text-[12px] font-mono text-ink-3 uppercase tracking-[0.1em]">
+                {ORI_SYMBOL}
+              </div>
+            </div>
+            {/* Quick amount chips */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {['1', '5', '10', '25'].map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setAmount(v)}
+                  className="rounded-full px-3.5 h-8 bg-white/60 border border-black/5 hover:bg-white/80 active:scale-95 transition text-[12.5px] font-medium text-ink-2 hover:text-ink"
+                >
+                  {v} {ORI_SYMBOL}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Optional memo */}
+          <div className="mt-6 space-y-2">
+            <Label htmlFor="send-memo">Memo (optional)</Label>
+            <Input
+              id="send-memo"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="thanks for the coffee"
+              maxLength={120}
+            />
+          </div>
+
+          {/* Send */}
+          <div className="mt-8">
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={!canSend || busy}
+              onClick={handleSend}
+            >
+              {canSend && amount
+                ? `Send ${amount} ${ORI_SYMBOL}`
+                : 'Send'}
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+            <p className="mt-3 text-[12px] text-ink-3 text-center">
+              {autoSign ? (
+                <>Auto-sign on — no popup.</>
+              ) : (
+                <>Wallet will ask once.</>
+              )}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </AppShell>
   )
 }
