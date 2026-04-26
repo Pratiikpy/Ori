@@ -13,7 +13,7 @@
  *   MCP actions tab               → useAgentActionsByOwner(initiaAddress)
  *   MCP tools tab                 → static `mcpTools` catalogue from the MCP app
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Bot, CheckCheck, Plus, Send, WalletCards } from 'lucide-react'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
@@ -214,18 +214,40 @@ export default function InboxPage() {
     }
   }, [messagesQuery.data, initiaAddress, keypair])
 
-  // Best-effort read receipts: any inbound message we just rendered that is
-  // unread gets a POST to /v1/messages/:id/read. Triage allows best-effort.
+  // Read receipts via IntersectionObserver — only mark messages read once
+  // they actually scroll into view AND the tab is visible. Previous version
+  // marked everything read the moment the thread opened, even messages
+  // below the fold or in a backgrounded tab — defeating the point of read
+  // receipts. We attach observers to elements tagged with data-mark-read-id.
+  const markedRef = useRef<Set<string>>(new Set())
   useEffect(() => {
     if (!decrypted.length || !initiaAddress) return
-    const unread = decrypted.filter(
-      (m) => m.from === 'them' && !m.raw.readAt,
-    )
-    for (const m of unread) {
-      markRead.mutate(m.id)
+    if (typeof IntersectionObserver === 'undefined') {
+      // Older runtime fallback — fire the bulk mark we used to do.
+      decrypted
+        .filter((m) => m.from === 'them' && !m.raw.readAt)
+        .forEach((m) => markRead.mutate(m.id))
+      return
     }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (document.visibilityState !== 'visible') return
+        for (const e of entries) {
+          if (!e.isIntersecting) continue
+          const id = (e.target as HTMLElement).getAttribute('data-mark-read-id')
+          if (!id || markedRef.current.has(id)) continue
+          markedRef.current.add(id)
+          markRead.mutate(id)
+          obs.unobserve(e.target)
+        }
+      },
+      { threshold: 0.5 },
+    )
+    const nodes = document.querySelectorAll<HTMLElement>('[data-mark-read-id]')
+    nodes.forEach((n) => obs.observe(n))
+    return () => obs.disconnect()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [decrypted.length, initiaAddress])
+  }, [decrypted, initiaAddress])
 
   const handleSend = async () => {
     if (!draft.trim() || !activeChat || !initiaAddress) return
@@ -243,9 +265,24 @@ export default function InboxPage() {
     setSending(true)
     try {
       const recipient = activeChat.counterparty.initiaAddress
-      const recipientPub = await getRecipientEncryptionPubkey(recipient)
+      // null = deterministic 'no key on chain'. throws = transient. The
+      // distinction lets the UI tell the user whether to wait/retry or to
+      // chase the recipient about enabling encrypted DMs.
+      let recipientPub: Uint8Array | null
+      try {
+        recipientPub = await getRecipientEncryptionPubkey(recipient)
+      } catch (lookupErr) {
+        toast.error('Could not check recipient', {
+          description:
+            lookupErr instanceof Error ? lookupErr.message : 'Backend unreachable. Try again.',
+        })
+        return
+      }
       if (!recipientPub) {
-        toast.error('Recipient has not published an encryption key yet')
+        toast.error('Recipient has no encryption key yet', {
+          description:
+            'Ask them to open Inbox and tap “Enable encrypted DMs”. Once they publish their pubkey on-chain, retry.',
+        })
         return
       }
       const plaintextBytes = utf8Encode(draft)
@@ -586,6 +623,11 @@ export default function InboxPage() {
                         : 'border-black/10 bg-[#F5F5F5]'
                     }`}
                     data-testid={`message-${message.id}`}
+                    // Tag inbound, unread messages so the IntersectionObserver
+                    // above can mark them read only when scrolled into view.
+                    {...(message.from === 'them' && !message.raw.readAt
+                      ? { 'data-mark-read-id': message.id }
+                      : {})}
                   >
                     <p
                       className="text-sm leading-6"

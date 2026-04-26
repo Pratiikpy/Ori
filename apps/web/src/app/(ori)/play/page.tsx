@@ -594,19 +594,48 @@ export default function PlayPage() {
                 {tab.summary}
               </h2>
             </div>
-            <div
-              className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-              data-testid={`play-actions-grid-${tab.id}`}
-            >
-              {tab.actions.map((action) => (
-                <ActionCard
-                  key={action.id}
-                  scope={`play-${tab.id}`}
-                  action={action as Action}
-                  onOpen={setModalAction}
-                />
-              ))}
-            </div>
+            {!isConnected ? (
+              // Connect-wallet gate. Previously the action grid was always
+              // rendered; clicking any card opened a form, the user filled
+              // it, and only on submit did the handler call openConnect()
+              // — losing every typed value. Block the cards entirely until
+              // the wallet is connected.
+              <div
+                className="border border-black/10 bg-white p-6 text-sm"
+                data-testid={`play-connect-gate-${tab.id}`}
+              >
+                <p className="font-heading text-base font-bold text-black">
+                  Connect wallet to play
+                </p>
+                <p className="mt-2 leading-6 text-[#52525B]">
+                  Wagers, prediction markets, and lucky pools all submit
+                  on-chain transactions. Connect a wallet to enable the
+                  action cards below.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openConnect()}
+                  className="mt-3 rounded-none bg-[#0022FF] px-5 py-2 text-white hover:bg-[#0019CC]"
+                  data-testid={`play-connect-button-${tab.id}`}
+                >
+                  Connect wallet
+                </button>
+              </div>
+            ) : (
+              <div
+                className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+                data-testid={`play-actions-grid-${tab.id}`}
+              >
+                {tab.actions.map((action) => (
+                  <ActionCard
+                    key={action.id}
+                    scope={`play-${tab.id}`}
+                    action={action as Action}
+                    onOpen={setModalAction}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
         ))}
       </Tabs>
