@@ -4,317 +4,250 @@
 
 ### Messages that move money.
 
-A chat wallet where your friends, your funds, and your AI agents share one surface.
-Eighteen Move modules on the Initia MiniMove rollup. Built for humans and agents.
+A chat wallet for humans and AI agents on the Initia MiniMove rollup. Every conversation can carry a payment, a tip, a gift, a paywall, or a wager — and every action is also a tool an agent can call, under a daily cap you sign once.
 
-[![Initia](https://img.shields.io/badge/Initia-ori--1-5e6ad2)](https://docs.initia.xyz)
-[![Move modules](https://img.shields.io/badge/Move-18%20modules-5e6ad2)](./packages/contracts/sources)
-[![MCP tools](https://img.shields.io/badge/MCP-14%20tools-5e6ad2)](./apps/mcp-server)
-[![A2A](https://img.shields.io/badge/A2A-JSON--RPC-5e6ad2)](./apps/api/src/routes/wellKnown.ts)
-[![x402](https://img.shields.io/badge/x402-HTTP%20402-5e6ad2)](./packages/contracts/sources/paywall.move)
-[![License](https://img.shields.io/badge/license-MIT-5e6ad2)](./LICENSE)
+[Live app](https://ori-chi-rosy.vercel.app) · [Submission manifest](./.initia/submission.json) · [Contract on explorer](https://scan.testnet.initia.xyz/ori-1/accounts/0x05dd0c60873d4d93658d5144fd0615bcfa43a53a)
+
+[![Chain](https://img.shields.io/badge/chain-ori--1%20MiniMove-0022FF)](https://docs.initia.xyz)
+[![Modules](https://img.shields.io/badge/Move%20modules-18-0022FF)](./packages/contracts/sources)
+[![Agent tools](https://img.shields.io/badge/MCP%20tools-14-0022FF)](./apps/mcp-server)
+[![Protocols](https://img.shields.io/badge/protocols-MCP%20·%20A2A%20·%20x402-0022FF)](#agents-as-first-class-users)
+[![License](https://img.shields.io/badge/license-MIT-0022FF)](./LICENSE)
 
 </div>
 
 ---
 
-## Submission
+## What it is
 
-| | |
-|---|---|
-| **Project name** | Ori |
-| **Tagline** | Messages that move money. |
-| **Primary track** | AI |
-| **Secondary track** | Consumer |
-| **Testnet chain** | `ori-1` (MiniMove) · settles to `initiation-2` via OPinit |
-| **Contract address** | [`0x05dd0c60873d4d93658d5144fd0615bcfa43a53a`](https://scan.testnet.initia.xyz) |
-| **Live demo** | https://ori-chi-rosy.vercel.app |
-| **Submission manifest** | [`.initia/submission.json`](./.initia/submission.json) |
+Ori collapses the wallet into the chat window. Open a thread with a friend, drop an amount, hit send — both sides see the payment land as a card without leaving the conversation. The same happens for tips, gift packets, link-based group gifts, paywalls, subscriptions, payment streams, prediction markets, lucky pools, and 1v1 wagers. Eighteen Move modules carry it all on a single MiniMove rollup.
 
-### TL;DR
+Where most wallets stop, Ori adds a parallel surface for AI. Every primitive that a human can call from the UI is also a tool on an MCP server, exposed through Claude Desktop and any other MCP client. The same tools are mirrored over A2A JSON-RPC so non-MCP agents reach them by HTTP. The paywall module speaks x402 — an HTTP 402 response with a Move payment route an agent can satisfy in one round-trip. None of this is a wrapper: an on-chain `agent_policy` module enforces a per-agent daily spending cap and a kill-switch that propagates to every device the moment you sign it.
 
-Ori is a chat wallet. You can message a friend and pay them in the same window. An AI agent can do the same through a standard protocol, under a daily cap you set on-chain. Eighteen Move modules ship everything a consumer app needs: send, tip, gift, stream, predict, paywall, subscribe, wager, follow, squads. Fourteen of those actions are also MCP tools for Claude Desktop. Every tool is callable over A2A JSON-RPC, and the paywall speaks x402. **No token launch** — testnet uses the rollup's native denom, mainnet will use bridged INIT via Interwoven Bridge, same model as Base uses bridged ETH.
-
-### Hackathon requirement checklist
-
-| Requirement | Status | Evidence |
-|---|:---:|---|
-| Deployed on Initia rollup | ✅ | Live on `ori-1` MiniMove, contracts at `0x05dd...a53a` |
-| Uses `@initia/interwovenkit-react` | ✅ | Every send / tip / predict / gift goes through `requestTxBlock` |
-| At least one Initia-native feature | ✅ | **Auto-signing (session keys), Interwoven Bridge, OPinit settlement, Connect oracle** |
-| `.initia/submission.json` present | ✅ | [`.initia/submission.json`](./.initia/submission.json) — every count verified by a test |
-| README with overview + implementation + how-to-run | ✅ | Below, organized to the scoring dimensions |
-| Open source | ✅ | MIT, this repo |
+> Built for the **INITIATE** hackathon. Primary track: AI. Secondary: Consumer.
 
 ---
 
-## Why Ori exists
+## Five-second summary
 
-| Before | With Ori |
-|---|---|
-| Crypto apps shout numbers. Balances, gas fees, confirmations — in your face. | Chat first. The wallet lives inside the conversation. |
-| Messengers ignore money. You leave the chat, open a bank app, come back, paste a confirmation. | Tap an amount. The payment lands as a card both sides see at the same moment. |
-| AI agents can reason but can't pay. | Agents get the same fourteen actions as users, with a daily cap enforced on-chain. |
-| Creator tips, gifts, streams are all separate apps. | Eighteen Move modules, one thread, one name, one identity. |
-| Most wallets launch a token as a cash grab. | No token launch. Bridged INIT only. |
+| | |
+|:---|:---|
+| **Chain** | `ori-1` MiniMove rollup, settles to `initiation-2` via OPinit |
+| **Contract** | `0x05dd0c60873d4d93658d5144fd0615bcfa43a53a` (18 Move modules) |
+| **Identity** | `.init` usernames on Initia L1 (one name, every device) |
+| **Encryption** | libsodium sealed-box. X25519 keys derived from a wallet signature so they survive device loss |
+| **Oracle** | Connect price feeds (BTC/USD, ETH/USD, SOL/USD plus 60+ pairs) for prediction markets |
+| **Realtime** | Socket.IO for messages and presence; HTTP polling fallback when WS is offline |
+| **Tokenomics** | None. Bridged INIT only, via Interwoven Bridge |
+
+---
+
+## How it fits together
+
+```
+                                ┌───────────────────────────┐
+       Browser / mobile  ───►   │   Next.js 16 (App Router) │
+                                │   InterwovenKit drawer    │
+                                │   libsodium for E2E DMs   │
+                                └────────────┬──────────────┘
+                                             │ HTTPS
+                                             ▼
+                                ┌───────────────────────────┐
+       Claude Desktop  ──MCP──► │   Fastify API             │
+       Agent over A2A  ──HTTP─► │   Prisma · Postgres       │
+       x402 client     ──HTTP─► │   Redis pub/sub · Outbox  │
+                                └────────────┬──────────────┘
+                                             │ Cosmos SDK
+                                             ▼
+                                ┌───────────────────────────┐
+                                │  ori-1 (MiniMove rollup)  │
+                                │  18 Move modules          │
+                                │  agent_policy enforces    │
+                                │  per-agent daily caps     │
+                                └────────────┬──────────────┘
+                                             │ OPinit
+                                             ▼
+                                ┌───────────────────────────┐
+                                │  Initia L1 (initiation-2) │
+                                │  • settlement             │
+                                │  • .init usernames        │
+                                │  • Interwoven Bridge      │
+                                └───────────────────────────┘
+```
+
+The web app and the Fastify API ship as a single Vercel deployment (the API runs as a serverless catchall route). The rollup runs separately and is exposed to the deployment over a secure tunnel. There is no co-located VM, no Kubernetes, no docker-compose in production.
 
 ---
 
 ## What's on chain
 
-Contract address on `ori-1`: `0x05dd0c60873d4d93658d5144fd0615bcfa43a53a`
-(`init1qhwsccy884xexevd29z06ps4hnay8ff6szgkt2` in bech32).
-
-Every feature below is a real Move module under that address.
+Eighteen modules under a single named address. Each one is a real Move source file in [`packages/contracts/sources`](./packages/contracts/sources) and ships with Move unit tests.
 
 | Module | Purpose |
-|---|---|
-| `profile_registry` | Public profile bound to an `.init` name |
-| `payment_router` | Send ORI to anyone by name; batch-send; chat-scoped payment cards |
+|:---|:---|
+| `profile_registry` | Public profile + `.init` handle + on-chain X25519 encryption pubkey |
+| `payment_router` | Send, batch-send, and chat-scoped payment cards |
 | `tip_jar` | One-tap creator tips with a 1% platform fee |
-| `gift_packet` | Link-based one-recipient gifts, claimable by first tap |
-| `gift_group` | Link-based multi-slot gifts (one pot, N recipients, per-slot secrets) |
-| `gift_box_catalog` | Curated gift themes (admin-curated) |
-| `paywall` | Lock any URL behind a payment. Integrates with x402 HTTP 402 |
-| `subscription_vault` | Recurring plans with period-by-period release |
+| `gift_packet` | Link-based single-recipient gifts |
+| `gift_group` | Multi-slot pots with per-slot secrets |
+| `gift_box_catalog` | Curated gift themes |
 | `payment_stream` | Continuous per-second streams |
-| `wager_escrow` | Peer-to-peer wagers with oracle or arbiter settle |
-| `prediction_pool` | Parimutuel prediction markets resolved by Connect oracle |
-| `lucky_pool` | Raffle-style pools with admin draw |
-| `achievement_sbt` | Non-transferable achievement badges (SBT) |
-| `follow_graph` | Social follow / unfollow on-chain |
-| `reputation` | Per-user activity counters |
-| `squads` | Group profiles with shared XP |
-| `merchant_registry` | On-chain merchant directory |
-| `agent_policy` | **Daily spending caps + kill switch for AI agents** |
-
-Every module is verified by real on-chain tests:
-[`scripts/wsl-onchain-user-flows.sh`](./scripts/wsl-onchain-user-flows.sh) and
-[`scripts/wsl-test-tier2-modules.sh`](./scripts/wsl-test-tier2-modules.sh).
+| `subscription_vault` | Recurring plans with per-period release |
+| `paywall` | Lock any URL or content behind a Move payment; speaks x402 |
+| `merchant_registry` | Storefront identity + accepted-denom routing |
+| `wager_escrow` | 1v1 and PvP wagers with arbiter or oracle resolution |
+| `prediction_pool` | Parimutuel YES/NO markets, resolved by Connect oracle |
+| `lucky_pool` | Fixed-entry pools with deterministic VRF winner draw |
+| `squads` | Group identities (chats, shared funds, leaderboards) |
+| `follow_graph` | Follow / unfollow as a chain-scoped social graph |
+| `reputation` | Thumbs-up, thumbs-down, signed-claim attestations |
+| `achievement_sbt` | Soulbound badges for milestones (multi-level) |
+| `agent_policy` | Per-agent daily spending cap and kill-switch enforced by VM |
 
 ---
 
-## Economics — no token launch
+## Agents as first-class users
 
-- **Testnet** (`ori-1`): the rollup's own native denom (`umin`, displayed as ORI). This is the test currency.
-- **Mainnet**: bridged INIT from `initiation-2` L1 via Interwoven Bridge. Same model as Base (bridged ETH from Ethereum) or Arbitrum (bridged ETH). No new token, no launch event, no tokenomics overhead.
+Three protocols, one surface.
 
-Transparent on-chain fees: `tip_jar` takes 1%, `paywall` takes 1%, everything else is 0%.
+**MCP** — Fourteen of the actions above are exposed as MCP tools (`payment.send`, `tip.send`, `gift.create_link`, `paywall.purchase`, `prediction.stake`, etc.). Claude Desktop discovers them through stdio and can transact under your authorization. Source: [`apps/mcp-server`](./apps/mcp-server).
 
----
+**A2A JSON-RPC 2.0** — The same tools are mirrored at `/agent/jsonrpc`. Any non-MCP agent calls them with a plain HTTP request. The agent card lives at [`/.well-known/agent.json`](./apps/api/src/routes/wellKnown.ts), so discovery is one fetch.
 
-## Why Initia
+**x402** — The paywall module mints a payment route that satisfies x402's HTTP 402 challenge. An agent that hits a locked URL gets back a JSON envelope describing the Move call needed to unlock it; one round-trip later, the agent has paid and the URL serves.
 
-Ori depends on four Initia-native features. This isn't a product that happens to live on Initia — it's a product the design of Initia makes possible.
-
-| Initia feature | How Ori uses it |
-|---|---|
-| **MiniMove VM** | Eighteen Move modules give us strict resource semantics for balances, per-user state, and on-chain agent policy. A payment is a move of a `Coin<T>` object, not a number in a table. |
-| **Session keys (auto-signing)** | `InterwovenKit.enableAutoSign` grants 24h signing for `/initia.move.v1.MsgExecute`. That's what makes "zero wallet popups per send" possible. Without it, every tip would require a confirmation modal — the product is dead. |
-| **Interwoven Bridge** | Onboard from any Initia-ecosystem chain in one hop. Deposit flow in `apps/web/src/components/bridge-button.tsx`. |
-| **OPinit settlement** | `ori-1` settles to `initiation-2`. Users inherit L1's finality without paying L1 gas. |
-| **Connect oracle** | `prediction_pool` resolves markets against Connect price feeds (BTC/USD, ETH/USD, SOL/USD, and 60+ other pairs the rollup tracks). Parimutuel pools mean no liquidity provider, no counterparty risk. |
-| **Initia Usernames (`.init`)** | Every user is addressable by name across chat, payment, profile URL, and agent endpoint. One identity, four surfaces. |
-| **Social login (Privy)** | Email / Google / X sign-in via `initiaPrivyWalletConnector`. No seed phrase friction for first-time users. |
+**Daily caps in Move, not in middleware.** `agent_policy::can_spend(owner, agent, amount)` is read by every spend module before it accepts an agent's payment. Revoke an agent and the cap goes to zero in the next block — even mid-flight a Claude session stops being able to send.
 
 ---
 
-## Agents, specifically
+## Initia-native features used
 
-Three protocols so every kind of AI client can spend under your rules.
-
-| Protocol | Transport | Who speaks it | Where in the repo |
-|---|---|---|---|
-| **MCP** | stdio | Claude Desktop, Claude Code, Cursor, any MCP client | [`apps/mcp-server`](./apps/mcp-server) |
-| **A2A JSON-RPC 2.0** | HTTP | Any HTTP client, agent framework | `/a2a` on the API + [`/.well-known/agent.json`](./apps/api/src/routes/wellKnown.ts) |
-| **x402** | HTTP 402 | Agents hitting paywalled URLs | [`paywall.move`](./packages/contracts/sources/paywall.move) + MCP `ori.purchase_paywall` |
-
-**The safety story is on-chain, not in the server.**
-`agent_policy::set_policy(agent, daily_cap_umin)` writes a per-agent cap. `agent_policy::pre_check_and_record` runs *inside* every spending tx. If the agent tries to exceed the cap, the Move VM aborts the tx — before any coin moves. The kill switch is a single `revoke_agent` tx the user can send from any device.
-
-**14 MCP tools shipped today:**
-`ori.send_payment` · `ori.send_tip` · `ori.create_link_gift` · `ori.get_balance` · `ori.get_profile` · `ori.resolve_init_name` · `ori.propose_wager` · `ori.list_top_creators` · `ori.purchase_paywall` · `ori.search_initia_docs` · `ori.fetch_initia_doc` · `ori.discover_x402` · `ori.schedule_action` · `ori.predict`
-
----
-
-## Architecture
-
-```
-                    Browser / MCP client / A2A HTTP
-                          │
-                          ▼
-┌──────────────────────────────────────────────┐
-│  Next.js 16 + Fastify 5 (on Vercel)          │  ◀── EIP-191 wallet auth
-│  ─ /api/[...path] wraps Fastify via inject() │  ◀── idempotency, rate limit
-│  ─ realtime adapter (Supabase / Socket.IO)   │       in Redis (Upstash)
-└──────────────────────────────────────────────┘
-                          │
-            ┌─────────────┼─────────────┐
-            ▼             ▼             ▼
-┌──────────────────┐ ┌──────────┐ ┌──────────────────┐
-│ Supabase         │ │ Upstash  │ │ Initia rollup    │
-│ ─ Postgres 16    │ │ Redis    │ │ ─ ori-1 MiniMove │
-│ ─ Edge Functions │ └──────────┘ │ ─ 18 Move modules│
-│   (event-listener│               │ ─ OPinit → L1    │
-│    + pg_cron)    │               │ ─ Connect oracle │
-│ ─ Realtime       │               └──────────────────┘
-└──────────────────┘                        ▲
-        ▲                                   │
-        └──────── event-decoder ────────────┘
-                (packages/event-decoder)
-                Pure TS shared by Node + Deno —
-                same decode logic runs in the
-                long-running Node listener AND the
-                Supabase Edge Function. No drift.
-```
-
-Smart contracts hold all the money and state. The server only keeps off-chain things: encrypted messages, session tokens, and a Postgres cache of chain events for fast feeds.
+| Feature | Where it lands |
+|:---|:---|
+| **MiniMove VM** | Every module is Move source, compiled with `minitiad move build` |
+| **OPinit settlement** | `ori-1` settles to `initiation-2`; bridged INIT is the gas + unit of account |
+| **InterwovenKit auto-signing** | 24h session keys cover `/initia.move.v1.MsgExecute`, so an agent can chain calls without prompting |
+| **Sponsored onboarding** | New wallets get a small seed grant + a sponsored `.init` username on first login |
+| **Connect oracle** | `prediction_pool` markets resolve against Connect feeds — BTC/USD, ETH/USD, SOL/USD, and 60+ pairs the rollup tracks |
+| **Interwoven Bridge** | The only path INIT enters the rollup. No platform token issued, ever |
 
 ---
 
 ## Tech stack
 
-| Layer | Tech |
-|---|---|
-| Web | Next.js 16, React 19, Tailwind v4, Geist + Instrument Serif |
-| API | Fastify 5, Prisma 6, ioredis, Graphile Worker, Zod |
-| Database | PostgreSQL 16 (self-hosted locally; Supabase in prod) |
-| Cache | Redis (Upstash in prod) |
-| Realtime | Supabase Realtime (prod), Socket.IO (local dev) |
-| Chain | Initia MiniMove (Cosmos SDK + Move VM), ethsecp256k1 |
-| Auth | EIP-191 wallet signatures, session tokens in Postgres |
-| Oracle | Connect (formerly Slinky) |
-| Agent protocols | MCP stdio, A2A JSON-RPC 2.0, x402 |
+| Layer | Choice |
+|:---|:---|
+| Frontend | Next.js 16 (App Router, Server Components), Turbopack, Tailwind CSS v4 |
+| Wallet UX | `@initia/interwovenkit-react` (drawer + autosign + Privy social login) |
+| API | Fastify 5 on Vercel serverless (catchall route mounts in-process) |
+| Realtime | Socket.IO with HTTP polling fallback for environments without WS upgrade |
+| Database | Postgres on Supabase, accessed via Prisma 6 |
+| Cache / queue | Upstash Redis (pub/sub + idempotency middleware + circuit-breaker state) |
+| Encryption | libsodium-wrappers-sumo sealed-box; X25519 keys derived from EIP-191 signature |
+| Background jobs | Graphile Worker (Postgres-backed) for outbox, push, and scheduled actions |
+| Move toolchain | `minitiad` for the rollup, `aptos move` compatible source under `packages/contracts` |
+| Hosting | Vercel for web + API, Supabase for DB + Realtime, Upstash for Redis |
 
 ---
 
-## Repository layout
+## Repo layout
 
 ```
-apps/
-  web/             Next.js 16 frontend
-  api/             Fastify backend (Prisma, Redis, event listener, outbox)
-  mcp-server/      MCP stdio + A2A HTTP server (14 tools)
-
-packages/
-  contracts/       Move source for all 18 modules + Move tests
-  event-decoder/   Pure TS decoder shared by Node + Deno (parity-tested)
-  shared-types/    Types shared across apps
-  sdk/             Client SDK helpers
-
-supabase/
-  config.toml
-  functions/       Deno Edge Functions (event listener; pg_cron invokes)
-  migrations/      pg_cron schedules
-
-scripts/           Deploy, build, and test scripts (WSL-first)
-docs/              Architecture, runbooks, migration plans
-.initia/
-  submission.json  Hackathon submission manifest (verified numbers)
+ori/
+├── apps/
+│   ├── web/                      Next.js 16 frontend + API catchall
+│   ├── api/                      Fastify routes, Prisma, workers
+│   └── mcp-server/               14-tool MCP stdio server for agents
+├── packages/
+│   ├── contracts/                18 Move modules + Move unit tests
+│   ├── shared-types/             TS types shared across apps
+│   └── event-decoder/            Pure-TS Move event decoder (Node + Deno)
+├── scripts/                      Deploy, smoke-test, and migration helpers
+├── supabase/                     Edge function source
+├── docs/                         Public-facing docs + architecture graph
+└── .initia/submission.json       Hackathon submission manifest
 ```
 
 ---
 
-## Run locally
+## Run it locally
 
-**Needs**: Node 20+, pnpm 9+, Docker Desktop, WSL on Windows, and a funded Initia testnet wallet.
+Prerequisites: Node 22+, pnpm 9+, a Postgres URL, a Redis URL, a wallet mnemonic.
 
 ```bash
 # 1. Install
+git clone https://github.com/Pratiikpy/Ori.git ori && cd ori
 pnpm install
 
-# 2. Provision Postgres + Redis
-#    Easiest: Supabase + Upstash (both free tier; URLs go in apps/api/.env).
+# 2. Configure
+#    Create apps/api/.env with DATABASE_URL, REDIS_URL, JWT_SECRET,
+#    ORI_RPC_URL, ORI_REST_URL, ORI_DEPLOYER_MNEMONIC, VAPID_*.
+#    Required vars are documented in apps/api/src/config.ts.
 
-# 3. Create apps/api/.env with the required vars (DATABASE_URL, REDIS_URL,
-#    JWT_SECRET, ORI_RPC_URL, ORI_REST_URL, ORI_DEPLOYER_MNEMONIC, etc).
+# 3. Apply DB schema
+pnpm --filter @ori/api db:migrate:deploy
 
-# 4. Apply DB migrations
-pnpm --filter @ori/api db:migrate
-
-# 5. Start a local rollup (WSL, separate terminal)
+# 4. (Optional) start a local rollup if you don't have a public RPC
 bash scripts/wsl-start-rollup.sh
 
-# 6. Deploy contracts to that local rollup
-bash scripts/deploy-testnet.sh
-
-# 7. Run API and web in two terminals
-pnpm --filter @ori/api dev        # http://localhost:3001
-pnpm --filter @ori/web dev        # http://localhost:3000
+# 5. Run web + API in two terminals
+pnpm --filter @ori/api dev      # http://localhost:3001
+pnpm --filter @ori/web dev      # http://localhost:3000
 ```
 
-Open http://localhost:3000 and connect a wallet. You're in.
+Connect a wallet, sign once for the session, sign once for the encryption keypair, and you're sending encrypted DMs that carry payments.
 
 ---
 
-## Deploy to production (free tier, ~35 min)
+## Deploy to production
 
-All three services have generous free tiers: **Vercel** (web + API as serverless), **Supabase** (Postgres + Edge Functions + Realtime), **Upstash** (Redis). Push the repo to GitHub, import into Vercel, set the env vars listed in `apps/web/src/lib/chain-config.ts` and `apps/api/src/config.ts`, then run `pnpm --filter @ori/api db:migrate:deploy` once against the production database.
+The repo is shaped for a free-tier deploy across three providers.
 
----
+| Service | Provider | What it hosts |
+|:---|:---|:---|
+| Web + API | **Vercel** | Next.js frontend; Fastify API mounted on `/api/[...path]` |
+| Postgres | **Supabase** | Prisma schema, with the transaction pooler URL for runtime |
+| Redis | **Upstash** | pub/sub, idempotency, circuit-breaker state |
 
-## Testing — every number in this README is backed by a script
-
-| Suite | Command | What it proves |
-|---|---|---|
-| Move unit tests | `bash scripts/wsl-move-test.sh` | Every entry function, every abort code |
-| On-chain user flows | `bash scripts/wsl-onchain-user-flows.sh` | 16 real signed tx flows |
-| Tier-2 modules | `bash scripts/wsl-test-tier2-modules.sh` | 21 more real tx flows |
-| Backend suite | `bash scripts/wsl-test-everything.sh` | 96 API + event cases |
-| Auth + A2A | `node scripts/wsl-test-auth-and-a2a.js` | 17 EIP-191 + JSON-RPC cases |
-| MCP stdio | `bash scripts/wsl-test-mcp-stdio.sh` | 14 tools list + invoke |
-| Frontend renders | `bash scripts/wsl-test-frontend-renders.sh` | 15 real page renders |
-| Event-decoder parity | `pnpm --filter @ori/event-decoder test` | 7 cases, same code runs in Node + Deno |
-
-Run against a live rollup. If you claim it, a script proves it.
+Push the repo, import the project on Vercel, set the env vars enumerated in [`apps/web/src/lib/chain-config.ts`](./apps/web/src/lib/chain-config.ts) and [`apps/api/src/config.ts`](./apps/api/src/config.ts), then run `pnpm --filter @ori/api db:migrate:deploy` once against the production database. The rollup itself runs anywhere reachable over HTTPS — set `ORI_RPC_URL` and `ORI_REST_URL` to the public endpoints.
 
 ---
 
-## Agent setup (Claude Desktop)
+## Verification
 
-Add this to your `mcp.json`:
+Every claim in `.initia/submission.json` is backed by a script in this repo.
 
-```json
-{
-  "mcpServers": {
-    "ori": {
-      "command": "npx",
-      "args": ["-y", "@ori/mcp-server"],
-      "env": {
-        "ORI_MCP_MNEMONIC": "<your 12 or 24 word BIP-39 mnemonic>",
-        "ORI_CHAIN_ID": "ori-1",
-        "ORI_RPC_URL": "https://<rollup-rpc>",
-        "ORI_REST_URL": "https://<rollup-rest>"
-      }
-    }
-  }
-}
-```
-
-First, go to `/settings` in the web app and set a daily cap on-chain for this agent address. The agent can never spend more than what you allow — enforced by Move, not by the server.
-
-A sample config lives at [`.mcp.json.sample`](./.mcp.json.sample).
+| Check | How it's verified |
+|:---|:---|
+| 18 Move modules deploy and respond | `scripts/wsl-onchain-user-flows.sh` (16 real tx flows) |
+| All tier-2 modules pass tests | `scripts/wsl-test-tier2-modules.sh` (21 on-chain tests) |
+| MCP server lists and runs 14 tools | `scripts/wsl-test-mcp-stdio.sh` |
+| Auth + A2A end-to-end | `scripts/wsl-test-auth-and-a2a.js` (17 cases) |
+| 15 frontend routes render | `scripts/wsl-test-frontend-renders.sh` |
+| Move event decoder parity | `packages/event-decoder` (7 unit tests) |
+| Move modules unit-tested | `packages/contracts` (per-module Move tests) |
 
 ---
 
-## Docs
+## Why no token
 
-- [`CHANGELOG.md`](./CHANGELOG.md) — version-by-version release notes
-- [`docs/aboutproduct.md`](./docs/aboutproduct.md) — product overview
-- [`docs/DEMO_SCRIPT.md`](./docs/DEMO_SCRIPT.md) — demo walkthrough
-- [`docs/architecture-graph/`](./docs/architecture-graph) — auto-generated module graph
+Most wallets ship a token. Ori does not. The platform uses bridged INIT through Interwoven Bridge as gas and unit of account — the same model Base uses with bridged ETH. There is no governance token, no liquidity-mining program, no airdrop. Fees are minimal and visible in `.move` source. We thought the right thing to do for a hackathon submission was to ship a real product and let the chain's token do its job.
 
 ---
 
 ## Links
 
-- Initia docs: https://docs.initia.xyz
-- Initia testnet explorer: https://scan.testnet.initia.xyz
-- Move language: https://move-language.github.io/move/
-- Model Context Protocol: https://modelcontextprotocol.io
+- Initia documentation — https://docs.initia.xyz
+- Initia testnet explorer — https://scan.testnet.initia.xyz
+- Move language reference — https://move-language.github.io/move/
+- Connect oracle — https://docs.initia.xyz/home/core-concepts/connect
 
 ---
 
 ## License
 
-MIT. See [`LICENSE`](./LICENSE).
+MIT for the application code and the Move contracts. See [`LICENSE`](./LICENSE).
+
+<div align="center">
+<sub>Built by <a href="https://x.com/prateekhh">@prateekhh</a> for the <strong>INITIATE</strong> hackathon.</sub>
+</div>
