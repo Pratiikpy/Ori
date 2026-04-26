@@ -28,7 +28,7 @@ Eighteen Move modules on the Initia MiniMove rollup. Built for humans and agents
 | **Secondary track** | Consumer |
 | **Testnet chain** | `ori-1` (MiniMove) · settles to `initiation-2` via OPinit |
 | **Contract address** | [`0x05dd0c60873d4d93658d5144fd0615bcfa43a53a`](https://scan.testnet.initia.xyz) |
-| **Live demo** | Deploy in progress — see [DEPLOY.md](./DEPLOY.md) |
+| **Live demo** | https://ori-chi-rosy.vercel.app |
 | **Submission manifest** | [`.initia/submission.json`](./.initia/submission.json) |
 
 ### TL;DR
@@ -223,12 +223,11 @@ docs/              Architecture, runbooks, migration plans
 # 1. Install
 pnpm install
 
-# 2. Start Postgres + Redis in Docker
-docker compose up -d
+# 2. Provision Postgres + Redis
+#    Easiest: Supabase + Upstash (both free tier; URLs go in apps/api/.env).
 
-# 3. Copy env and fill in your mnemonic
-cp .env.example apps/api/.env
-# Edit apps/api/.env — set ORI_DEPLOYER_MNEMONIC (12 or 24 word BIP-39).
+# 3. Create apps/api/.env with the required vars (DATABASE_URL, REDIS_URL,
+#    JWT_SECRET, ORI_RPC_URL, ORI_REST_URL, ORI_DEPLOYER_MNEMONIC, etc).
 
 # 4. Apply DB migrations
 pnpm --filter @ori/api db:migrate
@@ -250,10 +249,7 @@ Open http://localhost:3000 and connect a wallet. You're in.
 
 ## Deploy to production (free tier, ~35 min)
 
-All three services have generous free tiers: **Vercel** (web + API as serverless), **Supabase** (Postgres + Edge Functions + Realtime), **Upstash** (Redis).
-
-- **Shipment 1** — web + API + database + Redis. See [`DEPLOY.md`](./DEPLOY.md).
-- **Shipment 2** — real-time feed via Supabase Edge Functions + pg_cron. See [`DEPLOY2.md`](./DEPLOY2.md).
+All three services have generous free tiers: **Vercel** (web + API as serverless), **Supabase** (Postgres + Edge Functions + Realtime), **Upstash** (Redis). Push the repo to GitHub, import into Vercel, set the env vars listed in `apps/web/src/lib/chain-config.ts` and `apps/api/src/config.ts`, then run `pnpm --filter @ori/api db:migrate:deploy` once against the production database.
 
 ---
 
@@ -304,10 +300,9 @@ A sample config lives at [`.mcp.json.sample`](./.mcp.json.sample).
 ## Docs
 
 - [`CHANGELOG.md`](./CHANGELOG.md) — version-by-version release notes
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — style guide and PR rules
-- [`docs/RUNBOOK.md`](./docs/RUNBOOK.md) — ops playbook
-- [`docs/MIGRATION_PLAN.md`](./docs/MIGRATION_PLAN.md) — Vercel + Supabase architecture
-- [`docs/SHIPMENT1_PLAN.md`](./docs/SHIPMENT1_PLAN.md) · [`docs/SHIPMENT2_PLAN.md`](./docs/SHIPMENT2_PLAN.md) — phased deploy plans
+- [`docs/aboutproduct.md`](./docs/aboutproduct.md) — product overview
+- [`docs/DEMO_SCRIPT.md`](./docs/DEMO_SCRIPT.md) — demo walkthrough
+- [`docs/architecture-graph/`](./docs/architecture-graph) — auto-generated module graph
 
 ---
 

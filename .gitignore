@@ -75,15 +75,49 @@ docs/architecture-graph/cache/
 .emergent/
 .gitconfig
 
+# Editor-specific config — Claude Code settings.json was per-machine state
+# only. Each contributor sets their own preferences.
+.claude/
+
 # Internal planning docs and ephemeral test reports written by automation.
 # Not part of the project source; kept out of the public repo.
 memory/
 test_reports/
 
+# Internal-only design assets, planning markdowns, and deployment notes
+# (DEPLOY.md / DEPLOY2.md) that don't help anyone reading the repo
+# externally. The product README + .initia/submission.json cover the
+# externally relevant info.
+design-refs/
+DEPLOY.md
+DEPLOY2.md
+CONTRIBUTING.md
+CLAUDE.md
+.graphifyignore
+.mcp.json.sample
+compose.yaml
+
+# Internal docs that previously lived in docs/ and were superseded by the
+# README + the live deployment.
+docs/RUNBOOK.md
+docs/MAINNET_DEPLOY.md
+docs/MIGRATION_PLAN.md
+docs/SHIPMENT1_PLAN.md
+docs/SHIPMENT2_PLAN.md
+docs/DEPLOY_TO_VERCEL.md
+docs/DAY_1_SETUP.md
+
 # Auto-generated design tokens / planning artifacts that aren't imported by
 # any code in apps/ or packages/. Real design system lives in code (Tailwind
 # theme + apps/web/src/app/globals.css).
 design_guidelines.json
+
+# Example env files contained in the previous commits as `.env.example` and
+# `.env.production.example` are now removed — the README documents the
+# required env vars by name; concrete values live only in the deployer's
+# private store and never in the repo.
+.env.example
+.env.production.example
 
 # One-shot debugging scripts. Long-lived maintenance scripts stay tracked
 # under scripts/; these patterns catch the throwaway ones.
