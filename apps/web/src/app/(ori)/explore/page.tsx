@@ -20,6 +20,7 @@
  * constraint should a future squad action want to route through it.
  */
 import { useCallback, useState } from 'react'
+import Link from 'next/link'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { Activity, Compass, UsersRound, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -301,14 +302,14 @@ export default function ExplorePage() {
                   items.map((entry) => {
                     const label = entryLabel(entry)
                     return (
-                      <Button
+                      <Link
                         key={entry.address}
-                        variant="ghost"
-                        className="h-auto w-full justify-start rounded-none border border-black/10 px-3 py-3 text-left hover:bg-black hover:text-white"
+                        href={`/profile/${entry.address}`}
+                        className="block w-full rounded-none border border-black/10 px-3 py-3 text-left text-sm hover:bg-black hover:text-white"
                         data-testid={`discover-item-${key}-${entry.address.slice(0, 10).toLowerCase()}`}
                       >
                         {label}
-                      </Button>
+                      </Link>
                     )
                   })
                 )}
@@ -382,7 +383,13 @@ export default function ExplorePage() {
                     className="font-mono text-sm"
                     data-testid={`leaderboard-row-creators-${index}`}
                   >
-                    {index + 1}. {leaderLabel(row)}
+                    {index + 1}.{' '}
+                    <Link
+                      href={`/profile/${row.address}`}
+                      className="text-[#0022FF] hover:underline"
+                    >
+                      {leaderLabel(row)}
+                    </Link>
                     {row.tipsReceived !== undefined ? ` — ${row.tipsReceived} tips` : ''}
                   </li>
                 ))
@@ -413,7 +420,13 @@ export default function ExplorePage() {
                     className="font-mono text-sm"
                     data-testid={`leaderboard-row-tippers-${index}`}
                   >
-                    {index + 1}. {leaderLabel(row)}
+                    {index + 1}.{' '}
+                    <Link
+                      href={`/profile/${row.address}`}
+                      className="text-[#0022FF] hover:underline"
+                    >
+                      {leaderLabel(row)}
+                    </Link>
                     {row.tipsGiven !== undefined ? ` — ${row.tipsGiven} tips` : ''}
                   </li>
                 ))
@@ -451,7 +464,14 @@ export default function ExplorePage() {
                     className="font-mono text-sm"
                     data-testid={`leaderboard-row-creator-tippers-${index}`}
                   >
-                    {index + 1}. {leaderLabel(row)} — {row.tipCount} tips
+                    {index + 1}.{' '}
+                    <Link
+                      href={`/profile/${row.address}`}
+                      className="text-[#0022FF] hover:underline"
+                    >
+                      {leaderLabel(row)}
+                    </Link>{' '}
+                    — {row.tipCount} tips
                   </li>
                 ))
               )}

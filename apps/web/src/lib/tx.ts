@@ -13,8 +13,22 @@
  *   console.log(tx.txHash, tx.rawResponse)
  */
 import type { useInterwovenKit } from '@initia/interwovenkit-react'
-import { ORI_DENOM } from './chain-config'
+import { ORI_CHAIN_ID, ORI_DENOM } from './chain-config'
 import { haptic } from './haptics'
+
+/**
+ * Build a tx-detail explorer URL for the Ori rollup. The Initia hosted
+ * explorer (scan.testnet.initia.xyz) routes by `/{chainId}/txs/{hash}` per
+ * initia-docs/developers/developer-guides/integrating-initia-apps/usernames.mdx.
+ * If our rollup isn't yet indexed there the URL still gives the user the hash
+ * to copy, which is strictly better than discarding it.
+ */
+export function txExplorerUrl(txHash: string): string {
+  return `https://scan.testnet.initia.xyz/${ORI_CHAIN_ID}/txs/${txHash}`
+}
+
+/** Re-export with a name some hooks use — same function as friendlyError. */
+export const friendlyTxError = (err: unknown): string => friendlyError(err)
 
 export type InterwovenKit = ReturnType<typeof useInterwovenKit>
 

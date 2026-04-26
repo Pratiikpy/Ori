@@ -34,19 +34,25 @@ export function useKeypair() {
     }
   }, [hexAddress, isConnected])
 
-  const unlock = async () => {
-    if (!hexAddress) return
+  // Returns the unlocked Keypair so callers that need it synchronously (e.g.
+  // useEnsureEncryption, which immediately uses the public half to broadcast
+  // a Move tx) don't have to wait for React state to settle.
+  const unlock = async (): Promise<Keypair | null> => {
+    if (!hexAddress) return null
     setError(null)
     try {
       const signature = await sign(KEY_DERIVATION_MESSAGE)
       const kp = await unlockKeypair(hexAddress, signature)
       if (!kp) {
         setError('No keypair on this device — finish onboarding first')
-        return
+        return null
       }
       setKeypair(kp)
+      setExists(true)
+      return kp
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unlock failed')
+      return null
     }
   }
 

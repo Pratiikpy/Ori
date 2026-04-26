@@ -32,6 +32,7 @@ import { useInterwovenKit, useUsernameQuery } from '@initia/interwovenkit-react'
 import { Button } from '@/components/ui/button'
 import { navItems } from '@/data/ori-data'
 import { useTrustScore } from '@/hooks/use-trust-score'
+import { OnboardingBanner } from './onboarding-banner'
 
 function shortenAddress(address: string | undefined | null): string {
   if (!address) return '—'
@@ -227,6 +228,7 @@ export function OriShell({
         className="pb-44 lg:ml-72 lg:pb-24"
         data-testid="app-main-content"
       >
+        <OnboardingBanner />
         {children}
       </main>
 
