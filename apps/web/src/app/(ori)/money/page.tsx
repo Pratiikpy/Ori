@@ -263,8 +263,8 @@ export default function MoneyPage() {
             chatId,
             denom: ORI_DENOM,
           })
-          await sendOne(msg)
-          toast.success(`Sent ${amountStr} INIT`)
+          const __r = await sendOne(msg)
+          toastTx(`Sent ${amountStr} INIT`, __r)
           return
         }
 
@@ -302,8 +302,8 @@ export default function MoneyPage() {
             denom: ORI_DENOM,
             batchId,
           })
-          await sendOne(msg)
-          toast.success(`Bulk sent to ${recipients.length}`)
+          const __r = await sendOne(msg)
+          toastTx(`Bulk sent to ${recipients.length}`, __r)
           return
         }
 
@@ -315,7 +315,7 @@ export default function MoneyPage() {
           if (!r?.initiaAddress) throw new Error('Creator could not be resolved')
           const baseUnits = toBaseUnits(amountStr)
           if (baseUnits <= 0n) throw new Error('Amount must be > 0')
-          await sendOne(
+          const __r = await sendOne(
             msgTip({
               sender: initiaAddress,
               creator: r.initiaAddress,
@@ -324,7 +324,7 @@ export default function MoneyPage() {
               denom: ORI_DENOM,
             }),
           )
-          toast.success('Tip sent')
+          toastTx('Tip sent', __r)
           return
         }
 
@@ -361,7 +361,7 @@ export default function MoneyPage() {
           } catch {
             /* on-chain gift creation remains authoritative */
           }
-          await sendOne(
+          const __r = await sendOne(
             msgCreateLinkGift({
               sender: initiaAddress,
               amount: baseUnits,
@@ -372,9 +372,11 @@ export default function MoneyPage() {
               denom: ORI_DENOM,
             }),
           )
-          toast.success('Link gift created', {
-            description: `${shortCode ? `Short code ${shortCode}. ` : ''}Secret: 0x${bytesToHex(secret)}`,
-          })
+          toastTx(
+            'Link gift created',
+            __r,
+            `${shortCode ? `Short code ${shortCode}. ` : ''}Secret: 0x${bytesToHex(secret)}`,
+          )
           return
         }
 

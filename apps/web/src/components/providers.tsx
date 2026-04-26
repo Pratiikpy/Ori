@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ApiError, clearSessionToken } from '@/lib/api'
+import { toast } from 'sonner'
 import { WagmiProvider, createConfig, http } from 'wagmi'
 import { defineChain } from 'viem'
 import {
@@ -36,18 +38,48 @@ const wagmiConfig = createConfig({
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 10_000,
-            refetchOnWindowFocus: false,
-            retry: 1,
+  const [queryClient] = useState(() => {
+    // Centralised 401 handler — wipes the stale JWT in localStorage so the
+    // next page nav re-runs the auth flow via SessionBoot's auto-signIn
+    // effect. Without this every protected fetch after expiry just raises
+    // and the UI shows nothing forever (no 'session expired' surface
+    // existed before per the cross-cutting audit). Sonner's toast keeps
+    // the surface light — the user re-signs and continues.
+    const onAuthError = (err: unknown): boolean => {
+      if (err instanceof ApiError && err.status === 401) {
+        clearSessionToken()
+        toast.message('Session expired', {
+          description: 'Re-sign with your wallet to continue.',
+        })
+        return true
+      }
+      return false
+    }
+    return new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 10_000,
+          refetchOnWindowFocus: false,
+          retry: (failureCount, error) => {
+            // Don't retry auth failures — the token is dead, retrying
+            // just amplifies the noise.
+            if (error instanceof ApiError && error.status === 401) return false
+            return failureCount < 1
           },
         },
+      },
+      queryCache: new QueryCache({
+        onError: (err) => {
+          onAuthError(err)
+        },
       }),
-  )
+      mutationCache: new MutationCache({
+        onError: (err) => {
+          onAuthError(err)
+        },
+      }),
+    })
+  })
 
   // Inject InterwovenKit's CSS into the Shadow DOM the drawer renders into.
   // The drawer uses a shadow root for style isolation, so a normal CSS import

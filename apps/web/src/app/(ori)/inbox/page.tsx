@@ -617,17 +617,21 @@ export default function InboxPage() {
                       void handleSend()
                     }
                   }}
-                  placeholder="Write encrypted message..."
+                  placeholder={
+                    !keypair
+                      ? 'Enable encryption first (button above) to send'
+                      : 'Write encrypted message...'
+                  }
                   className="h-12 min-w-0 rounded-none border-black/20 text-sm"
                   data-testid="message-composer-input"
-                  disabled={!activeChat || sending}
+                  disabled={!activeChat || !keypair || sending}
                 />
                 <Button
                   onClick={() => void handleSend()}
                   className="h-12 shrink-0 rounded-none bg-[#0022FF] px-4 hover:bg-[#0019CC]"
                   data-testid="message-send-button"
                   aria-label="Send encrypted message"
-                  disabled={!activeChat || !draft.trim() || sending}
+                  disabled={!activeChat || !draft.trim() || !keypair || sending}
                 >
                   <Send className="h-4 w-4" />
                 </Button>
