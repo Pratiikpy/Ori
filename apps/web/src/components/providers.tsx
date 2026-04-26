@@ -87,11 +87,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
             richColors
             toastOptions={{
               style: {
-                borderRadius: '14px',
-                background: 'rgba(255, 255, 255, 0.85)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(0, 0, 0, 0.06)',
-                color: '#1D1D1F',
+                borderRadius: '0',
+                background: '#FFFFFF',
+                border: '1px solid rgba(0, 0, 0, 0.16)',
+                color: '#0A0A0A',
+                boxShadow: '4px 4px 0 rgba(0, 34, 255, 0.22)',
               },
             }}
           />

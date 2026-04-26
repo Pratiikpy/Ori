@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from 'next'
-import { Manrope, IBM_Plex_Sans, JetBrains_Mono } from 'next/font/google'
+import { Archivo, Manrope, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 
-const heading = Manrope({
+const heading = Archivo({
   subsets: ['latin'],
-  weight: ['400', '500', '700', '800'],
+  weight: ['400', '500', '700', '900'],
   variable: '--font-heading',
   display: 'swap',
 })
 
-const body = IBM_Plex_Sans({
+const body = Manrope({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600'],
   variable: '--font-body',
   display: 'swap',
 })

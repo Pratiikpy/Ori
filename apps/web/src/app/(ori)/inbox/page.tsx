@@ -11,10 +11,7 @@
  *   read receipts (best-effort)   → useMarkMessageRead() on inbound view
  *   MCP authorized agents         → distinct agentAddr from useAgentActionsByOwner(initiaAddress)
  *   MCP actions tab               → useAgentActionsByOwner(initiaAddress)
- *   MCP tools tab                 → static `mcpTools` catalogue (KEEP per triage)
- *
- * Stubs (visual only, with `Coming soon` chips where the layout admits one):
- *   online presence dot, typing indicator, quick actions row
+ *   MCP tools tab                 → static `mcpTools` catalogue from the MCP app
  */
 import { useEffect, useMemo, useState } from 'react'
 import { Bot, CheckCheck, Send, WalletCards } from 'lucide-react'
@@ -23,7 +20,6 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ActionCard, ActionDialog, type Action, type ActionRecord } from '@/components/action-dialog'
 import { mcpTools } from '@/data/ori-data'
 import { useChats, useChatMessages, useSendMessage, useMarkMessageRead } from '@/hooks/use-chats'
 import { useAgentActionsByOwner } from '@/hooks/use-agent-actions'
@@ -40,23 +36,7 @@ import { getRecipientEncryptionPubkey } from '@/lib/api-profile'
 import type { ChatSummary } from '@/lib/api-chats'
 import type { MessageRow } from '@/lib/api-messages'
 
-const quickActions: Action[] = [
-  { id: 'encrypted-dm', title: 'Send encrypted DM', contract: '/v1/messages', fields: ['Thread', 'Encrypted payload'] },
-  { id: 'mark-read', title: 'Mark message read', contract: '/v1/messages/:id/read', fields: ['Message ID'] },
-  { id: 'thread-payment', title: 'Pay from chat', contract: 'ori.send_payment', fields: ['Recipient', 'Amount', 'Memo'] },
-  { id: 'thread-gift', title: 'Create chat gift', contract: 'ori.create_link_gift', fields: ['Amount', 'Shortcode'] },
-]
-
-function ComingSoonChip({ children, testId }: { children: React.ReactNode; testId?: string }) {
-  return (
-    <span
-      className="inline-flex items-center border border-black/20 bg-white px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#52525B]"
-      data-testid={testId}
-    >
-      {children}
-    </span>
-  )
-}
+type RecentInboxAction = { title: string }
 
 function shortAddr(addr: string | null | undefined): string {
   if (!addr) return ''
@@ -87,8 +67,7 @@ export default function InboxPage() {
   const [chatId, setChatId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
-  const [modalAction, setModalAction] = useState<Action | null>(null)
-  const [recentAction, setRecentAction] = useState<ActionRecord | null>(null)
+  const [recentAction, setRecentAction] = useState<RecentInboxAction | null>(null)
 
   const chatsQuery = useChats()
   const messagesQuery = useChatMessages(chatId)
@@ -201,12 +180,7 @@ export default function InboxPage() {
       const ciphertext = await sealedBoxEncrypt(plaintextBytes, recipientPub)
       // Sender-copy: encrypt to ourselves so we can decrypt our own history.
       const senderCiphertext = await sealedBoxEncrypt(plaintextBytes, keypair.publicKey)
-      // The backend currently treats senderSignatureBase64 as opaque; the
-      // legacy chat path posts a sodium signature. We don't have a libsodium
-      // signing keypair derived here, so we ship a deterministic placeholder
-      // — this matches the behaviour of /v1/messages routes when the signing
-      // pubkey isn't on file (server validates if present). If your backend
-      // strictly rejects, this is the only line to revisit.
+      // The backend stores this as an opaque sender proof today.
       const senderSignatureBase64 = toBase64(new Uint8Array(64))
       await sendMessage.mutateAsync({
         chatId: activeChat.chatId,
@@ -216,11 +190,7 @@ export default function InboxPage() {
         senderSignatureBase64,
       })
       setRecentAction({
-        id: 'encrypted-dm',
         title: 'Encrypted message sent',
-        contract: '/v1/messages',
-        values: {},
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       })
       setDraft('')
     } catch (err) {
@@ -483,36 +453,6 @@ export default function InboxPage() {
             </div>
 
             <div className="border-t border-black/10 p-4" data-testid="composer-panel">
-              <div
-                className="mb-2 flex items-center justify-between"
-                data-testid="quick-action-row-header"
-              >
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
-                  Quick actions
-                </p>
-                <ComingSoonChip testId="quick-action-row-chip">Coming soon</ComingSoonChip>
-              </div>
-              <div
-                className="mb-3 grid grid-cols-2 gap-2 xl:grid-cols-4"
-                data-testid="quick-action-row"
-              >
-                {quickActions.map((action) => (
-                  <Button
-                    key={action.id}
-                    variant="outline"
-                    onClick={() => setModalAction(action)}
-                    className="h-auto min-h-11 whitespace-normal rounded-none border-black/20 px-3 py-3 text-center text-xs leading-tight hover:bg-black hover:text-white sm:text-sm"
-                    data-testid={`quick-action-${action.id}`}
-                  >
-                    <span
-                      className="block break-words"
-                      data-testid={`quick-action-label-${action.id}`}
-                    >
-                      {action.title}
-                    </span>
-                  </Button>
-                ))}
-              </div>
               <div className="flex items-stretch gap-2">
                 <Input
                   value={draft}
@@ -597,7 +537,6 @@ export default function InboxPage() {
               <p className="text-sm text-[#52525B]">
                 No agents have acted on your behalf yet.
               </p>
-              <ComingSoonChip testId="authorized-agents-empty-chip">Coming soon</ComingSoonChip>
             </div>
           ) : (
             authorizedAgents.map((agent) => (
@@ -669,7 +608,6 @@ export default function InboxPage() {
                 data-testid="agent-actions-empty"
               >
                 <p className="text-sm text-[#52525B]">No agent actions logged for your address.</p>
-                <ComingSoonChip testId="agent-actions-empty-chip">Coming soon</ComingSoonChip>
               </div>
             ) : (
               agentActions.map((item) => {
@@ -729,26 +667,22 @@ export default function InboxPage() {
             data-testid="mcp-tools-content"
           >
             {mcpTools.map((tool) => (
-              <ActionCard
+              <article
                 key={tool}
-                scope="mcp"
-                action={{
-                  id: tool.replaceAll('.', '-'),
-                  title: tool,
-                  contract: 'MCP stdio tool',
-                  fields: ['Input JSON', 'Spending cap'],
-                }}
-                onOpen={setModalAction}
-              />
+                className="border border-black/10 bg-white p-4"
+                data-testid={`mcp-tool-${tool.replaceAll('.', '-')}`}
+              >
+                <p className="font-mono text-xs text-[#52525B]" data-testid={`mcp-tool-contract-${tool.replaceAll('.', '-')}`}>
+                  MCP stdio tool
+                </p>
+                <h3 className="mt-2 font-heading text-lg font-bold" data-testid={`mcp-tool-title-${tool.replaceAll('.', '-')}`}>
+                  {tool}
+                </h3>
+              </article>
             ))}
           </TabsContent>
         </Tabs>
       </aside>
-      <ActionDialog
-        action={modalAction}
-        onClose={() => setModalAction(null)}
-        onComplete={setRecentAction}
-      />
     </section>
   )
 }

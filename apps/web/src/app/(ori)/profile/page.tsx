@@ -20,11 +20,8 @@
  *   • Privacy switch          → msgUpdatePrivacy on toggle
  *   • Agent policy slider     → msgSetAgentPolicy on commit (requires agent addr)
  *
- * Stubs (toast + chip — no helper or no endpoint):
- *   • Reputation tab actions  (no msg helpers)
- *   • Agent policy kill switch (no helper)
- *   • Settings push subscribe/delete (browser permission complexity)
- *   • Phone push toggle
+ * Settings push subscribe/delete use the real PWA push endpoints through
+ * lib/push-client.
  */
 import { useMemo, useState } from 'react'
 import {
@@ -71,6 +68,10 @@ import {
   msgUnfollow,
   msgSetAgentPolicy,
   msgRevokeAgent,
+  msgThumbsUp,
+  msgThumbsDown,
+  msgRetractVote,
+  msgAttest,
 } from '@/lib/contracts'
 import {
   ORI_CHAIN_ID,
@@ -78,6 +79,7 @@ import {
   GAS_LIMITS,
 } from '@/lib/chain-config'
 import { sendTx, buildAutoSignFee, friendlyError } from '@/lib/tx'
+import { ensurePushSubscription, unsubscribePush } from '@/lib/push-client'
 
 /**
  * Optional default agent address for the policy slider commit. If unset, the
@@ -361,22 +363,21 @@ export default function ProfilePage() {
           )
           return
         }
-        case 'agent-kill-switch': {
-          // STUB: no helper yet.
-          toast.message('Kill switch coming soon', {
-            description: 'agent_policy.move kill-switch helper not exposed yet.',
-          })
-          return
-        }
 
         // ---------- settings tab ----------
-        case 'push-subscribe':
+        case 'push-subscribe': {
+          const sub = await ensurePushSubscription()
+          if (!sub) toast.error('Push notifications are not available or permission was denied')
+          else {
+            setPushEnabled(true)
+            toast.success('Push notifications registered')
+          }
+          return
+        }
         case 'push-delete': {
-          // STUB: PWA push subscription (browser PermissionAPI complexity).
-          toast.message('Push notifications coming soon', {
-            description:
-              'PWA push registration will be wired once the service-worker handshake lands.',
-          })
+          await unsubscribePush()
+          setPushEnabled(false)
+          toast.success('Push notifications removed')
           return
         }
         case 'agent-card': {
@@ -391,14 +392,44 @@ export default function ProfilePage() {
         }
 
         // ---------- reputation tab ----------
-        case 'thumbs-up':
-        case 'thumbs-down':
-        case 'retract-vote':
+        case 'thumbs-up': {
+          if (!firstValue) {
+            toast.error('Enter a target address')
+            return
+          }
+          await submitMsg(msgThumbsUp({ voter: initiaAddress, target: firstValue }), 'Thumbs up')
+          return
+        }
+        case 'thumbs-down': {
+          if (!firstValue) {
+            toast.error('Enter a target address')
+            return
+          }
+          await submitMsg(msgThumbsDown({ voter: initiaAddress, target: firstValue }), 'Thumbs down')
+          return
+        }
+        case 'retract-vote': {
+          if (!firstValue) {
+            toast.error('Enter a target address')
+            return
+          }
+          await submitMsg(msgRetractVote({ voter: initiaAddress, target: firstValue }), 'Vote retracted')
+          return
+        }
         case 'attest-signed-claim': {
-          // STUB: no msg helpers in lib/contracts.ts for reputation.move.
-          toast.message('Reputation actions coming soon', {
-            description: 'reputation.move msg helpers not yet exposed.',
-          })
+          if (!firstValue) {
+            toast.error('Enter a target address')
+            return
+          }
+          await submitMsg(
+            msgAttest({
+              attester: initiaAddress,
+              target: firstValue,
+              claim: secondValue || 'Ori attestation',
+              evidenceUri: '',
+            }),
+            'Attestation submitted',
+          )
           return
         }
 
@@ -806,12 +837,6 @@ export default function ProfilePage() {
                 <LinkIcon className="h-4 w-4" />
                 No links yet
               </Button>
-              <p
-                className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]"
-                data-testid="merchant-coming-soon-chip"
-              >
-                Coming soon
-              </p>
             </>
           ) : (
             (profile.data!.links).map((link, idx) => (
@@ -855,21 +880,14 @@ export default function ProfilePage() {
                 checked={pushEnabled}
                 onCheckedChange={(next) => {
                   setPushEnabled(next)
-                  toast.message('Push notifications coming soon', {
-                    description:
-                      'PWA push registration ships with the service-worker handshake.',
+                  void (next ? ensurePushSubscription() : unsubscribePush()).then(() => {
+                    toast.success(next ? 'Push notifications registered' : 'Push notifications removed')
                   })
                 }}
                 className="data-[state=checked]:bg-[#0022FF]"
                 data-testid="push-notification-switch"
               />
             </div>
-            <p
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]"
-              data-testid="push-coming-soon-chip"
-            >
-              Coming soon
-            </p>
             <div
               className="flex items-center justify-between border border-black/10 p-3"
               data-testid="auto-sign-row"
@@ -908,7 +926,6 @@ export default function ProfilePage() {
           ))}
         </TabsList>
         {profileActions.map((section) => {
-          const isStubSection = section.id === 'reputation'
           return (
             <TabsContent
               key={section.id}
@@ -916,18 +933,8 @@ export default function ProfilePage() {
               className="mt-4"
               data-testid={`profile-tab-content-${section.id}`}
             >
-              {isStubSection && (
-                <p
-                  className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]"
-                  data-testid={`profile-tab-chip-${section.id}`}
-                >
-                  Coming soon — reputation.move helpers not yet exposed.
-                </p>
-              )}
               <div
-                className={`grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 ${
-                  isStubSection ? 'pointer-events-none opacity-50' : ''
-                }`}
+                className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
                 data-testid={`profile-actions-grid-${section.id}`}
               >
                 {section.actions.map((action) => (
@@ -956,10 +963,9 @@ export default function ProfilePage() {
       <ActionDialog
         action={modalAction}
         onClose={() => setModalAction(null)}
-        onComplete={(record) => {
+        onComplete={async (record) => {
           setRecentAction(record)
-          // Fire-and-forget — UI already closed, errors surface via toast.
-          void dispatchAction(record, record.values)
+          await dispatchAction(record, record.values)
         }}
       />
     </section>

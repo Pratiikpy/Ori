@@ -8,7 +8,7 @@
  *   Leaderboards tab  → useTopCreators / useTopTippers / useProfileTopTippers
  *   Oracle prices tab → useOraclePrices(['BTC/USD', 'ETH/USD', 'SOL/USD', 'BNB/USD', 'ATOM/USD'])
  *                       (React-Query refetchInterval handles "live"; no setInterval drift.)
- *   Activity tab      → STUB — no global activity feed endpoint.
+ *   Activity tab      → useActivity(initiaAddress) for the connected profile feed.
  *   Squads tab        → 5 actions wired via custom dialog → useAutoSign → sendTx.
  *
  * Squads dialog choice: ActionDialog only fires a toast on submit and we can't
@@ -44,6 +44,7 @@ import {
   useTopTippers,
 } from '@/hooks/use-leaderboards'
 import { useOraclePrices } from '@/hooks/use-oracle'
+import { useActivity } from '@/hooks/use-activity'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import { ORI_CHAIN_ID } from '@/lib/chain-config'
 import {
@@ -60,6 +61,7 @@ import {
 } from '@/lib/api-oracle'
 import type { DiscoverEntry } from '@/lib/api-discover'
 import type { LeaderEntry, ProfileTipperEntry } from '@/lib/api-leaderboards'
+import type { ActivityEntry } from '@/lib/api-activity'
 
 // ---------- discover labels (verbatim ids from reference) ----------
 const DISCOVER_LABELS: Record<string, string> = {
@@ -91,13 +93,6 @@ const squadActions: SquadAction[] = [
   { id: 'transfer-leadership', title: 'Transfer leadership', contract: 'squads.move', fields: ['Squad ID', 'New leader'] },
 ]
 
-const ACTIVITY_PLACEHOLDER_ROWS = [
-  'mira.init purchased paywall #204',
-  'nova.agent.init scheduled price prediction',
-  'kai.init released subscription period',
-  'rio.init claimed group gift',
-] as const
-
 const ORACLE_PAIRS = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'BNB/USD', 'ATOM/USD'] as const
 const ORACLE_IDS = ['btc', 'eth', 'sol', 'bnb', 'atom'] as const
 
@@ -108,6 +103,13 @@ function entryLabel(entry: DiscoverEntry): string {
 
 function leaderLabel(row: LeaderEntry | ProfileTipperEntry): string {
   return row.initName ? `${row.initName}.init` : `${row.address.slice(0, 10)}...`
+}
+
+function activityLabel(entry: ActivityEntry): string {
+  const who = `${entry.counterparty.slice(0, 10)}...`
+  if (entry.kind === 'tip') return `${entry.direction === 'given' ? 'Tipped' : 'Received tip from'} ${who}`
+  if (entry.kind === 'payment') return `${entry.direction === 'sent' ? 'Paid' : 'Received payment from'} ${who}`
+  return entry.direction === 'started_following' ? `Followed ${who}` : `${who} followed you`
 }
 
 // ---------- page ----------
@@ -137,6 +139,7 @@ export default function ExplorePage() {
 
   // Oracle wiring (React-Query refetchInterval — replaces setInterval drift).
   const oracle = useOraclePrices([...ORACLE_PAIRS])
+  const activity = useActivity(initiaAddress, 12)
 
   const openSquadModal = useCallback((action: SquadAction) => {
     setSquadValues({})
@@ -503,7 +506,7 @@ export default function ExplorePage() {
           })}
         </TabsContent>
 
-        {/* ---------------- ACTIVITY (STUB) ---------------- */}
+        {/* ---------------- ACTIVITY ---------------- */}
         <TabsContent
           value="activity"
           className="mt-4 border border-black/10 bg-white p-6"
@@ -514,31 +517,36 @@ export default function ExplorePage() {
             data-testid="activity-header"
           >
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#52525B]">
-              Public activity feed
+              Your activity feed
             </p>
-            <span
-              className="border border-black/10 bg-[#F5F5F5] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#52525B]"
-              data-testid="activity-coming-soon-chip"
-            >
-              Coming soon
-            </span>
           </div>
-          {ACTIVITY_PLACEHOLDER_ROWS.map((item, index) => (
-            <div
-              key={item}
-              className="flex items-center gap-4 border-b border-black/10 py-4 last:border-b-0"
-              data-testid={`activity-row-${index}`}
-            >
-              <Activity className="h-4 w-4 text-[#0022FF]" />
-              <span
-                className="text-sm text-[#52525B]"
-                data-testid={`activity-text-${index}`}
-                title={item}
+          {!initiaAddress ? (
+            <p className="text-sm text-[#52525B]" data-testid="activity-disconnected">
+              Connect wallet to load your activity.
+            </p>
+          ) : activity.isLoading ? (
+            <p className="font-mono text-sm text-[#52525B]" data-testid="activity-loading">Loading…</p>
+          ) : (activity.data?.entries ?? []).length === 0 ? (
+            <p className="font-mono text-sm text-[#52525B]" data-testid="activity-empty">No activity yet.</p>
+          ) : (
+            (activity.data?.entries ?? []).map((item, index) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-4 border-b border-black/10 py-4 last:border-b-0"
+                data-testid={`activity-row-${index}`}
               >
-                Coming soon — public activity feed
-              </span>
-            </div>
-          ))}
+                <Activity className="h-4 w-4 text-[#0022FF]" />
+                <div>
+                  <p className="text-sm font-semibold" data-testid={`activity-text-${index}`}>
+                    {activityLabel(item)}
+                  </p>
+                  <p className="mt-1 font-mono text-xs text-[#52525B]" data-testid={`activity-time-${index}`}>
+                    {new Date(item.at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
         </TabsContent>
 
         {/* ---------------- SQUADS ---------------- */}
@@ -573,7 +581,7 @@ export default function ExplorePage() {
           className="mt-6 font-mono text-sm text-[#0022FF]"
           data-testid="explore-recent-action"
         >
-          {recentAction.title} simulated.
+          {recentAction.title} submitted.
         </p>
       )}
 

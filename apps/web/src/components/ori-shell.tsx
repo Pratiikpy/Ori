@@ -10,10 +10,10 @@
  *   - trust score from useTrustScore (the `/v1/profiles/:address/trust-score`
  *     endpoint), shown only when connected
  *
- * No mock-data fallbacks. When disconnected, the sidebar wallet card shows
+ * No invented data fallbacks. When disconnected, the sidebar wallet card shows
  * "Not connected" + a primary connect button; the topbar trust/agent badges
  * are hidden entirely. The agent-cap topbar pill is also hidden because no
- * `agent_policy.move` view function is exposed yet (would be a fake number).
+ * `agent_policy.move` view function is exposed yet.
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -65,7 +65,7 @@ export function OriShell({
   const trustQuery = useTrustScore(isConnected ? initiaAddress : null)
 
   const username = usernameQuery.data
-  // Display values — only shown when connected. No mock fallbacks.
+  // Display values — only shown when connected. No invented fallbacks.
   const handle = isConnected
     ? username
       ? `${username}.init`

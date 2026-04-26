@@ -5,12 +5,10 @@
  *
  * Visual layout: verbatim port of ui-ref-orii/frontend/src/pages/Money.jsx.
  * Wiring strategy:
- *   - Total wallet balance & Agent daily cap → STUB chips (no view fns yet).
- *   - Portfolio grid → usePortfolio(initiaAddress) → 4 real tiles from stats.*.
- *   - Tab actions → ActionDialog still drives the form; we wrap onComplete
- *     and route by `action.id` to msg* helpers + sendTx (or inline fetch
- *     for sponsor REST). Streams + paywalls + cancel-subscription = toast
- *     "Coming soon".
+ *   - Wallet + portfolio summary → real connected wallet state and
+ *     usePortfolio(initiaAddress).
+ *   - Tab actions → ActionDialog collects inputs; handleComplete routes to
+ *     real Move helpers, or the documented REST sponsor/link endpoints.
  *
  * Per-action mapping documented in apps/web/_protocol/verify/Money.md.
  */
@@ -20,7 +18,6 @@ import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import {
   ActionCard,
@@ -43,19 +40,30 @@ import {
   msgCreateGroupGift,
   msgCreateLinkGift,
   msgClaimDirectedGift,
+  msgClaimGroupSlot,
   msgClaimLinkGift,
+  msgCloseStream,
+  msgCreatePaywall,
   msgDeactivateSubscriptionPlan,
+  msgDeactivatePaywall,
+  msgCancelSubscription,
+  msgOpenStream,
+  msgPurchasePaywall,
   msgReclaimExpiredGift,
+  msgReclaimExpiredGroup,
   msgRegisterGiftBox,
+  msgRegisterMerchant,
   msgRegisterSubscriptionPlan,
   msgReleaseSubscriptionPeriod,
   msgSendPayment,
   msgSubscribe,
+  msgWithdrawStream,
   msgTip,
 } from '@/lib/contracts'
 import { resolve } from '@/lib/resolve'
 import { deriveChatId, randomBytes, sha256 } from '@/lib/crypto'
 import { buildAutoSignFee, friendlyError, sendTx } from '@/lib/tx'
+import { getSessionToken } from '@/lib/api'
 
 // ---------- helpers ----------
 
@@ -82,6 +90,26 @@ function truncAddr(a: string | null | undefined): string {
   return `${a.slice(0, 8)}…${a.slice(-4)}`
 }
 
+function parseNumericId(input: string): bigint {
+  const cleaned = input.trim().replace(/^#/, '')
+  if (!/^\d+$/.test(cleaned)) throw new Error('Numeric ID required')
+  return BigInt(cleaned)
+}
+
+function parseSecretHex(input: string): Uint8Array {
+  const cleanHex = input.trim().replace(/^0x/, '')
+  if (!/^[0-9a-fA-F]+$/.test(cleanHex) || cleanHex.length % 2 !== 0) {
+    throw new Error('Secret must be even-length hex')
+  }
+  return new Uint8Array(cleanHex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)))
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 function parsePeriodSeconds(input: string): bigint {
   const trimmed = (input ?? '').trim().toLowerCase()
   if (/^\d+$/.test(trimmed)) return BigInt(trimmed)
@@ -92,22 +120,6 @@ function parsePeriodSeconds(input: string): bigint {
   const n = Number(trimmed)
   return Number.isFinite(n) && n > 0 ? BigInt(Math.floor(n)) : 2_592_000n
 }
-
-const COMING_SOON_IDS = new Set([
-  // streams tab
-  'open-stream',
-  'withdraw-stream',
-  'close-stream',
-  // subscription cancel (no helper)
-  'cancel-subscription',
-  // paywalls tab
-  'create-paywall',
-  'purchase-paywall',
-  'deactivate-paywall',
-  'register-merchant',
-])
-
-const STUB_TAB_IDS = new Set(['streams', 'paywalls'])
 
 // ---------- page ----------
 
@@ -131,13 +143,16 @@ export default function MoneyPage() {
     })
   }
 
-  const handleComplete = async (record: ActionRecord) => {
+  const handleComplete = async (record: ActionRecord): Promise<void> => {
     setRecentAction(record)
 
     // Sponsor REST first — pure fetch, no chain.
     if (record.id === 'sponsor-status') {
       const wallet = (record.values['Wallet address'] || initiaAddress || '').trim()
-      if (!wallet) return toast.error('Connect a wallet or supply an address')
+      if (!wallet) {
+        toast.error('Connect a wallet or supply an address')
+        return
+      }
       try {
         const res = await fetch(
           `${API_URL}/v1/sponsor/status?address=${encodeURIComponent(wallet)}`,
@@ -154,7 +169,10 @@ export default function MoneyPage() {
     }
     if (record.id === 'claim-seed') {
       const wallet = (record.values['New wallet address'] || initiaAddress || '').trim()
-      if (!wallet) return toast.error('Wallet address required')
+      if (!wallet) {
+        toast.error('Wallet address required')
+        return
+      }
       try {
         const res = await fetch(`${API_URL}/v1/sponsor/seed`, {
           method: 'POST',
@@ -171,8 +189,14 @@ export default function MoneyPage() {
     if (record.id === 'sponsored-username') {
       const slug = (record.values['Desired .init'] || '').trim()
       const bio = record.values['Bio'] || ''
-      if (!slug) return toast.error('Pick a .init slug')
-      if (!initiaAddress) return toast.error('Connect a wallet first')
+      if (!slug) {
+        toast.error('Pick a .init slug')
+        return
+      }
+      if (!initiaAddress) {
+        toast.error('Connect a wallet first')
+        return
+      }
       try {
         const res = await fetch(`${API_URL}/v1/sponsor/username`, {
           method: 'POST',
@@ -184,14 +208,6 @@ export default function MoneyPage() {
       } catch (e) {
         toast.error(friendlyError(e))
       }
-      return
-    }
-
-    // Coming-soon stubs.
-    if (COMING_SOON_IDS.has(record.id)) {
-      toast.message('Coming soon', {
-        description: `${record.title} — module wiring pending.`,
-      })
       return
     }
 
@@ -295,6 +311,30 @@ export default function MoneyPage() {
           const secret = await randomBytes(32)
           const secretHash = await sha256(secret)
           const ttl = BigInt(Number(expiry) || 0)
+          let shortCode = ''
+          try {
+            const token = getSessionToken()
+            const linkRes = await fetch(`${API_URL}/v1/links`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({
+                amount: baseUnits.toString(),
+                denom: ORI_DENOM,
+                theme: 0,
+                message: record.values['Shortcode'] || '',
+                secretHashHex: bytesToHex(secretHash),
+              }),
+            })
+            if (linkRes.ok) {
+              const body = (await linkRes.json()) as { shortCode: string }
+              shortCode = body.shortCode
+            }
+          } catch {
+            /* on-chain gift creation remains authoritative */
+          }
           await sendOne(
             msgCreateLinkGift({
               sender: initiaAddress,
@@ -306,7 +346,9 @@ export default function MoneyPage() {
               denom: ORI_DENOM,
             }),
           )
-          toast.success('Link gift created — keep the secret safe')
+          toast.success('Link gift created', {
+            description: `${shortCode ? `Short code ${shortCode}. ` : ''}Secret: 0x${bytesToHex(secret)}`,
+          })
           return
         }
 
@@ -363,14 +405,8 @@ export default function MoneyPage() {
         }
 
         case 'claim-link-gift': {
-          // Form re-uses the shortcode field for giftId, claim addr for hex secret.
-          const idStr = record.values['Shortcode'] || ''
-          const secretHex = record.values['Claiming address'] || ''
-          const giftId = BigInt(idStr.replace(/^0x/, '') || '0')
-          const cleanHex = secretHex.replace(/^0x/, '')
-          const secretBytes = new Uint8Array(
-            cleanHex.match(/.{1,2}/g)?.map((b) => parseInt(b, 16)) ?? [],
-          )
+          const giftId = parseNumericId(record.values['Gift ID'] || '')
+          const secretBytes = parseSecretHex(record.values['Secret hex'] || '')
           await sendOne(
             msgClaimLinkGift({
               claimer: initiaAddress,
@@ -382,9 +418,9 @@ export default function MoneyPage() {
           return
         }
 
-        case 'claim-directed-group-gift': {
+        case 'claim-directed-gift': {
           const idStr = record.values['Gift ID'] || ''
-          const giftId = BigInt(idStr.replace(/^0x/, '') || '0')
+          const giftId = parseNumericId(idStr)
           await sendOne(
             msgClaimDirectedGift({ claimer: initiaAddress, giftId }),
           )
@@ -392,13 +428,31 @@ export default function MoneyPage() {
           return
         }
 
-        case 'reclaim-expired-gifts': {
+        case 'claim-group-slot': {
+          const giftId = parseNumericId(record.values['Group gift ID'] || '')
+          const slotIndex = parseNumericId(record.values['Slot index'] || '')
+          const secret = parseSecretHex(record.values['Secret hex'] || '')
+          await sendOne(
+            msgClaimGroupSlot({ claimer: initiaAddress, giftId, slotIndex, secret }),
+          )
+          toast.success('Group gift slot claimed')
+          return
+        }
+
+        case 'reclaim-expired-gift': {
           const idStr = record.values['Gift ID'] || ''
-          const giftId = BigInt(idStr.replace(/^0x/, '') || '0')
+          const giftId = parseNumericId(idStr)
           await sendOne(
             msgReclaimExpiredGift({ sender: initiaAddress, giftId }),
           )
           toast.success('Reclaimed expired gift')
+          return
+        }
+
+        case 'reclaim-expired-group': {
+          const giftId = parseNumericId(record.values['Group gift ID'] || '')
+          await sendOne(msgReclaimExpiredGroup({ sender: initiaAddress, giftId }))
+          toast.success('Reclaimed expired group gift')
           return
         }
 
@@ -418,6 +472,42 @@ export default function MoneyPage() {
             }),
           )
           toast.success('Gift box template registered')
+          return
+        }
+
+        // ----- streams -----
+        case 'open-stream': {
+          const recipientInput = record.values['Recipient .init or address'] || ''
+          const rate = toBaseUnits(record.values['Rate per second'] || '')
+          const durationSeconds = BigInt(Number(record.values['Duration seconds'] || 0))
+          const r = await resolve(recipientInput.trim())
+          if (!r?.initiaAddress) throw new Error('Recipient could not be resolved')
+          if (rate <= 0n) throw new Error('Rate must be > 0')
+          if (durationSeconds <= 0n) throw new Error('Duration must be > 0')
+          await sendOne(
+            msgOpenStream({
+              sender: initiaAddress,
+              recipient: r.initiaAddress,
+              ratePerSecond: rate,
+              durationSeconds,
+              denom: ORI_DENOM,
+            }),
+          )
+          toast.success('Payment stream opened')
+          return
+        }
+
+        case 'withdraw-stream': {
+          const streamId = parseNumericId(record.values['Stream ID'] || '')
+          await sendOne(msgWithdrawStream({ recipient: initiaAddress, streamId }))
+          toast.success('Stream withdrawal submitted')
+          return
+        }
+
+        case 'close-stream': {
+          const streamId = parseNumericId(record.values['Stream ID'] || '')
+          await sendOne(msgCloseStream({ sender: initiaAddress, streamId }))
+          toast.success('Stream close submitted')
           return
         }
 
@@ -475,6 +565,17 @@ export default function MoneyPage() {
           return
         }
 
+        case 'cancel-subscription': {
+          const creatorInput = record.values['Creator .init or address'] || ''
+          const creator = await resolve(creatorInput.trim())
+          if (!creator?.initiaAddress) throw new Error('Creator could not be resolved')
+          await sendOne(
+            msgCancelSubscription({ subscriber: initiaAddress, creator: creator.initiaAddress }),
+          )
+          toast.success('Subscription cancelled')
+          return
+        }
+
         case 'deactivate-plan': {
           await sendOne(
             msgDeactivateSubscriptionPlan({ creator: initiaAddress }),
@@ -483,10 +584,56 @@ export default function MoneyPage() {
           return
         }
 
+        // ----- paywalls + merchant -----
+        case 'create-paywall': {
+          const title = record.values['Title'] || ''
+          const resourceUri = record.values['Content link or promise'] || ''
+          const price = toBaseUnits(record.values['Price'] || '')
+          if (!title.trim()) throw new Error('Title required')
+          if (!resourceUri.trim()) throw new Error('Content link or promise required')
+          if (price <= 0n) throw new Error('Price must be > 0')
+          await sendOne(
+            msgCreatePaywall({ creator: initiaAddress, title, resourceUri, price, denom: ORI_DENOM }),
+          )
+          toast.success('Paywall created')
+          return
+        }
+
+        case 'purchase-paywall': {
+          const paywallId = parseNumericId(record.values['Paywall ID'] || '')
+          await sendOne(msgPurchasePaywall({ buyer: initiaAddress, paywallId }))
+          toast.success('Paywall purchase submitted')
+          return
+        }
+
+        case 'deactivate-paywall': {
+          const paywallId = parseNumericId(record.values['Paywall ID'] || '')
+          await sendOne(msgDeactivatePaywall({ creator: initiaAddress, paywallId }))
+          toast.success('Paywall deactivated')
+          return
+        }
+
+        case 'register-merchant': {
+          const acceptedDenoms = (record.values['Accepted denoms CSV'] || ORI_DENOM)
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean)
+          await sendOne(
+            msgRegisterMerchant({
+              owner: initiaAddress,
+              name: record.values['Merchant name'] || '',
+              category: record.values['Category'] || 'creator',
+              logoUrl: record.values['Logo URL'] || '',
+              contact: record.values['Contact'] || '',
+              acceptedDenoms,
+            }),
+          )
+          toast.success('Merchant registration submitted')
+          return
+        }
+
         default:
-          toast.message('Not wired', {
-            description: `${record.title} has no handler yet.`,
-          })
+          toast.error(`${record.title} is not available in this build`)
       }
     } catch (e) {
       toast.error(friendlyError(e))
@@ -502,22 +649,15 @@ export default function MoneyPage() {
         className="grid grid-cols-1 gap-4 lg:grid-cols-4"
         data-testid="money-overview-grid"
       >
-        {/* Balance card (STUB) */}
         <div
           className="relative border border-black/10 bg-black p-6 text-white lg:col-span-2"
           data-testid="money-balance-card"
         >
-          <span
-            className="absolute right-4 top-4 border border-white/40 bg-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/80"
-            data-testid="money-balance-chip"
-          >
-            Balance live soon
-          </span>
           <p
             className="text-xs font-bold uppercase tracking-[0.2em] text-white/60"
             data-testid="money-balance-label"
           >
-            Total wallet
+            Wallet
           </p>
           <h2
             className="mt-4 font-mono text-3xl font-black tracking-tight md:text-4xl"
@@ -535,7 +675,7 @@ export default function MoneyPage() {
             className="mt-4 max-w-xl text-sm leading-6 text-white/70"
             data-testid="money-balance-detail"
           >
-            Prototype portfolio rolls up balances, paywalls, streams, tips, subscriptions, gifts, and sponsored gas readiness.
+            Connected actions below submit through the existing wallet integration and Ori backend endpoints.
           </p>
           {!isConnected && (
             <Button
@@ -549,32 +689,23 @@ export default function MoneyPage() {
           )}
         </div>
 
-        {/* Agent daily cap (STUB) */}
         <div
           className="relative border border-black/10 bg-white p-6"
           data-testid="money-agent-budget-card"
         >
-          <span
-            className="absolute right-3 top-3 border border-black/20 bg-[#F5F5F5] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#52525B]"
-            data-testid="money-agent-budget-chip"
-          >
-            Coming soon
-          </span>
           <Radio className="h-6 w-6 text-[#0022FF]" />
           <p
             className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]"
             data-testid="money-agent-budget-label"
           >
-            Agent daily cap
+            Activity totals
           </p>
           <p className="mt-2 font-mono text-2xl font-black" data-testid="money-agent-budget-value">
-            250 INIT
+            {stats ? `${stats.paymentsSent + stats.tipsGiven} sent` : '—'}
           </p>
-          <Progress
-            value={38}
-            className="mt-5 h-2 rounded-none bg-black/10"
-            data-testid="money-agent-budget-progress"
-          />
+          <p className="mt-4 font-mono text-xs text-[#52525B]" data-testid="money-agent-budget-progress">
+            {stats ? `${stats.paymentsReceived + stats.tipsReceived} received · ${stats.giftsClaimed} gifts claimed` : 'Connect wallet for portfolio stats'}
+          </p>
         </div>
 
         {/* Gift visual (KEEP) */}
@@ -698,7 +829,6 @@ export default function MoneyPage() {
           ))}
         </TabsList>
         {moneyTabs.map((tab) => {
-          const isStub = STUB_TAB_IDS.has(tab.id)
           return (
             <TabsContent
               key={tab.id}
@@ -716,14 +846,6 @@ export default function MoneyPage() {
                     data-testid={`money-tab-overline-${tab.id}`}
                   >
                     {tab.label}
-                    {isStub && (
-                      <span
-                        className="border border-black/20 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#52525B]"
-                        data-testid={`money-tab-chip-${tab.id}`}
-                      >
-                        Coming soon
-                      </span>
-                    )}
                   </p>
                   <h2
                     className="font-heading text-3xl font-black tracking-tight"
@@ -763,13 +885,13 @@ export default function MoneyPage() {
           data-testid="money-recent-action"
         >
           <Gift className="mr-2 inline h-4 w-4 text-[#0022FF]" />
-          {recentAction.title} queued at {recentAction.time}
+          {recentAction.title} submitted at {recentAction.time}
         </div>
       )}
       <ActionDialog
         action={modalAction}
         onClose={() => setModalAction(null)}
-        onComplete={(record) => void handleComplete(record)}
+        onComplete={handleComplete}
       />
     </section>
   )

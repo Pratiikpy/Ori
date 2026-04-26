@@ -4,15 +4,12 @@
  * ActionDialog + ActionCard — verbatim port of
  * ui-ref-orii/frontend/src/components/ActionDialog.jsx.
  *
- * The reference simulates contract actions via a toast-and-record loop.
- * Real wiring to Move modules (payment_router, wager_escrow, etc.)
- * happens in lib/contracts and lib/tx — those callsites should
- * eventually replace `submitAction` with the actual InterwovenKit
- * tx execution pattern. (TODO: real backend wiring.)
+ * Generic action form used by the connected Ori surfaces. It only collects
+ * inputs and delegates execution to the page-level handler; confirmations
+ * are emitted only after the connected handler runs.
  */
 import { useState } from 'react'
 import { Check, X } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,17 +33,19 @@ export function ActionDialog({
 }: {
   action: Action | null
   onClose: () => void
-  onComplete: (record: ActionRecord) => void
+  onComplete: (record: ActionRecord) => void | Promise<void>
 }) {
   const [values, setValues] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
 
   if (!action) return null
 
   const updateValue = (field: string, value: string) =>
     setValues((current) => ({ ...current, [field]: value }))
 
-  const submitAction = (event: React.FormEvent) => {
+  const submitAction = async (event: React.FormEvent) => {
     event.preventDefault()
+    setSubmitting(true)
     const record: ActionRecord = {
       ...action,
       values,
@@ -55,11 +54,13 @@ export function ActionDialog({
         minute: '2-digit',
       }),
     }
-    onComplete(record)
-    toast.success(`${action.title} simulated`, {
-      description: `${action.contract} is ready for live wiring.`,
-    })
-    onClose()
+    try {
+      await onComplete(record)
+      setValues({})
+      onClose()
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -155,6 +156,7 @@ export function ActionDialog({
             onClick={onClose}
             className="rounded-none border-black hover:bg-black hover:text-white"
             data-testid={`modal-cancel-${action.id}`}
+            disabled={submitting}
           >
             Cancel
           </Button>
@@ -162,8 +164,9 @@ export function ActionDialog({
             type="submit"
             className="rounded-none bg-[#0022FF] hover:bg-[#0019CC]"
             data-testid={`modal-submit-${action.id}`}
+            disabled={submitting}
           >
-            <Check className="h-4 w-4" /> Simulate action
+            <Check className="h-4 w-4" /> {submitting ? 'Submitting…' : 'Submit action'}
           </Button>
         </div>
       </form>

@@ -13,9 +13,9 @@
  *   - Wagers (9) → `msgPropose*`, `msgAcceptWager`, `msgResolveWager`,
  *     `msgConcedeWager`, `msgCancelPendingWager`, `msgRefundExpiredWager`,
  *     `msgProposeOracleWager`, `msgResolveFromOracle`.
- *   - Prediction markets (5) → `msgCreatePredictionMarket`,
+ *   - Prediction markets → `msgCreatePredictionMarket`,
  *     `msgStakePrediction`, `msgResolvePrediction`,
- *     `msgClaimPredictionWinnings`. `predict-price` is STUBBED.
+ *     `msgClaimPredictionWinnings`.
  *   - Lucky pools (3) → `msgCreateLuckyPool`, `msgJoinLuckyPool`,
  *     `msgDrawLuckyPool`.
  *
@@ -160,18 +160,16 @@ export default function PlayPage() {
             }
           }
           case 'accept-wager': {
-            // GAP: "Opponent or market" repurposed as wager id
-            const wagerId = parseId(values['Opponent or market'])
+            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
             return {
               msg: msgAcceptWager({ accepter: initiaAddress, wagerId }),
               gas: 500_000,
             }
           }
           case 'resolve-wager': {
-            // GAP: "Opponent or market" → wagerId, "Terms" → winner address
-            const wagerId = parseId(values['Opponent or market'])
-            const winner = (values['Terms'] ?? '').trim()
-            if (!winner) throw new Error('Winner address required (Terms field)')
+            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
+            const winner = (values['Winner address'] ?? values['Terms'] ?? '').trim()
+            if (!winner) throw new Error('Winner address required')
             return {
               msg: msgResolveWager({
                 arbiter: initiaAddress,
@@ -182,14 +180,14 @@ export default function PlayPage() {
             }
           }
           case 'concede-wager': {
-            const wagerId = parseId(values['Opponent or market'])
+            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
             return {
               msg: msgConcedeWager({ loser: initiaAddress, wagerId }),
               gas: 500_000,
             }
           }
           case 'cancel-pending-wager': {
-            const wagerId = parseId(values['Opponent or market'])
+            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
             return {
               msg: msgCancelPendingWager({
                 proposer: initiaAddress,
@@ -199,7 +197,7 @@ export default function PlayPage() {
             }
           }
           case 'refund-expired-wager': {
-            const wagerId = parseId(values['Opponent or market'])
+            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
             return {
               msg: msgRefundExpiredWager({
                 caller: initiaAddress,
@@ -209,11 +207,13 @@ export default function PlayPage() {
             }
           }
           case 'propose-oracle-resolved-wager': {
-            // GAP: "Terms" repurposed as oraclePair (e.g. "BTC/USD")
-            // GAP: targetPrice/comparator/category not in form — sensible defaults
-            const accepter = (values['Opponent or market'] ?? '').trim()
-            const oraclePair = (values['Terms'] ?? '').trim() || 'BTC/USD'
+            const accepter = (values['Opponent address'] ?? values['Opponent or market'] ?? '').trim()
+            const oraclePair = (values['Oracle pair'] ?? values['Terms'] ?? '').trim() || 'BTC/USD'
             const amount = parseAmountToBase(values['Stake'])
+            const targetRaw = (values['Target raw oracle price'] ?? '').trim()
+            const targetPrice = /^\d+$/.test(targetRaw) ? BigInt(targetRaw) : 0n
+            const winsAboveRaw = (values['Proposer wins above'] ?? 'true').trim()
+            const proposerWinsAbove = /^(1|true|yes|y|above)$/i.test(winsAboveRaw)
             if (!accepter) throw new Error('Opponent address required')
             if (amount <= 0n) throw new Error('Stake required')
             return {
@@ -225,14 +225,14 @@ export default function PlayPage() {
                 category: 'oracle',
                 deadlineSeconds: defaultDeadlineSecondsFromNow(),
                 oraclePair,
-                targetPrice: 0n, // GAP: no target-price field — UI placeholder
-                proposerWinsAbove: true, // GAP: no comparator field
+                targetPrice,
+                proposerWinsAbove,
               }),
               gas: 700_000,
             }
           }
           case 'resolve-from-oracle': {
-            const wagerId = parseId(values['Opponent or market'])
+            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
             return {
               msg: msgResolveFromOracle({
                 caller: initiaAddress,
@@ -244,10 +244,11 @@ export default function PlayPage() {
 
           // ---------------- Prediction markets ----------------
           case 'create-market': {
-            // GAP: "Question" not used by helper. "Resolution source" → oraclePair.
-            // GAP: targetPrice/comparator not in form — defaults applied.
-            const oraclePair =
-              (values['Resolution source'] ?? '').trim() || 'BTC/USD'
+            const oraclePair = (values['Oracle pair'] ?? '').trim() || 'BTC/USD'
+            const targetRaw = (values['Target raw oracle price'] ?? '').trim()
+            const targetPrice = /^\d+$/.test(targetRaw) ? BigInt(targetRaw) : 0n
+            const comparatorRaw = (values['YES wins above'] ?? 'true').trim()
+            const comparator = /^(1|true|yes|y|above)$/i.test(comparatorRaw)
             const deadlineRaw = (values['Deadline'] ?? '').trim()
             const deadlineSeconds =
               deadlineRaw && /^\d+$/.test(deadlineRaw)
@@ -257,8 +258,8 @@ export default function PlayPage() {
               msg: msgCreatePredictionMarket({
                 sender: initiaAddress,
                 oraclePair,
-                targetPrice: 0n, // GAP
-                comparator: true, // GAP
+                targetPrice,
+                comparator,
                 deadlineSeconds,
               }),
               gas: 700_000,
@@ -367,19 +368,13 @@ export default function PlayPage() {
   )
 
   /**
-   * Called after ActionDialog finishes its built-in form submit. We route to
-   * a real on-chain tx (or stub toast for predict-price).
+   * Called after ActionDialog finishes its form submit. We route to a real
+   * on-chain transaction through the existing wallet integration.
    */
   const handleActionComplete = useCallback(
     async (record: ActionRecord) => {
       // Always set the recentAction toast row first (preserves UI behaviour).
       setRecentAction(record)
-
-      // STUB: AI predict — no contract msg.
-      if (record.id === 'predict-price') {
-        toast.message('Coming soon — AI predict via MCP')
-        return
-      }
 
       if (!isConnected) {
         openConnect()
@@ -431,7 +426,7 @@ export default function PlayPage() {
             className="mt-4 max-w-3xl text-sm leading-6 text-[#52525B]"
             data-testid="play-intro-copy"
           >
-            Every wager, prediction market, and lucky pool action is represented as a simulated transaction flow ready for contract integration.
+            Every wager, prediction market, and lucky pool action submits a real Move transaction through your connected wallet.
           </p>
         </div>
         <div
@@ -559,7 +554,7 @@ export default function PlayPage() {
           className="mt-6 border border-[#0022FF] p-4 font-mono text-sm text-[#0022FF]"
           data-testid="play-recent-action"
         >
-          {recentAction.title} simulated at {recentAction.time}
+          {recentAction.title} submitted at {recentAction.time}
         </div>
       )}
       <ActionDialog

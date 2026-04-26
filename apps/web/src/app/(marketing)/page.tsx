@@ -50,7 +50,7 @@ export default function Landing() {
           <div className="mt-10 flex flex-col gap-3 sm:flex-row" data-testid="landing-cta-row">
             <Button asChild className="rounded-none bg-[#0022FF] px-7 py-6 text-base text-white hover:bg-[#0019CC]" data-testid="landing-launch-app-button">
               <Link href="/inbox">
-                Connect simulated wallet <ArrowRight className="h-4 w-4" />
+                Open Ori <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <a href="#feature-grid" className="inline-flex items-center justify-center border border-black px-7 py-3 font-semibold transition-colors hover:bg-black hover:text-white" data-testid="landing-explore-features-link">Explore surface</a>
@@ -66,7 +66,7 @@ export default function Landing() {
               <Link href="/inbox"><WalletCards className="h-4 w-4" /> MetaMask</Link>
             </Button>
           </div>
-          <p className="mt-3 font-mono text-xs text-[#52525B]" data-testid="landing-sign-message-note">Prototype signs one tiny login message and can claim mira.init as the starter name.</p>
+          <p className="mt-3 font-mono text-xs text-[#52525B]" data-testid="landing-sign-message-note">Connect your existing wallet to load real chats, profile data, payments, and agent logs.</p>
         </div>
 
         <div className="relative border border-black/10 bg-[#F5F5F5] p-4 lg:col-span-5" data-testid="landing-hero-art-card">

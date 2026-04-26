@@ -1,0 +1,63 @@
+{
+  "summary": "Frontend-only validation completed for Ori active pages and key UI flows. All requested pages render without runtime crashes. TypeScript typecheck passes. Critical integration blockers remain due API URL/env fallback and disconnected-only profile state during testing.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Profile disconnected shell",
+        "issue": "Achievements/Quests/Links-Merchant/Notifications render as connect-only placeholders, so reputation and push sections cannot be verified as fully active in this run.",
+        "selector": "[data-testid='profile-page']",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Frontend API integration across /inbox, /play, /explore, /money",
+        "issue": "App requests http://localhost:3001/* and receives net::ERR_CONNECTION_REFUSED; real backend integration is not active in this environment run.",
+        "affected_selectors": [
+          "[data-testid='inbox-page']",
+          "[data-testid='play-page']",
+          "[data-testid='explore-page']",
+          "[data-testid='money-page']"
+        ]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Profile",
+        "issues": [
+          "Disconnected state looks like stubbed cards ('Connect wallet to view.') instead of an active actionable section for reputation/push verification."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/root/.emergent/automation_output/20260426_024807/console_20260426_024807.log",
+    "/root/.emergent/automation_output/20260426_024904/console_20260426_024904.log"
+  ],
+  "action_items": [
+    "Set NEXT_PUBLIC_API_URL (and related NEXT_PUBLIC_* endpoints) to the real backend URL; remove localhost fallback usage for deployed-like testing.",
+    "Re-run profile checks in connected wallet state to validate reputation tab actions and push controls are fully interactive.",
+    "Keep Money dialog submit label as 'Submit action' (verified) and preserve non-simulated confirmation text behavior."
+  ],
+  "critical_code_review_comments": [
+    "apps/web/src/lib/chain-config.ts hardcodes localhost defaults (API_URL/WS_URL/RPC/REST/JSON-RPC). This violates env-only fail-fast guidance and caused connection-refused integration failures.",
+    "Several interactive sidebar elements in apps/web/src/components/layout/sidebar.tsx lack data-testid attributes, reducing testability against stated QA requirements."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_1.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (skipped)",
+    "frontend": "78%"
+  },
+  "test_credentials": "Missing: /app/memory/test_credentials.md not found in workspace.",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Pages /inbox /money /play /explore /profile load without crashes at http://localhost:3000. Money tabs payments/gifts/streams/subscriptions/paywalls all expose active action buttons; send-payment modal submit label verified as 'Submit action' and recent-action text is non-simulated. Explore activity tab correctly shows connected-user state messaging (disconnected prompt in this run), no public-feed placeholder rows. Main blocker: API requests target localhost:3001 and fail; wallet remained disconnected so connected-only profile controls were not fully verifiable.",
+  "rca of the issue": "Root cause for integration failures is config fallback in chain-config.ts: NEXT_PUBLIC_API_URL defaults to http://localhost:3001 when env is absent, causing net::ERR_CONNECTION_REFUSED in browser console. Reproduction: open /explore or /play with missing NEXT_PUBLIC_API_URL => failed /v1/* fetches. Mitigation: require env values (no localhost default) and ensure deployment/test env injects correct public backend URL before UI verification."
+}

@@ -52,7 +52,7 @@ export const landingStats = [
   { id: "rails", label: "Rails", value: "Move contracts" },
 ] as const
 
-// TODO 5G: replace mock threads with the encrypted DM fetcher (lib/api).
+// Legacy sample threads retained only for routes that still import the old demo catalogue.
 export const threads = [
   {
     id: "rio",
@@ -195,9 +195,11 @@ export const moneyTabs = [
       { id: "create-link-gift", title: "Create link-gift", contract: "payment_router.move", fields: ["Amount", "Expiry", "Shortcode"] },
       { id: "create-directed-gift", title: "Create directed gift", contract: "payment_router.move", fields: fields.recipient },
       { id: "create-group-gift", title: "Create group gift", contract: "payment_router.move", fields: ["Total amount", "Claim slots", "Expiry"] },
-      { id: "claim-link-gift", title: "Claim link gift", contract: "/v1/links/:shortCode/claim", fields: ["Shortcode", "Claiming address"] },
-      { id: "claim-directed-group-gift", title: "Claim directed/group gift", contract: "payment_router.move", fields: ["Gift ID", "Proof or invite"] },
-      { id: "reclaim-expired-gifts", title: "Reclaim expired gifts", contract: "payment_router.move", fields: ["Gift ID", "Owner address"] },
+      { id: "claim-link-gift", title: "Claim link gift", contract: "gift_packet.move", fields: ["Gift ID", "Secret hex"] },
+      { id: "claim-directed-gift", title: "Claim directed gift", contract: "gift_packet.move", fields: ["Gift ID"] },
+      { id: "claim-group-slot", title: "Claim group gift slot", contract: "gift_group.move", fields: ["Group gift ID", "Slot index", "Secret hex"] },
+      { id: "reclaim-expired-gift", title: "Reclaim expired link gift", contract: "gift_packet.move", fields: ["Gift ID"] },
+      { id: "reclaim-expired-group", title: "Reclaim expired group gift", contract: "gift_group.move", fields: ["Group gift ID"] },
       { id: "register-gift-box", title: "Register gift box template", contract: "gift_box_catalog.move", fields: ["Template name", "Theme JSON", "Default amount"] },
     ],
   },
@@ -206,9 +208,9 @@ export const moneyTabs = [
     label: "Streams",
     summary: "Open per-second payments, withdraw vested funds, or close streams.",
     actions: [
-      { id: "open-stream", title: "Open a stream", contract: "payment_stream.move", fields: ["Recipient", "Rate per second", "Duration"] },
-      { id: "withdraw-stream", title: "Withdraw vested portion", contract: "payment_stream.move", fields: ["Stream ID", "Withdraw amount"] },
-      { id: "close-stream", title: "Close stream", contract: "payment_stream.move", fields: ["Stream ID", "Reason"] },
+      { id: "open-stream", title: "Open a stream", contract: "payment_stream.move", fields: ["Recipient .init or address", "Rate per second", "Duration seconds"] },
+      { id: "withdraw-stream", title: "Withdraw vested portion", contract: "payment_stream.move", fields: ["Stream ID"] },
+      { id: "close-stream", title: "Close stream", contract: "payment_stream.move", fields: ["Stream ID"] },
     ],
   },
   {
@@ -219,7 +221,7 @@ export const moneyTabs = [
       { id: "register-plan", title: "Register subscription plan", contract: "subscription_vault.move", fields: ["Plan name", "Period price", "Billing cadence"] },
       { id: "subscribe-plan", title: "Subscribe", contract: "subscription_vault.move", fields: ["Creator .init", "Plan ID"] },
       { id: "release-period", title: "Release subscription period", contract: "subscription_vault.move", fields: ["Plan ID", "Period"] },
-      { id: "cancel-subscription", title: "Cancel subscription", contract: "subscription_vault.move", fields: ["Subscription ID", "Reason"] },
+      { id: "cancel-subscription", title: "Cancel subscription", contract: "subscription_vault.move", fields: ["Creator .init or address"] },
       { id: "deactivate-plan", title: "Deactivate plan", contract: "subscription_vault.move", fields: ["Plan ID", "Final message"] },
     ],
   },
@@ -229,9 +231,9 @@ export const moneyTabs = [
     summary: "Sell content promises and x402 merchant access.",
     actions: [
       { id: "create-paywall", title: "Create paywall", contract: "paywall.move", fields: fields.content },
-      { id: "purchase-paywall", title: "Purchase paywall", contract: "paywall.move", fields: ["Paywall ID", "Buyer note"] },
-      { id: "deactivate-paywall", title: "Deactivate paywall", contract: "paywall.move", fields: ["Paywall ID", "Reason"] },
-      { id: "register-merchant", title: "Register as merchant", contract: "merchant_registry.move", fields: ["Merchant name", "Settlement address", "x402 callback URL"] },
+      { id: "purchase-paywall", title: "Purchase paywall", contract: "paywall.move", fields: ["Paywall ID"] },
+      { id: "deactivate-paywall", title: "Deactivate paywall", contract: "paywall.move", fields: ["Paywall ID"] },
+      { id: "register-merchant", title: "Register as merchant", contract: "merchant_registry.move", fields: ["Merchant name", "Category", "Logo URL", "Contact", "Accepted denoms CSV"] },
     ],
   },
   {
@@ -252,28 +254,27 @@ export const playTabs = [
     label: "Wagers",
     summary: "Escrowed 1v1, PvP, and oracle-resolved predictions.",
     actions: [
-      "Propose wager",
-      "Propose PvP wager",
-      "Accept wager",
-      "Resolve wager",
-      "Concede wager",
-      "Cancel pending wager",
-      "Refund expired wager",
-      "Propose oracle-resolved wager",
-      "Resolve from oracle",
-    ].map((title) => ({ id: title.toLowerCase().replaceAll(" ", "-"), title, contract: "wager_escrow.move", fields: fields.wager })),
+      { id: "propose-wager", title: "Propose wager", contract: "wager_escrow.move", fields: fields.wager },
+      { id: "propose-pvp-wager", title: "Propose PvP wager", contract: "wager_escrow.move", fields: fields.wager },
+      { id: "accept-wager", title: "Accept wager", contract: "wager_escrow.move", fields: ["Wager ID"] },
+      { id: "resolve-wager", title: "Resolve wager", contract: "wager_escrow.move", fields: ["Wager ID", "Winner address"] },
+      { id: "concede-wager", title: "Concede wager", contract: "wager_escrow.move", fields: ["Wager ID"] },
+      { id: "cancel-pending-wager", title: "Cancel pending wager", contract: "wager_escrow.move", fields: ["Wager ID"] },
+      { id: "refund-expired-wager", title: "Refund expired wager", contract: "wager_escrow.move", fields: ["Wager ID"] },
+      { id: "propose-oracle-resolved-wager", title: "Propose oracle-resolved wager", contract: "wager_escrow.move", fields: ["Opponent address", "Oracle pair", "Stake", "Target raw oracle price", "Proposer wins above"] },
+      { id: "resolve-from-oracle", title: "Resolve from oracle", contract: "wager_escrow.move", fields: ["Wager ID"] },
+    ],
   },
   {
     id: "markets",
     label: "Prediction markets",
     summary: "YES/NO pools, Slinky feeds, creator resolution, and winnings claims.",
     actions: [
-      { id: "create-market", title: "Create prediction market", contract: "prediction_pool.move", fields: ["Question", "Deadline", "Resolution source"] },
+      { id: "create-market", title: "Create prediction market", contract: "prediction_pool.move", fields: ["Oracle pair", "Target raw oracle price", "YES wins above", "Deadline"] },
       { id: "stake-yes", title: "Stake YES", contract: "prediction_pool.move", fields: ["Market ID", "Amount"] },
       { id: "stake-no", title: "Stake NO", contract: "prediction_pool.move", fields: ["Market ID", "Amount"] },
       { id: "resolve-market", title: "Resolve market", contract: "prediction_pool.move", fields: ["Market ID", "Outcome"] },
-      { id: "claim-winnings", title: "Claim winnings", contract: "prediction_pool.move", fields: ["Market ID", "Claim address"] },
-      { id: "predict-price", title: "AI price prediction", contract: "ori.predict", fields: ["Pair", "Horizon", "Thesis"] },
+      { id: "claim-winnings", title: "Claim winnings", contract: "prediction_pool.move", fields: ["Market ID"] },
     ],
   },
   {
@@ -313,7 +314,6 @@ export const profileActions = [
     actions: [
       { id: "set-agent-policy", title: "Set agent spending policy", contract: "agent_policy.move", fields: fields.policy },
       { id: "revoke-agent", title: "Revoke agent", contract: "agent_policy.move", fields: ["Agent address", "Reason"] },
-      { id: "agent-kill-switch", title: "Kill switch", contract: "agent_policy.move", fields: ["Confirm phrase"] },
     ],
   },
   {
