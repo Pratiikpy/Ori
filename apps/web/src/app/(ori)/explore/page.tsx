@@ -272,14 +272,47 @@ export default function ExplorePage() {
     { key: 'rising', query: rising },
   ]
 
+  // Client-side filter across all Discover sources by .init handle or
+  // address prefix. Keeps lookup snappy without a backend search endpoint.
+  // The same input doubles as a 'go to profile' shortcut for users who know
+  // the exact address — pressing Enter on a full init1… string navigates to
+  // /profile/<input>.
+  const [search, setSearch] = useState('')
+  function matchesSearch(entry: DiscoverEntry): boolean {
+    const q = search.trim().toLowerCase()
+    if (!q) return true
+    const name = (entry.initName ?? '').toLowerCase()
+    const addr = entry.address.toLowerCase()
+    return name.includes(q) || addr.includes(q)
+  }
+
   return (
     <section className="p-4 sm:p-6 lg:p-8" data-testid="explore-page">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && search.trim().toLowerCase().startsWith('init1')) {
+              window.location.href = `/profile/${search.trim()}`
+            }
+          }}
+          placeholder="Search by .init handle or paste init1… address"
+          className="min-w-[280px] flex-1 rounded-none border border-black/15 px-3 py-2 font-mono text-sm"
+          data-testid="explore-search-input"
+        />
+        <span className="font-mono text-xs text-[#52525B]">
+          Press Enter on an init1… to open that profile
+        </span>
+      </div>
+
       <div
         className="grid grid-cols-1 gap-4 xl:grid-cols-3"
         data-testid="explore-discover-grid"
       >
         {discoverSources.map(({ key, query }) => {
-          const items = (query.data ?? []) as DiscoverEntry[]
+          const allItems = (query.data ?? []) as DiscoverEntry[]
+          const items = allItems.filter(matchesSearch)
           return (
             <article
               key={key}
@@ -296,8 +329,24 @@ export default function ExplorePage() {
               <div className="mt-5 space-y-3" data-testid={`discover-list-${key}`}>
                 {query.isLoading ? (
                   <p className="font-mono text-xs text-[#52525B]">Loading…</p>
+                ) : query.isError ? (
+                  <div className="border border-black/10 p-3">
+                    <p className="font-mono text-xs text-[#0022FF]">
+                      Couldn't load — backend unreachable.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => query.refetch()}
+                      className="mt-2 text-xs underline"
+                      data-testid={`discover-retry-${key}`}
+                    >
+                      Retry
+                    </button>
+                  </div>
                 ) : items.length === 0 ? (
-                  <p className="font-mono text-xs text-[#52525B]">No entries yet.</p>
+                  <p className="font-mono text-xs text-[#52525B]">
+                    {search ? 'No matches for that search.' : 'No entries yet.'}
+                  </p>
                 ) : (
                   items.map((entry) => {
                     const label = entryLabel(entry)

@@ -388,7 +388,7 @@ export default function MoneyPage() {
           if (!r?.initiaAddress) throw new Error('Recipient could not be resolved')
           const baseUnits = toBaseUnits(amountStr)
           if (baseUnits <= 0n) throw new Error('Amount must be > 0')
-          await sendOne(
+          const __r = await sendOne(
             msgCreateDirectedGift({
               sender: initiaAddress,
               recipient: r.initiaAddress,
@@ -399,7 +399,7 @@ export default function MoneyPage() {
               denom: ORI_DENOM,
             }),
           )
-          toast.success('Directed gift created')
+          toastTx('Directed gift created', __r)
           return
         }
 
@@ -416,7 +416,7 @@ export default function MoneyPage() {
             const s = await randomBytes(32)
             hashes.push(await sha256(s))
           }
-          await sendOne(
+          const __r = await sendOne(
             msgCreateGroupGift({
               sender: initiaAddress,
               totalAmount: total,
@@ -428,31 +428,31 @@ export default function MoneyPage() {
               denom: ORI_DENOM,
             }),
           )
-          toast.success(`Group gift created (${slots.toString()} slots)`)
+          toastTx(`Group gift created (${slots.toString()} slots)`, __r)
           return
         }
 
         case 'claim-link-gift': {
           const giftId = parseNumericId(record.values['Gift ID'] || '')
           const secretBytes = parseSecretHex(record.values['Secret hex'] || '')
-          await sendOne(
+          const __r = await sendOne(
             msgClaimLinkGift({
               claimer: initiaAddress,
               giftId,
               secret: secretBytes,
             }),
           )
-          toast.success('Link gift claimed')
+          toastTx('Link gift claimed', __r)
           return
         }
 
         case 'claim-directed-gift': {
           const idStr = record.values['Gift ID'] || ''
           const giftId = parseNumericId(idStr)
-          await sendOne(
+          const __r = await sendOne(
             msgClaimDirectedGift({ claimer: initiaAddress, giftId }),
           )
-          toast.success('Directed gift claimed')
+          toastTx('Directed gift claimed', __r)
           return
         }
 
@@ -460,27 +460,27 @@ export default function MoneyPage() {
           const giftId = parseNumericId(record.values['Group gift ID'] || '')
           const slotIndex = parseNumericId(record.values['Slot index'] || '')
           const secret = parseSecretHex(record.values['Secret hex'] || '')
-          await sendOne(
+          const __r = await sendOne(
             msgClaimGroupSlot({ claimer: initiaAddress, giftId, slotIndex, secret }),
           )
-          toast.success('Group gift slot claimed')
+          toastTx('Group gift slot claimed', __r)
           return
         }
 
         case 'reclaim-expired-gift': {
           const idStr = record.values['Gift ID'] || ''
           const giftId = parseNumericId(idStr)
-          await sendOne(
+          const __r = await sendOne(
             msgReclaimExpiredGift({ sender: initiaAddress, giftId }),
           )
-          toast.success('Reclaimed expired gift')
+          toastTx('Reclaimed expired gift', __r)
           return
         }
 
         case 'reclaim-expired-group': {
           const giftId = parseNumericId(record.values['Group gift ID'] || '')
-          await sendOne(msgReclaimExpiredGroup({ sender: initiaAddress, giftId }))
-          toast.success('Reclaimed expired group gift')
+          const __r = await sendOne(msgReclaimExpiredGroup({ sender: initiaAddress, giftId }))
+          toastTx('Reclaimed expired group gift', __r)
           return
         }
 
@@ -488,7 +488,7 @@ export default function MoneyPage() {
           const name = record.values['Template name'] || ''
           const themeJson = record.values['Theme JSON'] || '{}'
           const defaultAmt = record.values['Default amount'] || ''
-          await sendOne(
+          const __r = await sendOne(
             msgRegisterGiftBox({
               admin: initiaAddress,
               name,
@@ -499,7 +499,7 @@ export default function MoneyPage() {
               featuredOrder: BigInt(Number(defaultAmt) || 0),
             }),
           )
-          toast.success('Gift box template registered')
+          toastTx('Gift box template registered', __r)
           return
         }
 
@@ -512,7 +512,7 @@ export default function MoneyPage() {
           if (!r?.initiaAddress) throw new Error('Recipient could not be resolved')
           if (rate <= 0n) throw new Error('Rate must be > 0')
           if (durationSeconds <= 0n) throw new Error('Duration must be > 0')
-          await sendOne(
+          const __r = await sendOne(
             msgOpenStream({
               sender: initiaAddress,
               recipient: r.initiaAddress,
@@ -521,21 +521,21 @@ export default function MoneyPage() {
               denom: ORI_DENOM,
             }),
           )
-          toast.success('Payment stream opened')
+          toastTx('Payment stream opened', __r)
           return
         }
 
         case 'withdraw-stream': {
           const streamId = parseNumericId(record.values['Stream ID'] || '')
-          await sendOne(msgWithdrawStream({ recipient: initiaAddress, streamId }))
-          toast.success('Stream withdrawal submitted')
+          const __r = await sendOne(msgWithdrawStream({ recipient: initiaAddress, streamId }))
+          toastTx('Stream withdrawal submitted', __r)
           return
         }
 
         case 'close-stream': {
           const streamId = parseNumericId(record.values['Stream ID'] || '')
-          await sendOne(msgCloseStream({ sender: initiaAddress, streamId }))
-          toast.success('Stream close submitted')
+          const __r = await sendOne(msgCloseStream({ sender: initiaAddress, streamId }))
+          toastTx('Stream close submitted', __r)
           return
         }
 
@@ -545,7 +545,7 @@ export default function MoneyPage() {
           const cadence = record.values['Billing cadence'] || ''
           const baseUnits = toBaseUnits(priceStr)
           if (baseUnits <= 0n) throw new Error('Price must be > 0')
-          await sendOne(
+          const __r = await sendOne(
             msgRegisterSubscriptionPlan({
               creator: initiaAddress,
               pricePerPeriod: baseUnits,
@@ -553,7 +553,7 @@ export default function MoneyPage() {
               denom: ORI_DENOM,
             }),
           )
-          toast.success('Subscription plan registered')
+          toastTx('Subscription plan registered', __r)
           return
         }
 
@@ -563,14 +563,14 @@ export default function MoneyPage() {
           const r = await resolve(creatorInput.trim())
           if (!r?.initiaAddress) throw new Error('Creator could not be resolved')
           const periods = BigInt(Number(planIdStr) || 1)
-          await sendOne(
+          const __r = await sendOne(
             msgSubscribe({
               subscriber: initiaAddress,
               creator: r.initiaAddress,
               periods,
             }),
           )
-          toast.success('Subscribed')
+          toastTx('Subscribed', __r)
           return
         }
 
@@ -582,14 +582,14 @@ export default function MoneyPage() {
           const creator = await resolve(period.trim())
           if (!sub?.initiaAddress || !creator?.initiaAddress)
             throw new Error('Subscriber and creator must resolve')
-          await sendOne(
+          const __r = await sendOne(
             msgReleaseSubscriptionPeriod({
               caller: initiaAddress,
               subscriber: sub.initiaAddress,
               creator: creator.initiaAddress,
             }),
           )
-          toast.success('Period released')
+          toastTx('Period released', __r)
           return
         }
 
@@ -597,18 +597,18 @@ export default function MoneyPage() {
           const creatorInput = record.values['Creator .init or address'] || ''
           const creator = await resolve(creatorInput.trim())
           if (!creator?.initiaAddress) throw new Error('Creator could not be resolved')
-          await sendOne(
+          const __r = await sendOne(
             msgCancelSubscription({ subscriber: initiaAddress, creator: creator.initiaAddress }),
           )
-          toast.success('Subscription cancelled')
+          toastTx('Subscription cancelled', __r)
           return
         }
 
         case 'deactivate-plan': {
-          await sendOne(
+          const __r = await sendOne(
             msgDeactivateSubscriptionPlan({ creator: initiaAddress }),
           )
-          toast.success('Plan deactivated')
+          toastTx('Plan deactivated', __r)
           return
         }
 
@@ -620,24 +620,24 @@ export default function MoneyPage() {
           if (!title.trim()) throw new Error('Title required')
           if (!resourceUri.trim()) throw new Error('Content link or promise required')
           if (price <= 0n) throw new Error('Price must be > 0')
-          await sendOne(
+          const __r = await sendOne(
             msgCreatePaywall({ creator: initiaAddress, title, resourceUri, price, denom: ORI_DENOM }),
           )
-          toast.success('Paywall created')
+          toastTx('Paywall created', __r)
           return
         }
 
         case 'purchase-paywall': {
           const paywallId = parseNumericId(record.values['Paywall ID'] || '')
-          await sendOne(msgPurchasePaywall({ buyer: initiaAddress, paywallId }))
-          toast.success('Paywall purchase submitted')
+          const __r = await sendOne(msgPurchasePaywall({ buyer: initiaAddress, paywallId }))
+          toastTx('Paywall purchase submitted', __r)
           return
         }
 
         case 'deactivate-paywall': {
           const paywallId = parseNumericId(record.values['Paywall ID'] || '')
-          await sendOne(msgDeactivatePaywall({ creator: initiaAddress, paywallId }))
-          toast.success('Paywall deactivated')
+          const __r = await sendOne(msgDeactivatePaywall({ creator: initiaAddress, paywallId }))
+          toastTx('Paywall deactivated', __r)
           return
         }
 
@@ -646,7 +646,7 @@ export default function MoneyPage() {
             .split(',')
             .map((v) => v.trim())
             .filter(Boolean)
-          await sendOne(
+          const __r = await sendOne(
             msgRegisterMerchant({
               owner: initiaAddress,
               name: record.values['Merchant name'] || '',
@@ -656,7 +656,7 @@ export default function MoneyPage() {
               acceptedDenoms,
             }),
           )
-          toast.success('Merchant registration submitted')
+          toastTx('Merchant registration submitted', __r)
           return
         }
 

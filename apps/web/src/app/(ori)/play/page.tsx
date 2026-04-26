@@ -63,7 +63,7 @@ import {
   msgResolveWager,
   msgStakePrediction,
 } from '@/lib/contracts'
-import { buildAutoSignFee, friendlyError, sendTx } from '@/lib/tx'
+import { buildAutoSignFee, extractTxHash, friendlyError, sendTx, txExplorerUrl } from '@/lib/tx'
 
 const ORACLE_PAIRS = ['BTC/USD', 'ETH/USD', 'SOL/USD'] as const
 
@@ -91,6 +91,42 @@ function parseId(s: string | undefined): bigint {
 /** Default 24h horizon for actions whose form omits a deadline field. */
 function defaultDeadlineSecondsFromNow(): bigint {
   return BigInt(Math.floor(Date.now() / 1000) + 24 * 3600)
+}
+
+/**
+ * Lookup helper that finds a form value by matching any of the provided
+ * key fragments case-insensitively. Lets the handler stay correct when
+ * the data/ori-data.ts catalogue field labels evolve (e.g. "Wager ID" →
+ * "Wager ID (numeric)") without needing to update every read site.
+ */
+function pick(
+  values: Record<string, string>,
+  ...fragments: string[]
+): string {
+  const lower = Object.entries(values).map(
+    ([k, v]) => [k.toLowerCase(), v] as const,
+  )
+  for (const frag of fragments) {
+    const f = frag.toLowerCase()
+    const hit = lower.find(([k]) => k.includes(f))
+    if (hit && hit[1].trim()) return hit[1]
+  }
+  return ''
+}
+
+/**
+ * Convert a USD-style price string (e.g. '100000', '99.50') to the raw
+ * integer the on-chain oracle stores. We multiply by 10^decimals using
+ * the oracle's own published `decimals` so callers don't have to think
+ * about whether BTC reports at 8 or 18 decimals.
+ */
+function usdToRaw(usd: string, decimals: number): bigint {
+  const trimmed = usd.trim()
+  if (!trimmed) throw new Error('Price required')
+  const n = Number(trimmed)
+  if (!Number.isFinite(n) || n < 0) throw new Error('Invalid price')
+  const scaled = Math.round(n * 10 ** decimals)
+  return BigInt(scaled)
 }
 
 export default function PlayPage() {
@@ -123,9 +159,9 @@ export default function PlayPage() {
         switch (actionId) {
           // ---------------- Wagers ----------------
           case 'propose-wager': {
-            const accepter = (values['Opponent or market'] ?? '').trim()
-            const claim = (values['Terms'] ?? '').trim()
-            const amount = parseAmountToBase(values['Stake'])
+            const accepter = pick(values, 'opponent').trim()
+            const claim = pick(values, 'terms').trim()
+            const amount = parseAmountToBase(pick(values, 'stake'))
             if (!accepter) throw new Error('Opponent address required')
             if (!claim) throw new Error('Terms required')
             if (amount <= 0n) throw new Error('Stake required')
@@ -133,7 +169,7 @@ export default function PlayPage() {
               msg: msgProposeWager({
                 proposer: initiaAddress,
                 accepter,
-                arbiter: initiaAddress, // GAP: form has no arbiter field; default to self
+                arbiter: initiaAddress, // proposer arbitrates by default
                 amount,
                 claim,
               }),
@@ -141,9 +177,9 @@ export default function PlayPage() {
             }
           }
           case 'propose-pvp-wager': {
-            const accepter = (values['Opponent or market'] ?? '').trim()
-            const claim = (values['Terms'] ?? '').trim()
-            const amount = parseAmountToBase(values['Stake'])
+            const accepter = pick(values, 'opponent').trim()
+            const claim = pick(values, 'terms').trim()
+            const amount = parseAmountToBase(pick(values, 'stake'))
             if (!accepter) throw new Error('Opponent address required')
             if (!claim) throw new Error('Terms required')
             if (amount <= 0n) throw new Error('Stake required')
@@ -153,22 +189,22 @@ export default function PlayPage() {
                 accepter,
                 amount,
                 claim,
-                category: 'general', // GAP: no category field
-                deadlineSeconds: defaultDeadlineSecondsFromNow(), // GAP: no deadline field
+                category: 'general',
+                deadlineSeconds: defaultDeadlineSecondsFromNow(),
               }),
               gas: 600_000,
             }
           }
           case 'accept-wager': {
-            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
+            const wagerId = parseId(pick(values, 'wager id', 'opponent'))
             return {
               msg: msgAcceptWager({ accepter: initiaAddress, wagerId }),
               gas: 500_000,
             }
           }
           case 'resolve-wager': {
-            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
-            const winner = (values['Winner address'] ?? values['Terms'] ?? '').trim()
+            const wagerId = parseId(pick(values, 'wager id', 'opponent'))
+            const winner = pick(values, 'winner', 'terms').trim()
             if (!winner) throw new Error('Winner address required')
             return {
               msg: msgResolveWager({
@@ -180,14 +216,14 @@ export default function PlayPage() {
             }
           }
           case 'concede-wager': {
-            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
+            const wagerId = parseId(pick(values, 'wager id', 'opponent'))
             return {
               msg: msgConcedeWager({ loser: initiaAddress, wagerId }),
               gas: 500_000,
             }
           }
           case 'cancel-pending-wager': {
-            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
+            const wagerId = parseId(pick(values, 'wager id', 'opponent'))
             return {
               msg: msgCancelPendingWager({
                 proposer: initiaAddress,
@@ -197,7 +233,7 @@ export default function PlayPage() {
             }
           }
           case 'refund-expired-wager': {
-            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
+            const wagerId = parseId(pick(values, 'wager id', 'opponent'))
             return {
               msg: msgRefundExpiredWager({
                 caller: initiaAddress,
@@ -207,13 +243,25 @@ export default function PlayPage() {
             }
           }
           case 'propose-oracle-resolved-wager': {
-            const accepter = (values['Opponent address'] ?? values['Opponent or market'] ?? '').trim()
-            const oraclePair = (values['Oracle pair'] ?? values['Terms'] ?? '').trim() || 'BTC/USD'
-            const amount = parseAmountToBase(values['Stake'])
-            const targetRaw = (values['Target raw oracle price'] ?? '').trim()
-            const targetPrice = /^\d+$/.test(targetRaw) ? BigInt(targetRaw) : 0n
-            const winsAboveRaw = (values['Proposer wins above'] ?? 'true').trim()
-            const proposerWinsAbove = /^(1|true|yes|y|above)$/i.test(winsAboveRaw)
+            const accepter = pick(values, 'opponent').trim()
+            const oraclePair = (pick(values, 'oracle pair', 'terms').trim() || 'BTC/USD').toUpperCase()
+            const amount = parseAmountToBase(pick(values, 'stake'))
+            // The oracle's target_price is the raw integer (USD * 10^decimals).
+            // We accept human USD input (e.g. "100000") and convert using the
+            // oracle's published decimals — without this, users typing "100"
+            // when they meant "$100k" actually proposed a wager that resolves
+            // at price=100 (raw) which is essentially price=0.
+            const usd = pick(values, 'usd price', 'target')
+            // oracle is an array of per-pair query results (useQueries). Find
+            // the matching pair and read its `decimals` from the response.
+            // Fallback to 8 (Slinky's default for crypto) when not yet loaded.
+            const decimals =
+              oracle.find((q) => q.data?.pair?.toUpperCase() === oraclePair)?.data
+                ?.decimals ?? 8
+            const targetPrice = usd ? usdToRaw(usd, decimals) : 0n
+            const proposerWinsAbove = /^(1|true|yes|y|above)$/i.test(
+              pick(values, 'wins').trim() || 'true',
+            )
             if (!accepter) throw new Error('Opponent address required')
             if (amount <= 0n) throw new Error('Stake required')
             return {
@@ -232,7 +280,7 @@ export default function PlayPage() {
             }
           }
           case 'resolve-from-oracle': {
-            const wagerId = parseId(values['Wager ID'] ?? values['Opponent or market'])
+            const wagerId = parseId(pick(values, 'wager id', 'opponent'))
             return {
               msg: msgResolveFromOracle({
                 caller: initiaAddress,
@@ -244,12 +292,19 @@ export default function PlayPage() {
 
           // ---------------- Prediction markets ----------------
           case 'create-market': {
-            const oraclePair = (values['Oracle pair'] ?? '').trim() || 'BTC/USD'
-            const targetRaw = (values['Target raw oracle price'] ?? '').trim()
-            const targetPrice = /^\d+$/.test(targetRaw) ? BigInt(targetRaw) : 0n
-            const comparatorRaw = (values['YES wins above'] ?? 'true').trim()
-            const comparator = /^(1|true|yes|y|above)$/i.test(comparatorRaw)
-            const deadlineRaw = (values['Deadline'] ?? '').trim()
+            const oraclePair = (pick(values, 'oracle pair').trim() || 'BTC/USD').toUpperCase()
+            const usd = pick(values, 'usd price', 'target')
+            // oracle is an array of per-pair query results (useQueries). Find
+            // the matching pair and read its `decimals` from the response.
+            // Fallback to 8 (Slinky's default for crypto) when not yet loaded.
+            const decimals =
+              oracle.find((q) => q.data?.pair?.toUpperCase() === oraclePair)?.data
+                ?.decimals ?? 8
+            const targetPrice = usd ? usdToRaw(usd, decimals) : 0n
+            const comparator = /^(1|true|yes|y|above)$/i.test(
+              (pick(values, 'wins') || 'true').trim(),
+            )
+            const deadlineRaw = pick(values, 'deadline').trim()
             const deadlineSeconds =
               deadlineRaw && /^\d+$/.test(deadlineRaw)
                 ? BigInt(deadlineRaw)
@@ -266,8 +321,8 @@ export default function PlayPage() {
             }
           }
           case 'stake-yes': {
-            const marketId = parseId(values['Market ID'])
-            const amount = parseAmountToBase(values['Amount'])
+            const marketId = parseId(pick(values, 'market id'))
+            const amount = parseAmountToBase(pick(values, 'amount'))
             if (amount <= 0n) throw new Error('Amount required')
             return {
               msg: msgStakePrediction({
@@ -280,8 +335,8 @@ export default function PlayPage() {
             }
           }
           case 'stake-no': {
-            const marketId = parseId(values['Market ID'])
-            const amount = parseAmountToBase(values['Amount'])
+            const marketId = parseId(pick(values, 'market id'))
+            const amount = parseAmountToBase(pick(values, 'amount'))
             if (amount <= 0n) throw new Error('Amount required')
             return {
               msg: msgStakePrediction({
@@ -295,7 +350,7 @@ export default function PlayPage() {
           }
           case 'resolve-market': {
             // GAP: "Outcome" field unused; resolution reads oracle on-chain.
-            const marketId = parseId(values['Market ID'])
+            const marketId = parseId(pick(values, 'market id'))
             return {
               msg: msgResolvePrediction({
                 sender: initiaAddress,
@@ -306,7 +361,7 @@ export default function PlayPage() {
           }
           case 'claim-winnings': {
             // GAP: "Claim address" unused; sender always claims own winnings.
-            const marketId = parseId(values['Market ID'])
+            const marketId = parseId(pick(values, 'market id'))
             return {
               msg: msgClaimPredictionWinnings({
                 sender: initiaAddress,
@@ -318,9 +373,8 @@ export default function PlayPage() {
 
           // ---------------- Lucky pools ----------------
           case 'create-lucky-pool': {
-            // GAP: "Draw time" field has no helper equivalent.
-            const entryFee = parseAmountToBase(values['Entry fee'])
-            const partsRaw = (values['Participants'] ?? '').trim()
+            const entryFee = parseAmountToBase(pick(values, 'entry fee'))
+            const partsRaw = pick(values, 'participants').trim()
             if (entryFee <= 0n) throw new Error('Entry fee required')
             if (!/^\d+$/.test(partsRaw))
               throw new Error('Participants must be a number')
@@ -335,7 +389,7 @@ export default function PlayPage() {
           }
           case 'join-lucky-pool': {
             // GAP: "Entry wallet" unused; sender is always the joiner.
-            const poolId = parseId(values['Pool ID'])
+            const poolId = parseId(pick(values, 'pool id'))
             return {
               msg: msgJoinLuckyPool({
                 participant: initiaAddress,
@@ -346,7 +400,7 @@ export default function PlayPage() {
           }
           case 'draw-winner': {
             // GAP: "Randomness proof" unused; module supplies its own randomness.
-            const poolId = parseId(values['Pool ID'])
+            const poolId = parseId(pick(values, 'pool id'))
             return {
               msg: msgDrawLuckyPool({
                 caller: initiaAddress,
@@ -386,13 +440,20 @@ export default function PlayPage() {
       if (!built) return
 
       try {
-        await sendTx(kit, {
+        const res = await sendTx(kit, {
           chainId: ORI_CHAIN_ID,
           messages: [built.msg],
           autoSign,
           fee: autoSign ? buildAutoSignFee(built.gas) : undefined,
         })
-        toast.success(`${record.title} submitted`)
+        const hash = extractTxHash(res.rawResponse) || res.txHash
+        const url = hash ? txExplorerUrl(hash) : null
+        toast.success(`${record.title} submitted`, {
+          description: hash ? `Tx ${hash.slice(0, 10)}…` : undefined,
+          action: url
+            ? { label: 'View tx', onClick: () => window.open(url, '_blank') }
+            : undefined,
+        })
       } catch (err) {
         toast.error(friendlyError(err))
       }

@@ -259,15 +259,22 @@ export const playTabs = [
     label: "Wagers",
     summary: "Escrowed 1v1, PvP, and oracle-resolved predictions.",
     actions: [
-      { id: "propose-wager", title: "Propose wager", contract: "wager_escrow.move", fields: fields.wager },
-      { id: "propose-pvp-wager", title: "Propose PvP wager", contract: "wager_escrow.move", fields: fields.wager },
-      { id: "accept-wager", title: "Accept wager", contract: "wager_escrow.move", fields: ["Wager ID"] },
-      { id: "resolve-wager", title: "Resolve wager", contract: "wager_escrow.move", fields: ["Wager ID", "Winner address"] },
-      { id: "concede-wager", title: "Concede wager", contract: "wager_escrow.move", fields: ["Wager ID"] },
-      { id: "cancel-pending-wager", title: "Cancel pending wager", contract: "wager_escrow.move", fields: ["Wager ID"] },
-      { id: "refund-expired-wager", title: "Refund expired wager", contract: "wager_escrow.move", fields: ["Wager ID"] },
-      { id: "propose-oracle-resolved-wager", title: "Propose oracle-resolved wager", contract: "wager_escrow.move", fields: ["Opponent address", "Oracle pair", "Stake", "Target raw oracle price", "Proposer wins above"] },
-      { id: "resolve-from-oracle", title: "Resolve from oracle", contract: "wager_escrow.move", fields: ["Wager ID"] },
+      // Wager / market form fields are wired exactly to what the handler in
+      // play/page.tsx parses. Previously the same `fields.wager` was reused
+      // for several actions and the per-action handler then ignored half of
+      // them — silent input loss. Each action now lists only what its
+      // handler reads, with explicit USD-friendly labels.
+      { id: "propose-wager", title: "Propose 1v1 wager (you arbitrate)", contract: "wager_escrow.move", fields: ["Opponent .init or address", "Terms (free text)", "Stake in INIT"] },
+      { id: "propose-pvp-wager", title: "Propose PvP wager (no arbiter; auto-deadline 24h)", contract: "wager_escrow.move", fields: ["Opponent .init or address", "Terms (free text)", "Stake in INIT"] },
+      { id: "accept-wager", title: "Accept a wager you've been challenged to", contract: "wager_escrow.move", fields: ["Wager ID (numeric)"] },
+      { id: "resolve-wager", title: "Resolve wager (arbiter only)", contract: "wager_escrow.move", fields: ["Wager ID (numeric)", "Winner .init or address"] },
+      { id: "concede-wager", title: "Concede the wager (you lose)", contract: "wager_escrow.move", fields: ["Wager ID (numeric)"] },
+      { id: "cancel-pending-wager", title: "Cancel a wager nobody accepted yet", contract: "wager_escrow.move", fields: ["Wager ID (numeric)"] },
+      { id: "refund-expired-wager", title: "Claim refund for expired wager", contract: "wager_escrow.move", fields: ["Wager ID (numeric)"] },
+      // Oracle wagers: USD-style price label; the handler converts internally
+      // using the oracle's published decimals.
+      { id: "propose-oracle-resolved-wager", title: "Propose oracle-resolved wager (price-based)", contract: "wager_escrow.move", fields: ["Opponent .init or address", "Oracle pair (e.g. BTC/USD)", "Stake in INIT", "Target USD price (e.g. 100000)", "Proposer wins if price is above (true/false)"] },
+      { id: "resolve-from-oracle", title: "Settle oracle wager from current price", contract: "wager_escrow.move", fields: ["Wager ID (numeric)"] },
     ],
   },
   {
@@ -275,11 +282,11 @@ export const playTabs = [
     label: "Prediction markets",
     summary: "YES/NO pools, Slinky feeds, creator resolution, and winnings claims.",
     actions: [
-      { id: "create-market", title: "Create prediction market", contract: "prediction_pool.move", fields: ["Oracle pair", "Target raw oracle price", "YES wins above", "Deadline"] },
-      { id: "stake-yes", title: "Stake YES", contract: "prediction_pool.move", fields: ["Market ID", "Amount"] },
-      { id: "stake-no", title: "Stake NO", contract: "prediction_pool.move", fields: ["Market ID", "Amount"] },
-      { id: "resolve-market", title: "Resolve market", contract: "prediction_pool.move", fields: ["Market ID", "Outcome"] },
-      { id: "claim-winnings", title: "Claim winnings", contract: "prediction_pool.move", fields: ["Market ID"] },
+      { id: "create-market", title: "Create prediction market", contract: "prediction_pool.move", fields: ["Oracle pair (e.g. BTC/USD)", "Target USD price", "YES wins if price is above (true/false)", "Deadline (UTC seconds)"] },
+      { id: "stake-yes", title: "Stake YES on a market", contract: "prediction_pool.move", fields: ["Market ID (numeric)", "Amount in INIT"] },
+      { id: "stake-no", title: "Stake NO on a market", contract: "prediction_pool.move", fields: ["Market ID (numeric)", "Amount in INIT"] },
+      { id: "resolve-market", title: "Resolve market (creator only)", contract: "prediction_pool.move", fields: ["Market ID (numeric)"] },
+      { id: "claim-winnings", title: "Claim your winnings", contract: "prediction_pool.move", fields: ["Market ID (numeric)"] },
     ],
   },
   {
@@ -287,9 +294,9 @@ export const playTabs = [
     label: "Lucky pools",
     summary: "Entry-fee pools with fixed participant counts and winner draws.",
     actions: [
-      { id: "create-lucky-pool", title: "Create lucky pool", contract: "lucky_pool.move", fields: ["Entry fee", "Participants", "Draw time"] },
-      { id: "join-lucky-pool", title: "Join pool", contract: "lucky_pool.move", fields: ["Pool ID", "Entry wallet"] },
-      { id: "draw-winner", title: "Draw winner", contract: "lucky_pool.move", fields: ["Pool ID", "Randomness proof"] },
+      { id: "create-lucky-pool", title: "Create a lucky pool", contract: "lucky_pool.move", fields: ["Entry fee (INIT)", "Participants (number)", "Pool deadline (UTC seconds)"] },
+      { id: "join-lucky-pool", title: "Join a pool", contract: "lucky_pool.move", fields: ["Pool ID (numeric)"] },
+      { id: "draw-winner", title: "Draw winner (anyone can call after deadline)", contract: "lucky_pool.move", fields: ["Pool ID (numeric)"] },
     ],
   },
 ] as const
