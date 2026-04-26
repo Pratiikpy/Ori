@@ -243,7 +243,13 @@ export function OriShell({
       </header>
 
       <main
-        className="pb-44 lg:ml-72 lg:pb-24"
+        // Mobile bottom-nav is 64px tall and pinned to bottom-0; pad the
+        // main content so the last cards aren't hidden under it. Previously
+        // content had pb-44 (176px) but the nav sat at bottom-16 (64px),
+        // leaving 112px of empty space below the nav and clipping the last
+        // card. Now nav is flush at bottom-0 and content reserves just
+        // enough room above it.
+        className="pb-20 lg:ml-72 lg:pb-12"
         data-testid="app-main-content"
       >
         <OnboardingBanner />
@@ -251,7 +257,7 @@ export function OriShell({
       </main>
 
       <nav
-        className="fixed bottom-16 left-0 right-0 z-[9999] grid grid-cols-5 border-y border-black/10 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-[9999] grid grid-cols-5 border-y border-black/10 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:hidden"
         data-testid="mobile-bottom-navigation"
       >
         {navItems.map((item) => {

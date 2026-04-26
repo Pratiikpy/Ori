@@ -620,6 +620,17 @@ export default function ProfilePage() {
               <p className="mt-2 font-mono text-lg font-black" data-testid="profile-trust">
                 {trustDisplay}
               </p>
+              {/* Help text — surfaces the levers a user can pull to raise
+                  their score. Without this, score=0 looks like a bug. */}
+              {trustScore.data && trustScore.data.score === 0 && (
+                <p
+                  className="mt-2 font-mono text-[10px] leading-4 text-[#52525B]"
+                  data-testid="profile-trust-help"
+                >
+                  Build trust by publishing your encryption key, claiming a
+                  .init handle, completing quests below, and receiving tips.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -832,6 +843,20 @@ export default function ProfilePage() {
                 quest.threshold > 0
                   ? Math.min(100, (quest.progress / quest.threshold) * 100)
                   : 0
+              // Map a quest id to the in-app surface that earns the next
+              // step. Without this the user sees 'progress: 2/5' and has
+              // nowhere to click. The mapping is fail-soft — unknown ids
+              // default to /money since most quests involve broadcasting
+              // a tx and Money has the widest selection of action cards.
+              const ctaHref = (() => {
+                const id = quest.id.toLowerCase()
+                if (id.includes('chat') || id.includes('message')) return '/inbox'
+                if (id.includes('follow') || id.includes('profile')) return '/explore'
+                if (id.includes('wager') || id.includes('market') || id.includes('pool')) return '/play'
+                if (id.includes('badge') || id.includes('agent')) return '/profile'
+                return '/money'
+              })()
+              const done = pct >= 100
               return (
                 <div key={quest.id} data-testid={`quest-${index}`}>
                   <div className="mb-2 flex justify-between text-sm">
@@ -848,12 +873,31 @@ export default function ProfilePage() {
                     className="rounded-none bg-black/10"
                     data-testid={`quest-progress-bar-${index}`}
                   />
-                  <p
-                    className="mt-1 font-mono text-[11px] text-[#52525B]"
-                    data-testid={`quest-xp-${index}`}
-                  >
-                    +{quest.xp} XP
-                  </p>
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <p
+                      className="font-mono text-[11px] text-[#52525B]"
+                      data-testid={`quest-xp-${index}`}
+                    >
+                      +{quest.xp} XP
+                    </p>
+                    {!done && (
+                      <a
+                        href={ctaHref}
+                        className="font-mono text-[11px] text-[#0022FF] underline hover:text-[#0019CC]"
+                        data-testid={`quest-cta-${index}`}
+                      >
+                        Go →
+                      </a>
+                    )}
+                    {done && (
+                      <span
+                        className="font-mono text-[11px] text-[#00A858]"
+                        data-testid={`quest-done-${index}`}
+                      >
+                        ✓ Complete
+                      </span>
+                    )}
+                  </div>
                 </div>
               )
             })}
