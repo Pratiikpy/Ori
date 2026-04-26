@@ -22,6 +22,7 @@ import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { CopyButton } from '@/components/copy-button'
 import { useProfile, useBadges } from '@/hooks/use-profile'
 import { useFollowStats, useFollowers, useFollowing } from '@/hooks/use-follows'
 import { useTrustScore } from '@/hooks/use-trust-score'
@@ -150,9 +151,12 @@ export default function OtherProfilePage() {
           <h1 className="mt-2 font-heading text-4xl font-black tracking-tight">
             {handle}
           </h1>
-          <p className="mt-1 break-all font-mono text-xs text-[#52525B]">
-            {targetAddress}
-          </p>
+          <div className="mt-1 flex items-center gap-2">
+            <p className="break-all font-mono text-xs text-[#52525B]">
+              {targetAddress}
+            </p>
+            <CopyButton value={targetAddress} label="Copy address" />
+          </div>
 
           {profile.data?.bio && (
             <p className="mt-4 text-sm leading-6">{profile.data.bio}</p>

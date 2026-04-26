@@ -37,12 +37,30 @@ export async function followRoutes(app: FastifyInstance): Promise<void> {
       orderBy: { createdAt: 'desc' },
       take: q.data.limit,
     })
+    // Hydrate display fields from profileCache so the UI can render
+    // .init handles, avatars, and bios next to each follower without a
+    // second N+1 round-trip. Frontend type
+    // (lib/api-follows.ts:FollowEntry) declares these fields and would
+    // otherwise see them as undefined → list collapses to plain
+    // shortened addresses.
+    const profiles = await prisma.profileCache.findMany({
+      where: { address: { in: rows.map((r) => r.fromAddr) } },
+      select: { address: true, initName: true, avatarUrl: true, bio: true },
+    })
+    const byAddr = new Map(profiles.map((p) => [p.address, p]))
     await reply.send({
       address: parsed.data,
-      entries: rows.map((r) => ({
-        address: r.fromAddr,
-        followedAt: r.createdAt.toISOString(),
-      })),
+      entries: rows.map((r) => {
+        const cache = byAddr.get(r.fromAddr)
+        return {
+          address: r.fromAddr,
+          initName: cache?.initName ?? null,
+          avatarUrl: cache?.avatarUrl ?? '',
+          bio: cache?.bio ?? '',
+          at: r.createdAt.toISOString(),
+          followedAt: r.createdAt.toISOString(),
+        }
+      }),
       nextCursor: rows.length === q.data.limit ? rows[rows.length - 1]!.createdAt.toISOString() : null,
     })
   })
@@ -68,12 +86,25 @@ export async function followRoutes(app: FastifyInstance): Promise<void> {
       orderBy: { createdAt: 'desc' },
       take: q.data.limit,
     })
+    // Same hydration as /followers above.
+    const profiles = await prisma.profileCache.findMany({
+      where: { address: { in: rows.map((r) => r.toAddr) } },
+      select: { address: true, initName: true, avatarUrl: true, bio: true },
+    })
+    const byAddr = new Map(profiles.map((p) => [p.address, p]))
     await reply.send({
       address: parsed.data,
-      entries: rows.map((r) => ({
-        address: r.toAddr,
-        followedAt: r.createdAt.toISOString(),
-      })),
+      entries: rows.map((r) => {
+        const cache = byAddr.get(r.toAddr)
+        return {
+          address: r.toAddr,
+          initName: cache?.initName ?? null,
+          avatarUrl: cache?.avatarUrl ?? '',
+          bio: cache?.bio ?? '',
+          at: r.createdAt.toISOString(),
+          followedAt: r.createdAt.toISOString(),
+        }
+      }),
       nextCursor: rows.length === q.data.limit ? rows[rows.length - 1]!.createdAt.toISOString() : null,
     })
   })

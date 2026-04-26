@@ -64,6 +64,7 @@ import { resolve } from '@/lib/resolve'
 import { deriveChatId, randomBytes, sha256 } from '@/lib/crypto'
 import { buildAutoSignFee, extractTxHash, friendlyError, sendTx, txExplorerUrl } from '@/lib/tx'
 import { getSessionToken, markLinkClaimed } from '@/lib/api'
+import { CopyButton } from '@/components/copy-button'
 
 // ---------- helpers ----------
 
@@ -133,6 +134,14 @@ export default function MoneyPage() {
 
   const [modalAction, setModalAction] = useState<Action | null>(null)
   const [recentAction, setRecentAction] = useState<ActionRecord | null>(null)
+  // Persistent receipt for newly-created link gifts. The secret can't be
+  // recovered after this dialog closes — see useEffect that surfaces a
+  // browser-warning beforeunload while the receipt is pending.
+  const [linkGiftReceipt, setLinkGiftReceipt] = useState<{
+    secretHex: string
+    shortCode: string
+    txHash: string
+  } | null>(null)
 
   const sendOne = async (msg: ReturnType<typeof msgSendPayment>) => {
     return sendTx(kit, {
@@ -396,11 +405,16 @@ export default function MoneyPage() {
               denom: ORI_DENOM,
             }),
           )
-          toastTx(
-            'Link gift created',
-            __r,
-            `${shortCode ? `Short code ${shortCode}. ` : ''}Secret: 0x${bytesToHex(secret)}`,
-          )
+          // Persistent modal — the gift secret cannot be recovered after
+          // this point. Showing it only in a transient toast risked the
+          // user blinking and losing access to the funds. Modal stays open
+          // until explicitly dismissed and offers per-field copy buttons.
+          setLinkGiftReceipt({
+            secretHex: bytesToHex(secret),
+            shortCode,
+            txHash: extractTxHash(__r.rawResponse) || __r.txHash,
+          })
+          toastTx('Link gift created', __r)
           return
         }
 
@@ -959,6 +973,90 @@ export default function MoneyPage() {
         onClose={() => setModalAction(null)}
         onComplete={handleComplete}
       />
+      {linkGiftReceipt && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          data-testid="link-gift-receipt"
+          onClick={(e) => {
+            // Backdrop click does NOT dismiss — the receipt is critical
+            // and a stray click should not lose the secret. User must
+            // explicitly click "I've saved this".
+            if (e.target === e.currentTarget) {
+              toast.message('Save the secret first', {
+                description: 'It cannot be recovered later — copy it before closing.',
+              })
+            }
+          }}
+        >
+          <div className="w-full max-w-md border border-black/15 bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,34,255,1)]">
+            <p className="font-heading text-2xl font-black tracking-tight">
+              Link gift created
+            </p>
+            <p className="mt-2 text-sm text-[#52525B]">
+              Save these details now. The secret unlocks the gift and is{' '}
+              <strong>not stored anywhere</strong> after this dialog closes.
+            </p>
+            <div className="mt-5 space-y-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
+                  Secret (hex)
+                </p>
+                <div className="mt-1 flex items-center gap-2">
+                  <code
+                    className="block flex-1 break-all border border-black/10 bg-[#F5F5F5] p-2 font-mono text-xs"
+                    data-testid="link-gift-secret"
+                  >
+                    0x{linkGiftReceipt.secretHex}
+                  </code>
+                  <CopyButton
+                    value={`0x${linkGiftReceipt.secretHex}`}
+                    label="Copy secret"
+                  />
+                </div>
+              </div>
+              {linkGiftReceipt.shortCode && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
+                    Short code
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <code className="block flex-1 break-all border border-black/10 bg-[#F5F5F5] p-2 font-mono text-xs">
+                      {linkGiftReceipt.shortCode}
+                    </code>
+                    <CopyButton
+                      value={linkGiftReceipt.shortCode}
+                      label="Copy short code"
+                    />
+                  </div>
+                </div>
+              )}
+              {linkGiftReceipt.txHash && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]">
+                    Tx hash
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <code className="block flex-1 break-all border border-black/10 bg-[#F5F5F5] p-2 font-mono text-xs">
+                      {linkGiftReceipt.txHash}
+                    </code>
+                    <CopyButton value={linkGiftReceipt.txHash} label="Copy tx hash" />
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setLinkGiftReceipt(null)}
+              className="mt-6 w-full rounded-none bg-[#0022FF] px-4 py-3 text-sm text-white hover:bg-[#0019CC]"
+              data-testid="link-gift-receipt-confirm"
+            >
+              I've saved these — close
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

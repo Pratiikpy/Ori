@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button'
 import { navItems } from '@/data/ori-data'
 import { useTrustScore } from '@/hooks/use-trust-score'
 import { OnboardingBanner } from './onboarding-banner'
+import { CopyButton } from './copy-button'
 
 function shortenAddress(address: string | undefined | null): string {
   if (!address) return '—'
@@ -164,12 +165,20 @@ export function OriShell({
                   >
                     {handle}
                   </p>
-                  <p
-                    className="font-mono text-xs text-[#52525B]"
+                  <div
+                    className="flex items-center gap-2"
                     data-testid="sidebar-wallet-address"
                   >
-                    {addressDisplay}
-                  </p>
+                    <p
+                      className="font-mono text-xs text-[#52525B]"
+                      title={initiaAddress ?? undefined}
+                    >
+                      {addressDisplay}
+                    </p>
+                    {initiaAddress && (
+                      <CopyButton value={initiaAddress} label="Copy address" />
+                    )}
+                  </div>
                   <Button
                     onClick={() => disconnect()}
                     variant="outline"
