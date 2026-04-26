@@ -13,7 +13,7 @@ function requiredPublicEnv(key: string, value: string | undefined): string {
 export const ORI_CHAIN_ID = requiredPublicEnv('NEXT_PUBLIC_CHAIN_ID', process.env.NEXT_PUBLIC_CHAIN_ID)
 export const ORI_RPC_URL = requiredPublicEnv('NEXT_PUBLIC_RPC_URL', process.env.NEXT_PUBLIC_RPC_URL)
 export const ORI_REST_URL = requiredPublicEnv('NEXT_PUBLIC_REST_URL', process.env.NEXT_PUBLIC_REST_URL)
-export const ORI_JSON_RPC_URL = requiredPublicEnv('NEXT_PUBLIC_JSON_RPC_URL', process.env.NEXT_PUBLIC_JSON_RPC_URL)
+export const ORI_JSON_RPC_URL = process.env.NEXT_PUBLIC_JSON_RPC_URL
 export const ORI_DENOM = requiredPublicEnv('NEXT_PUBLIC_NATIVE_DENOM', process.env.NEXT_PUBLIC_NATIVE_DENOM)
 // Rollup native denom is `umin` but the token is bridged INIT from L1. Pitch and
 // user-facing copy consistently say INIT, so the display symbol follows.
@@ -84,7 +84,7 @@ export const oriChain = {
     rpc: [{ address: ORI_RPC_URL }],
     rest: [{ address: ORI_REST_URL }],
     indexer: [{ address: ORI_REST_URL }],
-    'json-rpc': [{ address: ORI_JSON_RPC_URL }],
+    ...(ORI_JSON_RPC_URL ? { 'json-rpc': [{ address: ORI_JSON_RPC_URL }] } : {}),
   },
   fees: {
     fee_tokens: [

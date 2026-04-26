@@ -60,3 +60,9 @@ Build the best frontend possible for Ori, a chat wallet on the Initia rollup. Ev
 - NEXT_PUBLIC_L1_CHAIN_ID
 - NEXT_PUBLIC_L1_REST_URL
 - NEXT_PUBLIC_L1_USERNAMES_PORTAL_URL
+
+
+## Deployment follow-up — JSON-RPC optionalization
+- The Vercel build still failed on `NEXT_PUBLIC_JSON_RPC_URL`, so `apps/web/src/lib/chain-config.ts` was hardened: JSON-RPC is now optional in `oriChain.apis`; if absent, the `json-rpc` entry is omitted instead of throwing during Next page-data collection.
+- `NEXT_PUBLIC_RPC_URL` and `NEXT_PUBLIC_REST_URL` remain required.
+- Verified `pnpm --filter @ori/web typecheck` and `pnpm --filter @ori/web build` pass after this change.
