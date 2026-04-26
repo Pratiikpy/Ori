@@ -18,6 +18,7 @@ export function usePresence(enabled: boolean) {
   useEffect(() => {
     if (!enabled || !isConnected) return
     const socket = getSocket()
+    if (!socket) return // realtime disabled (no WS host configured)
     // Re-emit heartbeat whenever we reconnect.
     const onConnect = () => socket.emit('heartbeat')
     socket.on('connect', onConnect)

@@ -30,6 +30,7 @@ export function useTypingIndicator(params: {
   useEffect(() => {
     if (!chatId) return
     const socket = getSocket()
+    if (!socket) return // realtime disabled
     const onTyping = (payload: IncomingPayload) => {
       if (payload.chatId !== chatId) return
       setRemoteTyping(payload.isTyping)
@@ -57,7 +58,7 @@ export function useTypingIndicator(params: {
       if (isTyping && last.isTyping && elapsed < EMIT_INTERVAL_MS) return
       if (!isTyping && !last.isTyping) return
       lastEmittedRef.current = { ts: now, isTyping }
-      getSocket().emit('message.typing', {
+      getSocket()?.emit('message.typing', {
         chatId,
         recipientAddress,
         isTyping,

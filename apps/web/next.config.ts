@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
   // a sibling `./libsodium-sumo.mjs` that doesn't exist in the package.
   // Force bundlers to pick the CJS entry instead (which ships the core under
   // `modules-sumo/`). Upstream bug, not ours.
+  //
+  // For the cosmjs-types `"./*.js": null` exports-block issue (which breaks
+  // bundling of @initia/interwovenkit-react@2.6.0's imports like
+  // `cosmjs-types/google/protobuf/any.js`), see scripts/patch-cosmjs-types.mjs
+  // — the postinstall patches cosmjs-types' package.json directly, which is
+  // simpler and bundler-agnostic.
   turbopack: {
     resolveAlias: {
       'libsodium-wrappers-sumo':

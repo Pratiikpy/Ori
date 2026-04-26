@@ -1,9 +1,12 @@
 import { API_URL } from './chain-config'
 
+// Shape returned by GET /v1/profiles/:address/follow-stats. Confirmed against
+// apps/api/src/routes/follows.ts:95 — the route emits `followers` and
+// `following` (not the *Count suffix some frontend code historically used).
 export type FollowStats = {
   address: string
-  followersCount: number
-  followingCount: number
+  followers: number
+  following: number
 }
 
 export async function fetchFollowStats(address: string): Promise<FollowStats> {

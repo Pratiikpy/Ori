@@ -8,16 +8,13 @@ import {
   InterwovenKitProvider,
   TESTNET,
   initiaPrivyWalletConnector,
+  injectStyles,
 } from '@initia/interwovenkit-react'
+import InterwovenKitStyles from '@initia/interwovenkit-react/styles.js'
 import { Toaster } from 'sonner'
 
 import { ORI_CHAIN_ID, ORI_RPC_URL, oriChain } from '@/lib/chain-config'
 import { SessionBoot } from './session-boot'
-
-// InterwovenKit's stylesheet is imported in apps/web/src/app/globals.css
-// via `@import '...styles.css' layer(interwovenkit)`. The layer wrap is
-// what keeps its unlayered `:where(*)` resets from beating our Tailwind
-// utilities; see globals.css for the cascade-order rationale.
 
 // Wagmi requires at least one chain. InterwovenKit handles all actual ops;
 // this is a placeholder chain to satisfy wagmi config.
@@ -52,6 +49,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   )
 
+  // Inject InterwovenKit's CSS into the Shadow DOM the drawer renders into.
+  // The drawer uses a shadow root for style isolation, so a normal CSS import
+  // in our light DOM cannot reach it. The package exports its CSS as a JS
+  // string for exactly this case; injectStyles() attaches it via
+  // adoptedStyleSheets. Without this call the connect-wallet drawer renders
+  // as an unstyled flat strip of buttons. See README §Configure Providers
+  // and initia-docs/interwovenkit/integrations/native.mdx.
+  useEffect(() => {
+    injectStyles(InterwovenKitStyles)
+  }, [])
+
   // Register PWA service worker for offline / installability.
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -61,9 +69,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Provider order matches the README: QueryClientProvider must wrap
+  // WagmiProvider because wagmi v2's connection-state hooks query through
+  // TanStack Query under the hood. InterwovenKitProvider sits inside both
+  // because it consumes wagmi's wallet client and TanStack Query.
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <WagmiProvider config={wagmiConfig}>
         <InterwovenKitProvider
           {...TESTNET}
           defaultChainId={ORI_CHAIN_ID}
@@ -89,7 +101,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             }}
           />
         </InterwovenKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+      </WagmiProvider>
+    </QueryClientProvider>
   )
 }

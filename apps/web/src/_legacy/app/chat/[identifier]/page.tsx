@@ -158,6 +158,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (!chatId || !isAuthenticated || !keypair || !initiaAddress) return
     const socket = getSocket()
+    if (!socket) return
     const onNew = async (payload: WsMessageNewPayload) => {
       if (payload.chatId !== chatId) return
       const direction = payload.senderInitiaAddress === initiaAddress ? 'sent' : 'received'

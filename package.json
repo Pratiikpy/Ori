@@ -15,7 +15,7 @@
     "typecheck": "turbo typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "clean": "turbo clean && rm -rf node_modules",
-    "postinstall": "node scripts/fix-libsodium.mjs && node scripts/fix-ky.mjs"
+    "postinstall": "node scripts/fix-libsodium.mjs && node scripts/fix-ky.mjs && node scripts/patch-cosmjs-types.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

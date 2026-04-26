@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
@@ -101,8 +101,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     global: true,
     max: config.RATE_LIMIT_GLOBAL_MAX,
     timeWindow: '1 minute',
-    allowList: (req) => req.url === '/health' || req.url === '/health/ready',
-    keyGenerator: (req) => {
+    allowList: (req: FastifyRequest) =>
+      req.url === '/health' || req.url === '/health/ready',
+    keyGenerator: (req: FastifyRequest) => {
       const user = (req as unknown as { user?: { id: string } }).user
       if (user?.id) return `user:${user.id}`
       return (req.headers['x-forwarded-for'] as string | undefined) ?? req.ip

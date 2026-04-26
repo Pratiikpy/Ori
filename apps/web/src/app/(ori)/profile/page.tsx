@@ -140,9 +140,9 @@ export default function ProfilePage() {
   const bio = profile.data?.bio || '—'
   const addressDisplay = shortenAddress(initiaAddress)
   const followersDisplay =
-    followStats.data?.followersCount !== undefined ? followStats.data.followersCount : '—'
+    followStats.data?.followers !== undefined ? followStats.data.followers : '—'
   const followingDisplay =
-    followStats.data?.followingCount !== undefined ? followStats.data.followingCount : '—'
+    followStats.data?.following !== undefined ? followStats.data.following : '—'
   const trustDisplay = trustScore.data
     ? `${trustScore.data.score}/${trustScore.data.maxScore}`
     : '—'

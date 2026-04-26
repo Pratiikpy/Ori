@@ -50,6 +50,7 @@ export default function ChatsPage() {
   useEffect(() => {
     if (!isAuthenticated) return
     const socket = getSocket()
+    if (!socket) return
     const onNew = () => {
       void refetch()
     }

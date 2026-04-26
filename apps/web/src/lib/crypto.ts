@@ -10,6 +10,9 @@
  *   - Sender encrypts each message with recipient's pubkey (sealed box).
  *   - Only recipient can decrypt — backend stores ciphertext only.
  */
+// Default import — the .mjs build of libsodium-wrappers-sumo exposes a
+// single default export. The default's runtime members are typed via the
+// module augmentation in apps/web/src/types/libsodium-wrappers-sumo.d.ts.
 import sodium from 'libsodium-wrappers-sumo'
 
 let readyPromise: Promise<void> | null = null

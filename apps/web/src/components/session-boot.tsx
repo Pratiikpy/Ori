@@ -23,9 +23,9 @@ export function SessionBoot() {
     if (!isAuthenticated) return
     const socket = getSocket()
     const token = getSessionToken()
-    if (token && socket.connected) {
+    if (socket && token && socket.connected) {
       socket.emit('auth', { token })
-    } else if (token) {
+    } else if (socket && token) {
       socket.once('connect', () => socket.emit('auth', { token }))
     }
     // Best-effort push subscription (awaits user permission on first call).

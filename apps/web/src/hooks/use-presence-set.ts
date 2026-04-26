@@ -39,10 +39,10 @@ export function usePresenceSet(addresses: string[]): Set<string> {
         return next
       })
     }
-    socket.on('presence.update', onPresence)
+    socket?.on('presence.update', onPresence)
     return () => {
       cancelled = true
-      socket.off('presence.update', onPresence)
+      socket?.off('presence.update', onPresence)
     }
     // stringify to avoid effect storms when the same list is re-rendered
     // eslint-disable-next-line react-hooks/exhaustive-deps

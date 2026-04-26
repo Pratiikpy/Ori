@@ -21,6 +21,8 @@
  *   - This ties E2E identity to wallet identity — if you can sign with the
  *     wallet, you can decrypt your messages. Exactly what you want.
  */
+// Default import — runtime members not in upstream @types are augmented
+// onto the Sodium interface in apps/web/src/types/libsodium-wrappers-sumo.d.ts.
 import sodium from 'libsodium-wrappers-sumo'
 
 const DB_NAME = 'ori'
