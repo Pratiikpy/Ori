@@ -1,0 +1,15 @@
+# Vendor browser extensions — copied from local Chrome install for tests
+metamask-ext/
+keplr-ext/
+
+# Persistent MetaMask user data created by the tests
+mm-userdata/
+mm-userdata-alice-only/
+mm-userdata-inspect/
+
+# Test run artifacts (screenshots, logs)
+artifacts/
+artifacts-*/
+*.log
+node_modules/
+package-lock.json

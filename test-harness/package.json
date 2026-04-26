@@ -1,0 +1,11 @@
+{
+  "name": "ori-real-wallet-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node phase1-connect.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}
