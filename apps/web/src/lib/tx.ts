@@ -113,6 +113,76 @@ export function extractTxHash(tx: unknown): string {
 }
 
 /**
+ * Per-module Move abort-code → human message table. Codes are sourced from
+ * the `const E_*` constants in packages/contracts/sources/<module>.move.
+ *
+ * Cosmos SDK surfaces Move aborts as a string like:
+ *   "failed to execute message; message index: 0: ... abort code: 4 from <module>::<function>"
+ * On Initia these can also include the module name / function name,
+ * which lets us pick the right entry in the table. When no module is
+ * detected we fall back to a generic message that includes the raw code.
+ */
+const MOVE_ABORT_MESSAGES: Record<string, Record<number, string>> = {
+  wager_escrow: {
+    1: 'Wager not found.',
+    2: 'You are not a party to this wager.',
+    3: 'Wager not in pending state — already accepted or resolved.',
+    4: 'Arbiter must be a third party — not the proposer or accepter.',
+    5: 'Wager already accepted.',
+    6: 'Stake amount must be greater than zero.',
+    7: 'Wager has expired.',
+    8: 'Only the arbiter can resolve this wager.',
+    9: 'Winner must be the proposer or the accepter.',
+  },
+  prediction_pool: {
+    1: 'Market not found.',
+    2: 'Market is past its deadline.',
+    3: 'Market is already resolved.',
+    4: 'Stake must be greater than zero.',
+    5: 'Only the market creator can resolve.',
+    6: 'No winning stake to claim.',
+  },
+  agent_policy: {
+    1: 'No policy configured for this agent.',
+    2: 'Daily spending cap exceeded for this agent.',
+    3: 'Agent has been revoked.',
+    4: 'This message type is not in the agent allowlist.',
+  },
+  payment_router: {
+    1: 'Cannot send to yourself.',
+    2: 'Recipient does not have a profile yet.',
+    3: 'Batch size exceeds the per-tx limit.',
+  },
+  paywall: {
+    1: 'Paywall not found.',
+    2: 'Paywall is deactivated.',
+    3: 'Insufficient payment.',
+    4: 'Already purchased — open the unlocked content.',
+  },
+  subscription_vault: {
+    1: 'Plan not found.',
+    2: 'Plan is deactivated.',
+    3: 'Already subscribed.',
+    4: 'Period not yet due.',
+    5: 'No active subscription to release.',
+  },
+  gift_packet: {
+    1: 'Gift not found.',
+    2: 'Already claimed.',
+    3: 'Gift expired — original sender can reclaim.',
+    4: 'Wrong secret — gift cannot be unlocked with this code.',
+    5: 'You are not the intended recipient.',
+  },
+  profile_registry: {
+    1: 'Profile already exists.',
+    2: 'Profile not found.',
+    3: 'Encryption pubkey must be 32 bytes.',
+    4: 'Links and labels must be the same length.',
+    5: 'Slug already taken.',
+  },
+}
+
+/**
  * Map raw broadcast/sign errors to something a human would understand.
  * Covers the common ones: insufficient gas, rejected signature, abort codes.
  * Anything unknown falls through to a shortened form of the raw message.
@@ -139,11 +209,21 @@ export function friendlyError(err: unknown): string {
     return 'Gas estimate was too low for this action. Try again.'
   }
 
-  // Move abort codes — format "code N" or "abort_code: 0xabcde".
-  // Our modules throw error::invalid_argument, not_found, etc. We don't try
-  // to decode every code; we just nudge the user toward actionable retry.
-  const abortMatch = raw.match(/(?:abort_code|code)\s*[:=]?\s*(0x[0-9a-f]+|\d+)/i)
+  // Move abort codes. Two patterns:
+  //   "abort code: N from <addr>::<module>::<function>"
+  //   "code N" (older formatter)
+  const abortMatch = raw.match(/(?:abort_code|abort code|code)\s*[:=]?\s*(0x[0-9a-f]+|\d+)/i)
+  const moduleMatch = raw.match(/::(\w+)::\w+/)
   if (abortMatch) {
+    const codeRaw = abortMatch[1]!
+    const code = codeRaw.startsWith('0x') ? parseInt(codeRaw, 16) : parseInt(codeRaw, 10)
+    const moduleName = moduleMatch?.[1] ?? null
+    if (moduleName) {
+      const table = MOVE_ABORT_MESSAGES[moduleName]
+      if (table && table[code]) return table[code]!
+    }
+    // Fallback to substring matching on the message itself for the codes
+    // that emit categorical names instead of just numbers.
     if (lower.includes('not_found') || lower.includes('not found')) {
       return "That record doesn't exist on-chain. It may have been settled already."
     }
@@ -151,9 +231,9 @@ export function friendlyError(err: unknown): string {
       return 'This market is already resolved or past its deadline.'
     }
     if (lower.includes('no_stake')) {
-      return "You don't have a winning stake in this market."
+      return "You don't have a winning stake to claim."
     }
-    return `The chain rejected this action (${abortMatch[1]}). Try again or check the explorer.`
+    return `The chain rejected this action (${moduleName ?? 'unknown module'}, code ${code}).`
   }
 
   // Network.

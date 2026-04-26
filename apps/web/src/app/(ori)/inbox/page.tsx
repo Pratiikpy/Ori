@@ -302,21 +302,57 @@ export default function InboxPage() {
       }
       const plaintextBytes = utf8Encode(draft)
       const ciphertext = await sealedBoxEncrypt(plaintextBytes, recipientPub)
-      // Sender-copy: encrypt to ourselves so we can decrypt our own history.
       const senderCiphertext = await sealedBoxEncrypt(plaintextBytes, keypair.publicKey)
-      // The backend stores this as an opaque sender proof today.
       const senderSignatureBase64 = toBase64(new Uint8Array(64))
-      await sendMessage.mutateAsync({
-        chatId: activeChat.chatId,
-        recipientInitiaAddress: recipient,
-        ciphertextBase64: toBase64(ciphertext),
-        senderCiphertextBase64: toBase64(senderCiphertext),
-        senderSignatureBase64,
-      })
-      setRecentAction({
-        title: 'Encrypted message sent',
-      })
+
+      // Optimistic message bubble — push immediately so the user sees their
+      // text in the thread before the round-trip completes. We tag it with
+      // a synthetic id starting `pending-` and reconcile (replace with the
+      // real row) after sendMessage resolves and chatsQuery refetches.
+      const draftSnapshot = draft
+      const optimisticId = `pending-${Date.now()}`
+      const optimistic: DecryptedMessage = {
+        id: optimisticId,
+        text: draftSnapshot,
+        from: 'me',
+        meta: 'sending…',
+        raw: {
+          id: optimisticId,
+          chatId: activeChat.chatId,
+          senderId: '',
+          recipientId: '',
+          senderInitiaAddress: initiaAddress,
+          recipientInitiaAddress: recipient,
+          ciphertextBase64: toBase64(ciphertext),
+          senderCiphertextBase64: toBase64(senderCiphertext),
+          senderSignatureBase64,
+          createdAt: new Date().toISOString(),
+          deliveredAt: null,
+          readAt: null,
+        },
+      }
+      setDecrypted((prev) => [...prev, optimistic])
       setDraft('')
+
+      try {
+        await sendMessage.mutateAsync({
+          chatId: activeChat.chatId,
+          recipientInitiaAddress: recipient,
+          ciphertextBase64: toBase64(ciphertext),
+          senderCiphertextBase64: toBase64(senderCiphertext),
+          senderSignatureBase64,
+        })
+        setRecentAction({ title: 'Encrypted message sent' })
+        // Decrypt-effect re-runs on the refetch (mutation invalidates
+        // ['messages', chatId]) and overwrites the array, naturally
+        // dropping the pending bubble.
+      } catch (sendErr) {
+        // Roll the optimistic bubble back, restore the draft so the user
+        // can retry without retyping.
+        setDecrypted((prev) => prev.filter((m) => m.id !== optimisticId))
+        setDraft(draftSnapshot)
+        throw sendErr
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Send failed')
     } finally {
