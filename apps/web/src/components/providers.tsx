@@ -81,6 +81,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     })
   })
 
+  // (Wallet-switch cache reset lives in SessionBoot — it needs to be
+  // inside InterwovenKitProvider's subtree to call useInterwovenKit().)
+
   // Inject InterwovenKit's CSS into the Shadow DOM the drawer renders into.
   // The drawer uses a shadow root for style isolation, so a normal CSS import
   // in our light DOM cannot reach it. The package exports its CSS as a JS

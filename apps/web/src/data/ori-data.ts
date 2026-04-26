@@ -264,7 +264,11 @@ export const playTabs = [
       // for several actions and the per-action handler then ignored half of
       // them — silent input loss. Each action now lists only what its
       // handler reads, with explicit USD-friendly labels.
-      { id: "propose-wager", title: "Propose 1v1 wager (you arbitrate)", contract: "wager_escrow.move", fields: ["Opponent .init or address", "Terms (free text)", "Stake in INIT"] },
+      // Arbiter mode requires a third party. wager_escrow.move:215 aborts
+      // if arbiter == proposer or arbiter == accepter, so the form must
+      // collect a distinct arbiter address. Use propose-pvp-wager below
+      // if you don't want a third-party arbiter.
+      { id: "propose-wager", title: "Propose 1v1 wager (with third-party arbiter)", contract: "wager_escrow.move", fields: ["Opponent .init or address", "Arbiter .init or address (must be a third party)", "Terms (free text)", "Stake in INIT"] },
       { id: "propose-pvp-wager", title: "Propose PvP wager (no arbiter; auto-deadline 24h)", contract: "wager_escrow.move", fields: ["Opponent .init or address", "Terms (free text)", "Stake in INIT"] },
       { id: "accept-wager", title: "Accept a wager you've been challenged to", contract: "wager_escrow.move", fields: ["Wager ID (numeric)"] },
       { id: "resolve-wager", title: "Resolve wager (arbiter only)", contract: "wager_escrow.move", fields: ["Wager ID (numeric)", "Winner .init or address"] },

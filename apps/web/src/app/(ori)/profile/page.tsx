@@ -23,7 +23,7 @@
  * Settings push subscribe/delete use the real PWA push endpoints through
  * lib/push-client.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   BadgeCheck,
   Bell,
@@ -74,12 +74,14 @@ import {
   msgAttest,
 } from '@/lib/contracts'
 import {
+  API_URL,
   ORI_CHAIN_ID,
   ORI_DECIMALS,
   GAS_LIMITS,
 } from '@/lib/chain-config'
 import { sendTx, buildAutoSignFee, friendlyError } from '@/lib/tx'
 import { resolve } from '@/lib/resolve'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ensurePushSubscription, unsubscribePush } from '@/lib/push-client'
 
 /**
@@ -127,10 +129,33 @@ export default function ProfilePage() {
   // Local UI state.
   const [modalAction, setModalAction] = useState<Action | null>(null)
   const [recentAction, setRecentAction] = useState<ActionRecord | null>(null)
-  const [privateFollows, setPrivateFollows] = useState(true)
+  // Privacy switch: hold null until the on-chain profile loads, so the
+  // toggle doesn't flicker between a default 'true' and the real value.
+  const [privateFollows, setPrivateFollows] = useState<boolean | null>(null)
   const [pushEnabled, setPushEnabled] = useState(false)
   const [agentLimit, setAgentLimit] = useState<number[]>([250])
   const [busy, setBusy] = useState(false)
+
+  // Kill-switch state: the confirm dialog is open?, are we running the loop?,
+  // an abort signal that interrupts the per-agent broadcast loop, and the
+  // live progress text for the dialog body.
+  const [killOpen, setKillOpen] = useState(false)
+  const [killRunning, setKillRunning] = useState(false)
+  const [killProgress, setKillProgress] = useState<string | null>(null)
+  // The for-loop captures state at function start, so a setState on
+  // 'aborted' wouldn't be visible inside the loop. A ref re-reads on each
+  // iteration, which is what we need for cooperative cancellation.
+  const killAbortRef = useRef(false)
+
+  // Hydrate the privacy switch from the on-chain profile once it loads.
+  // Without this the switch defaulted to ON regardless of stored state and
+  // a user toggling it would write a redundant tx (or worse, regress).
+  useEffect(() => {
+    if (privateFollows !== null) return
+    if (profile.data && typeof profile.data.whitelistOnly === 'boolean') {
+      setPrivateFollows(profile.data.whitelistOnly)
+    }
+  }, [profile.data, privateFollows])
 
   // Derived identity.
   const handle = useMemo(() => {
@@ -164,6 +189,55 @@ export default function ProfilePage() {
     }
     return out
   }, [agentActions.data])
+
+  /**
+   * Kill-switch loop. Drives N sequential msgRevokeAgent broadcasts with
+   * live progress + abort support. Called from the ConfirmDialog so the
+   * destructive intent is gated behind a typed-confirm.
+   */
+  const runKillSwitch = async (): Promise<void> => {
+    if (!initiaAddress) return
+    setKillRunning(true)
+    killAbortRef.current = false
+    let success = 0
+    let failed = 0
+    const total = distinctAgents.length
+    for (let i = 0; i < total; i++) {
+      // Abort check — re-read state via the ref so a click in the dialog
+      // mid-loop actually breaks out.
+      if (killAbortRef.current) {
+        toast.message('Kill switch aborted', {
+          description: `Stopped at ${success + failed}/${total} (${success} revoked).`,
+        })
+        break
+      }
+      const a = distinctAgents[i]!
+      setKillProgress(`Revoking ${i + 1} / ${total} — ${a.agentAddr.slice(0, 10)}…`)
+      try {
+        await sendTx(kit, {
+          chainId: ORI_CHAIN_ID,
+          messages: [msgRevokeAgent({ sender: initiaAddress, agent: a.agentAddr })],
+          autoSign: autoSignEnabled,
+          fee: autoSignEnabled ? buildAutoSignFee(GAS_LIMITS.simpleTx) : undefined,
+        })
+        success++
+      } catch (err) {
+        failed++
+        // eslint-disable-next-line no-console
+        console.warn(`kill-switch: revoke failed for ${a.agentAddr}:`, err)
+      }
+    }
+    setKillRunning(false)
+    setKillProgress(null)
+    setKillOpen(false)
+    if (success === total) {
+      toast.success(`All ${total} agents revoked`)
+    } else if (success > 0) {
+      toast.message(`Revoked ${success}/${total}`, {
+        description: failed > 0 ? `${failed} failed; aborted or rejected` : undefined,
+      })
+    }
+  }
 
   /** Send a single Move msg via auto-sign or InterwovenKit drawer. */
   const submitMsg = async (msg: AnyMsg, label: string, gasLimit: number = GAS_LIMITS.simpleTx) => {
@@ -399,31 +473,17 @@ export default function ProfilePage() {
           return
         }
         case 'agent-kill-switch': {
-          // Revoke every agent the wallet has ever interacted with. We
-          // derive the list from the agent_actions log (distinctAgents
-          // memo above). Each revoke is its own tx — broadcast in
-          // sequence so a single failure doesn't strand the rest.
+          // Don't run the destructive loop straight from a button. Open
+          // the ConfirmDialog and let it drive the actual broadcast loop
+          // — that path supports a typed-confirm gate, live progress, and
+          // an Abort button. Implementation lives at runKillSwitch below.
           if (distinctAgents.length === 0) {
             toast.message('No agents to revoke', {
               description: 'No tracked agent activity for this wallet.',
             })
             return
           }
-          let success = 0
-          for (const a of distinctAgents) {
-            try {
-              await submitMsg(
-                msgRevokeAgent({ sender: initiaAddress, agent: a.agentAddr }),
-                `Revoked ${a.agentAddr.slice(0, 10)}…`,
-              )
-              success++
-            } catch (err) {
-              toast.error(`Revoke failed for ${a.agentAddr.slice(0, 10)}…`, {
-                description: err instanceof Error ? err.message : String(err),
-              })
-            }
-          }
-          toast.success(`Kill switch complete — revoked ${success}/${distinctAgents.length}`)
+          setKillOpen(true)
           return
         }
 
@@ -445,8 +505,16 @@ export default function ProfilePage() {
         }
         case 'agent-card': {
           if (typeof window !== 'undefined') {
+            // /.well-known/agent.json is mounted on the Fastify API
+            // (apps/api/src/routes/wellKnown.ts), reachable on Vercel only
+            // through the catchall at /api/[...path]. Hitting the bare
+            // origin returns Next.js's 404 page. Use API_URL so the path
+            // is /api/.well-known/agent.json in production.
+            const base = API_URL.startsWith('http')
+              ? API_URL
+              : `${window.location.origin}${API_URL}`
             window.open(
-              `${window.location.origin}/.well-known/agent.json`,
+              `${base}/.well-known/agent.json`,
               '_blank',
               'noopener,noreferrer',
             )
@@ -718,7 +786,7 @@ export default function ProfilePage() {
               <ShieldCheck className="h-4 w-4" /> Private follows
             </span>
             <Switch
-              checked={privateFollows}
+              checked={privateFollows ?? false}
               onCheckedChange={handlePrivacyToggle}
               disabled={busy}
               className="data-[state=checked]:bg-[#0022FF]"
@@ -1088,6 +1156,22 @@ export default function ProfilePage() {
         onComplete={async (record) => {
           setRecentAction(record)
           await dispatchAction(record, record.values)
+        }}
+      />
+      <ConfirmDialog
+        open={killOpen}
+        title="Kill switch — revoke all agents"
+        description={`This revokes every authorized AI agent on this wallet (${distinctAgents.length} active). Each one signs a separate revocation transaction. You can Abort mid-loop, but anything already revoked stays revoked. Type REVOKE to confirm.`}
+        typedPhrase="REVOKE"
+        confirmLabel={`Revoke all ${distinctAgents.length}`}
+        progress={killProgress}
+        running={killRunning}
+        onConfirm={runKillSwitch}
+        onAbort={() => {
+          killAbortRef.current = true
+        }}
+        onClose={() => {
+          if (!killRunning) setKillOpen(false)
         }}
       />
     </section>

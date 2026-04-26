@@ -44,7 +44,8 @@ import { playTabs } from '@/data/ori-data'
 import { useAutoSign } from '@/hooks/use-auto-sign'
 import { useOraclePrices } from '@/hooks/use-oracle'
 import { formatOraclePrice } from '@/lib/api-oracle'
-import { ORI_CHAIN_ID, ORI_DECIMALS } from '@/lib/chain-config'
+import { GAS_LIMITS, ORI_CHAIN_ID, ORI_DECIMALS } from '@/lib/chain-config'
+import { resolve } from '@/lib/resolve'
 import {
   msgAcceptWager,
   msgCancelPendingWager,
@@ -146,43 +147,75 @@ export default function PlayPage() {
    * Defined inside the component so we can close over `initiaAddress`.
    */
   const buildMessage = useCallback(
-    (
+    async (
       actionId: string,
       values: Record<string, string>,
-    ): { msg: EncodeObject; gas: number } | null => {
+    ): Promise<{ msg: EncodeObject; gas: number } | null> => {
       if (!initiaAddress) {
         toast.error('Connect wallet first')
         return null
+      }
+
+      // Resolve a user-typed identifier (.init handle, alice.init, init1...)
+      // to a canonical bech32 address. Throws a clear error if it can't be
+      // resolved — handlers below catch and surface via toast. Centralises
+      // the resolution so every bcs.address() input is normalised, fixing
+      // the 'invalid uint32: undefined' BCS errors users used to hit when
+      // typing names directly.
+      const resolveAddress = async (raw: string): Promise<string> => {
+        const r = await resolve(raw.trim())
+        if (!r?.initiaAddress) {
+          throw new Error(
+            `Could not resolve "${raw}" — type a .init handle or paste an init1… address`,
+          )
+        }
+        return r.initiaAddress
       }
 
       try {
         switch (actionId) {
           // ---------------- Wagers ----------------
           case 'propose-wager': {
-            const accepter = pick(values, 'opponent').trim()
+            // Arbiter mode: requires a third-party arbiter, distinct from
+            // both proposer and accepter. wager_escrow.move:215 aborts with
+            // E_SAME_ARBITER if any of those collide. Field is now exposed
+            // in the catalogue ('Arbiter .init or address') so the user
+            // chooses someone they both trust.
+            const accepter = await resolveAddress(pick(values, 'opponent'))
+            const arbiter = await resolveAddress(pick(values, 'arbiter'))
             const claim = pick(values, 'terms').trim()
             const amount = parseAmountToBase(pick(values, 'stake'))
-            if (!accepter) throw new Error('Opponent address required')
             if (!claim) throw new Error('Terms required')
             if (amount <= 0n) throw new Error('Stake required')
+            if (
+              arbiter === initiaAddress ||
+              arbiter === accepter ||
+              accepter === initiaAddress
+            ) {
+              throw new Error(
+                'Arbiter must be a third party — distinct from both you and your opponent',
+              )
+            }
             return {
               msg: msgProposeWager({
                 proposer: initiaAddress,
                 accepter,
-                arbiter: initiaAddress, // proposer arbitrates by default
+                arbiter,
                 amount,
                 claim,
               }),
-              gas: 600_000,
+              gas: GAS_LIMITS.mediumTx,
             }
           }
           case 'propose-pvp-wager': {
-            const accepter = pick(values, 'opponent').trim()
+            const accepter = await resolveAddress(pick(values, 'opponent'))
             const claim = pick(values, 'terms').trim()
             const amount = parseAmountToBase(pick(values, 'stake'))
-            if (!accepter) throw new Error('Opponent address required')
             if (!claim) throw new Error('Terms required')
             if (amount <= 0n) throw new Error('Stake required')
+            if (accepter === initiaAddress) {
+              throw new Error('Cannot wager against yourself')
+            }
             return {
               msg: msgProposePvpWager({
                 proposer: initiaAddress,
@@ -192,27 +225,26 @@ export default function PlayPage() {
                 category: 'general',
                 deadlineSeconds: defaultDeadlineSecondsFromNow(),
               }),
-              gas: 600_000,
+              gas: GAS_LIMITS.mediumTx,
             }
           }
           case 'accept-wager': {
             const wagerId = parseId(pick(values, 'wager id', 'opponent'))
             return {
               msg: msgAcceptWager({ accepter: initiaAddress, wagerId }),
-              gas: 500_000,
+              gas: GAS_LIMITS.simpleTx,
             }
           }
           case 'resolve-wager': {
             const wagerId = parseId(pick(values, 'wager id', 'opponent'))
-            const winner = pick(values, 'winner', 'terms').trim()
-            if (!winner) throw new Error('Winner address required')
+            const winner = await resolveAddress(pick(values, 'winner', 'terms'))
             return {
               msg: msgResolveWager({
                 arbiter: initiaAddress,
                 wagerId,
                 winner,
               }),
-              gas: 600_000,
+              gas: GAS_LIMITS.mediumTx,
             }
           }
           case 'concede-wager': {
@@ -243,7 +275,10 @@ export default function PlayPage() {
             }
           }
           case 'propose-oracle-resolved-wager': {
-            const accepter = pick(values, 'opponent').trim()
+            const accepter = await resolveAddress(pick(values, 'opponent'))
+            if (accepter === initiaAddress) {
+              throw new Error('Cannot wager against yourself')
+            }
             const oraclePair = (pick(values, 'oracle pair', 'terms').trim() || 'BTC/USD').toUpperCase()
             const amount = parseAmountToBase(pick(values, 'stake'))
             // The oracle's target_price is the raw integer (USD * 10^decimals).
@@ -436,7 +471,13 @@ export default function PlayPage() {
       }
       if (!initiaAddress) return
 
-      const built = buildMessage(record.id, record.values)
+      let built: { msg: EncodeObject; gas: number } | null
+      try {
+        built = await buildMessage(record.id, record.values)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Invalid input')
+        return
+      }
       if (!built) return
 
       try {
