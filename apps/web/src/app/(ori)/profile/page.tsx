@@ -649,16 +649,21 @@ export default function ProfilePage() {
               onValueCommit={handleAgentLimitCommit}
               max={500}
               step={10}
-              disabled={busy}
-              className="[&_[role=slider]]:rounded-none [&_[role=slider]]:bg-white"
+              // Disable the slider entirely when no default agent address
+              // is configured. Otherwise users drag, see no effect, and
+              // assume the slider is broken — it just silently no-ops in
+              // handleAgentLimitCommit.
+              disabled={busy || !DEFAULT_AGENT_ADDRESS}
+              className="[&_[role=slider]]:rounded-none [&_[role=slider]]:bg-white disabled:opacity-50"
               data-testid="agent-limit-slider"
             />
             {!DEFAULT_AGENT_ADDRESS && (
               <p
-                className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-white/50"
+                className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-white/70"
                 data-testid="agent-limit-chip"
               >
-                Select an agent in the Agent policy tab to commit
+                Use the “Set agent spending policy” action below to authorize
+                an agent — the slider commits to that address once configured.
               </p>
             )}
           </div>

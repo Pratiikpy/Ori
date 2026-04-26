@@ -593,6 +593,15 @@ export default function PlayPage() {
               >
                 {tab.summary}
               </h2>
+              <p
+                className="mt-3 font-mono text-[11px] leading-5 text-[#52525B]"
+                data-testid={`play-tab-help-${tab.id}`}
+              >
+                Need a wager / market / pool ID? After you propose one, the
+                tx hash toast links to the explorer — open it to find the
+                emitted ID. Anyone you wagered against gets the same ID via
+                their inbox notification.
+              </p>
             </div>
             {!isConnected ? (
               // Connect-wallet gate. Previously the action grid was always

@@ -447,7 +447,16 @@ export default function InboxPage() {
               return (
                 <button
                   key={chat.chatId}
-                  onClick={() => setChatId(chat.chatId)}
+                  onClick={() => {
+                    // Selecting a real thread should drop any in-flight
+                    // pending chat — otherwise the unsent thread sticks
+                    // around and reappears as 'active' next time the user
+                    // returns to inbox.
+                    if (pendingChat && pendingChat.chatId !== chat.chatId) {
+                      setPendingChat(null)
+                    }
+                    setChatId(chat.chatId)
+                  }}
                   className={`w-full border p-4 text-left transition-colors ${
                     isActive
                       ? 'border-[#0022FF] bg-white shadow-[4px_4px_0px_0px_rgba(0,34,255,1)]'
