@@ -434,7 +434,7 @@ export default function ProfilePage() {
         }
 
         default: {
-          toast.message(`${action.title} not yet wired`, {
+          toast.message(`${action.title} is not available in this build`, {
             description: `Action id: ${action.id}`,
           })
         }
@@ -506,14 +506,24 @@ export default function ProfilePage() {
           className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4"
           data-testid="profile-secondary-grid"
         >
-          {(['achievements', 'quests', 'links-merchant', 'notifications'] as const).map((slot) => (
+          {profileActions.map((section) => (
             <article
-              key={slot}
+              key={section.id}
               className="border border-black/10 bg-white p-6"
-              data-testid={`${slot}-card`}
+              data-testid={`profile-disconnected-section-${section.id}`}
             >
-              <p className="font-mono text-xs uppercase text-[#52525B]">{slot}</p>
-              <p className="mt-3 text-sm text-[#52525B]">Connect wallet to view.</p>
+              <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#52525B]" data-testid={`profile-disconnected-section-label-${section.id}`}>{section.label}</p>
+              <p className="mt-3 text-sm text-[#52525B]" data-testid={`profile-disconnected-section-summary-${section.id}`}>
+                {section.actions.slice(0, 2).map((action) => action.title).join(' · ')}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => void openConnect()}
+                className="mt-4 rounded-none border-black/20 hover:bg-black hover:text-white"
+                data-testid={`profile-disconnected-connect-${section.id}`}
+              >
+                Connect to use
+              </Button>
             </article>
           ))}
         </div>
@@ -832,7 +842,7 @@ export default function ProfilePage() {
                 variant="ghost"
                 disabled
                 className="mt-3 h-auto w-full justify-start rounded-none border border-black/10 px-3 py-3"
-                data-testid="merchant-link-placeholder"
+                data-testid="merchant-link-empty"
               >
                 <LinkIcon className="h-4 w-4" />
                 No links yet

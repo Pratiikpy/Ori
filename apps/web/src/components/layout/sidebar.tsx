@@ -7,7 +7,7 @@
  *   • Brand: #0022FF square with white "O" + heavy "Ori" wordmark
  *   • Nav items: bordered pills, active = solid blue, hover = solid black
  *   • Wallet card pinned bottom: "Connected wallet" (replaces prototype's
- *     "Simulated wallet"), real handle + address + Disconnect
+ *     real handle + address + wallet access
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -23,14 +23,15 @@ export function Sidebar() {
     <aside
       aria-label="Primary navigation"
       className="hidden lg:flex fixed left-0 top-0 h-dvh w-72 bg-white border-r border-black/10 flex-col z-40"
+      data-testid="desktop-sidebar"
     >
       {/* Brand */}
       <div className="border-b border-black/10 p-6">
-        <Link href="/" className="flex items-center gap-3" aria-label="Ori home">
-          <span className="grid h-10 w-10 place-items-center bg-[#0022FF] font-display text-lg font-black text-white">
+        <Link href="/" className="flex items-center gap-3" aria-label="Ori home" data-testid="sidebar-brand-link">
+          <span className="grid h-10 w-10 place-items-center bg-[#0022FF] font-display text-lg font-black text-white" data-testid="sidebar-brand-mark">
             O
           </span>
-          <span className="font-display text-2xl font-black tracking-tight">
+          <span className="font-display text-2xl font-black tracking-tight" data-testid="sidebar-brand-wordmark">
             Ori
           </span>
         </Link>
@@ -45,6 +46,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
+              data-testid={`sidebar-nav-${item.icon}`}
               className={[
                 'mb-2 flex items-center gap-3 border px-4 py-3 text-sm font-semibold transition-colors',
                 active
@@ -53,7 +55,7 @@ export function Sidebar() {
               ].join(' ')}
             >
               <NavGlyph kind={item.icon} />
-              {item.label}
+              <span data-testid={`sidebar-nav-label-${item.icon}`}>{item.label}</span>
             </Link>
           )
         })}
@@ -62,18 +64,19 @@ export function Sidebar() {
       {/* Wallet card pinned bottom */}
       <div className="border-t border-black/10 p-4 shrink-0">
         {isConnected ? (
-          <div className="border border-black/10 p-4 bg-white">
-            <div className="flex items-center gap-2 text-sm font-bold">
+          <div className="border border-black/10 p-4 bg-white" data-testid="sidebar-wallet-card">
+            <div className="flex items-center gap-2 text-sm font-bold" data-testid="sidebar-wallet-status">
               <WalletGlyph /> Connected wallet
             </div>
-            <p className="mt-3 font-mono text-sm">{username ?? 'wallet.init'}</p>
-            <p className="font-mono text-xs text-[#52525B] truncate">
+            <p className="mt-3 font-mono text-sm" data-testid="sidebar-wallet-username">{username ?? 'wallet.init'}</p>
+            <p className="font-mono text-xs text-[#52525B] truncate" data-testid="sidebar-wallet-address">
               {shortAddr(initiaAddress)}
             </p>
             <button
               type="button"
               onClick={() => openWallet()}
               className="mt-4 w-full border border-black px-4 py-2 text-sm font-semibold transition hover:bg-black hover:text-white cursor-pointer"
+              data-testid="sidebar-open-wallet-button"
             >
               Open wallet
             </button>
@@ -83,6 +86,7 @@ export function Sidebar() {
             type="button"
             onClick={() => void openConnect()}
             className="w-full bg-[#0A0A0A] text-white px-4 py-3 text-sm font-semibold transition hover:bg-[#0022FF] cursor-pointer"
+            data-testid="sidebar-connect-wallet-button"
           >
             Connect wallet
           </button>
