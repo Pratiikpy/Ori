@@ -14,7 +14,7 @@
  *   MCP tools tab                 → static `mcpTools` catalogue from the MCP app
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Bot, CheckCheck, Send, WalletCards } from 'lucide-react'
+import { Bot, CheckCheck, Plus, Send, WalletCards } from 'lucide-react'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,7 @@ import { useChats, useChatMessages, useSendMessage, useMarkMessageRead } from '@
 import { useAgentActionsByOwner } from '@/hooks/use-agent-actions'
 import { useKeypair } from '@/hooks/use-keypair'
 import {
+  deriveChatId,
   fromBase64,
   sealedBoxDecrypt,
   sealedBoxEncrypt,
@@ -33,6 +34,7 @@ import {
   utf8Encode,
 } from '@/lib/crypto'
 import { getRecipientEncryptionPubkey } from '@/lib/api-profile'
+import { resolve as resolveIdentifier } from '@/lib/resolve'
 import type { ChatSummary } from '@/lib/api-chats'
 import type { MessageRow } from '@/lib/api-messages'
 
@@ -68,6 +70,16 @@ export default function InboxPage() {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [recentAction, setRecentAction] = useState<RecentInboxAction | null>(null)
+  // "Start new chat" composer state — accepts a `.init` handle (e.g. `alice.init`)
+  // or a raw `init1...` wallet address. Resolves via L1 usernames module
+  // (lib/resolve.ts) so we get the canonical address + display name even if
+  // the user typed only the bare handle.
+  const [newChatInput, setNewChatInput] = useState('')
+  const [resolving, setResolving] = useState(false)
+  // A "pending" chat synthesized from the resolver result so the right-hand
+  // panel renders before any messages exist. Once the user sends the first
+  // message, the real chat appears in chatsQuery.data and supersedes this.
+  const [pendingChat, setPendingChat] = useState<ChatSummary | null>(null)
 
   const chatsQuery = useChats()
   const messagesQuery = useChatMessages(chatId)
@@ -85,9 +97,64 @@ export default function InboxPage() {
 
   const activeChat: ChatSummary | null = useMemo(() => {
     const list = chatsQuery.data?.chats ?? []
+    // If we just kicked off a new chat via the composer, prefer that — the
+    // real chat won't be in `list` until the first message is sent and the
+    // chats query refetches.
+    if (pendingChat && pendingChat.chatId === chatId) return pendingChat
     if (!list.length) return null
     return list.find((c) => c.chatId === chatId) ?? list[0]!
-  }, [chatsQuery.data, chatId])
+  }, [chatsQuery.data, chatId, pendingChat])
+
+  // Drop the pendingChat once the real one shows up in the chats list — keeps
+  // a single source of truth (with unread count, last-message-at, etc.).
+  useEffect(() => {
+    if (!pendingChat) return
+    const list = chatsQuery.data?.chats ?? []
+    if (list.find((c) => c.chatId === pendingChat.chatId)) {
+      setPendingChat(null)
+    }
+  }, [chatsQuery.data, pendingChat])
+
+  /**
+   * Resolve a `.init` handle or `init1...` address and prepare a brand-new
+   * chat for the composer panel. Doesn't send anything by itself — the user
+   * still has to type and submit a message to materialize the thread on
+   * the backend.
+   */
+  async function handleStartNewChat(): Promise<void> {
+    const raw = newChatInput.trim()
+    if (!raw || !initiaAddress) return
+    setResolving(true)
+    try {
+      const resolved = await resolveIdentifier(raw)
+      if (!resolved) {
+        toast.error(`Could not resolve "${raw}". Try a .init handle or init1… address.`)
+        return
+      }
+      if (resolved.initiaAddress === initiaAddress) {
+        toast.error("That's your own address — can't message yourself.")
+        return
+      }
+      const id = await deriveChatId(initiaAddress, resolved.initiaAddress)
+      setPendingChat({
+        chatId: id,
+        counterparty: {
+          initiaAddress: resolved.initiaAddress,
+          // hexAddress is unused in the right-panel UI but typed; safe placeholder
+          hexAddress: '',
+          initName: resolved.initName,
+        },
+        lastMessageAt: new Date().toISOString(),
+        unreadCount: 0,
+      })
+      setChatId(id)
+      setNewChatInput('')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to resolve identifier')
+    } finally {
+      setResolving(false)
+    }
+  }
 
   // Decrypt fetched messages
   const [decrypted, setDecrypted] = useState<DecryptedMessage[]>([])
@@ -227,12 +294,59 @@ export default function InboxPage() {
         className="border-b border-black/10 bg-[#F5F5F5] p-4 lg:border-b-0 lg:border-r"
         data-testid="thread-list-panel"
       >
-        <p
-          className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]"
-          data-testid="thread-list-title"
-        >
-          Threads
-        </p>
+        <div className="mb-4 flex items-center justify-between">
+          <p
+            className="text-xs font-bold uppercase tracking-[0.2em] text-[#52525B]"
+            data-testid="thread-list-title"
+          >
+            Threads
+          </p>
+          <span className="font-mono text-[10px] text-[#52525B]">
+            E2E · sealed-box
+          </span>
+        </div>
+
+        {/* New chat composer — accepts .init handle OR init1… address.
+            Hidden until wallet is connected (resolver needs the user's own
+            address to derive the chatId, and the API ignores the request
+            without auth). */}
+        {isConnected && (
+          <form
+            className="mb-4 border border-black/10 bg-white p-3"
+            data-testid="new-chat-composer"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void handleStartNewChat()
+            }}
+          >
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#0022FF]">
+              Start a new chat
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={newChatInput}
+                onChange={(e) => setNewChatInput(e.target.value)}
+                placeholder="alice.init or init1…"
+                className="rounded-none border-black/15 font-mono text-xs"
+                data-testid="new-chat-input"
+                disabled={resolving}
+              />
+              <Button
+                type="submit"
+                disabled={!newChatInput.trim() || resolving}
+                className="rounded-none bg-[#0022FF] hover:bg-[#0019CC]"
+                data-testid="new-chat-submit"
+              >
+                {resolving ? '…' : <Plus className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p className="mt-2 text-[11px] leading-5 text-[#52525B]">
+              Type their .init handle (claimed on Initia L1) or paste their
+              init1… wallet address. Messages are end-to-end encrypted with
+              libsodium sealed-box — only the recipient can decrypt.
+            </p>
+          </form>
+        )}
 
         {!isConnected ? (
           <div
@@ -262,16 +376,21 @@ export default function InboxPage() {
             Could not load threads:{' '}
             {chatsQuery.error instanceof Error ? chatsQuery.error.message : 'unknown error'}
           </div>
-        ) : !chatsQuery.data?.chats?.length ? (
+        ) : !chatsQuery.data?.chats?.length && !pendingChat ? (
           <div
             className="border border-black/10 bg-white p-4 text-sm text-[#52525B]"
             data-testid="thread-list-empty"
           >
-            No conversations yet. Send a payment or DM to start one.
+            <p className="font-heading text-base font-bold text-black">No threads yet</p>
+            <p className="mt-2 leading-5">
+              Use the box above to start a conversation. Once you send your
+              first encrypted message, the thread shows up here. Threads are
+              sorted by latest message and show unread counts in blue.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
-            {chatsQuery.data.chats.map((chat) => {
+            {(chatsQuery.data?.chats ?? []).map((chat) => {
               const name = deriveThreadName(chat)
               const handle = deriveThreadHandle(chat)
               const isActive = chat.chatId === (activeChat?.chatId ?? chatId)
@@ -419,9 +538,20 @@ export default function InboxPage() {
                     : 'unknown error'}
                 </p>
               ) : decrypted.length === 0 ? (
-                <p className="text-sm text-[#52525B]" data-testid="message-list-empty-thread">
-                  No messages yet. Say hi.
-                </p>
+                <div
+                  className="border border-dashed border-black/15 bg-white p-4 text-sm text-[#52525B]"
+                  data-testid="message-list-empty-thread"
+                >
+                  <p className="font-heading text-base font-bold text-black">
+                    Empty thread — say hi
+                  </p>
+                  <p className="mt-2 leading-5">
+                    Type a message below and hit send. We'll encrypt it with
+                    the recipient's on-chain X25519 pubkey via libsodium
+                    sealed-box, then post the ciphertext to the API. The
+                    backend can't read it — only the recipient's keypair can.
+                  </p>
+                </div>
               ) : (
                 decrypted.map((message) => (
                   <div
