@@ -8,7 +8,7 @@
  * inputs and delegates execution to the page-level handler; confirmations
  * are emitted only after the connected handler runs.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +43,18 @@ export function ActionDialog({
   const updateValue = (field: string, value: string) =>
     setValues((current) => ({ ...current, [field]: value }))
 
+  // ESC dismisses the modal when not mid-submit. Backdrop click does too —
+  // Radix Dialog gives us this for free, but ActionDialog is hand-rolled,
+  // so we wire it manually.
+  useEffect(() => {
+    if (!action) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !submitting) onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [action, submitting, onClose])
+
   const submitAction = async (event: React.FormEvent) => {
     event.preventDefault()
     setSubmitting(true)
@@ -54,12 +66,28 @@ export function ActionDialog({
         minute: '2-digit',
       }),
     }
+    let succeeded = false
     try {
+      // onComplete may throw to signal failure; in that case we keep the
+      // dialog open with values intact so the user can fix the problem
+      // (typo, bad amount, etc.) without retyping. Page-level handlers
+      // currently swallow errors and toast — see #5 in the audit, fixing
+      // those is out of scope here, but if any handler ever rethrows we
+      // honour it.
       await onComplete(record)
-      setValues({})
-      onClose()
+      succeeded = true
+    } catch (err) {
+      // Surface a generic toast so the user gets *some* signal even when
+      // the caller didn't already toast. The handler-level toast (if any)
+      // will arrive first; this is a safety net.
+      // eslint-disable-next-line no-console
+      console.warn(`ActionDialog: ${action.id} failed`, err)
     } finally {
       setSubmitting(false)
+    }
+    if (succeeded) {
+      setValues({})
+      onClose()
     }
   }
 
@@ -67,6 +95,9 @@ export function ActionDialog({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A0A0A]/70 px-4"
       data-testid={`modal-${action.id}`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !submitting) onClose()
+      }}
     >
       <form
         onSubmit={submitAction}

@@ -195,7 +195,7 @@ export const moneyTabs = [
       { id: "create-link-gift", title: "Create link-gift", contract: "payment_router.move", fields: ["Amount", "Expiry", "Shortcode"] },
       { id: "create-directed-gift", title: "Create directed gift", contract: "payment_router.move", fields: fields.recipient },
       { id: "create-group-gift", title: "Create group gift", contract: "payment_router.move", fields: ["Total amount", "Claim slots", "Expiry"] },
-      { id: "claim-link-gift", title: "Claim link gift", contract: "gift_packet.move", fields: ["Gift ID", "Secret hex"] },
+      { id: "claim-link-gift", title: "Claim link gift", contract: "gift_packet.move", fields: ["Gift ID", "Secret hex", "Short code (optional, from share link)"] },
       { id: "claim-directed-gift", title: "Claim directed gift", contract: "gift_packet.move", fields: ["Gift ID"] },
       { id: "claim-group-slot", title: "Claim group gift slot", contract: "gift_group.move", fields: ["Group gift ID", "Slot index", "Secret hex"] },
       { id: "reclaim-expired-gift", title: "Reclaim expired link gift", contract: "gift_packet.move", fields: ["Gift ID"] },

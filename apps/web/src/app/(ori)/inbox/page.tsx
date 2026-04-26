@@ -14,6 +14,7 @@
  *   MCP tools tab                 → static `mcpTools` catalogue from the MCP app
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Bot, CheckCheck, Plus, Send, WalletCards } from 'lucide-react'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { toast } from 'sonner'
@@ -93,7 +94,21 @@ export default function InboxPage() {
   // and the global onboarding banner — same logic, two surfaces.
   const ensureEncryption = useEnsureEncryption()
 
-  // Auto-select first chat once chats load
+  // Sync `chatId` with the ?chat= URL search param. The /profile/[address]
+  // page deep-links here via /inbox?chat=<derivedId> when a user clicks
+  // 'Message'. Without this read, the inbox always auto-selected the first
+  // existing thread and the deep-link landed on the wrong conversation.
+  // Also keep state in sync with manual URL edits / browser back-forward.
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const fromUrl = searchParams?.get('chat') ?? null
+    if (fromUrl && fromUrl !== chatId) setChatId(fromUrl)
+    // We deliberately don't depend on `chatId` here — manual selection via
+    // setChatId in onClick still works; the URL is a one-way seed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  // Auto-select first chat once chats load (fallback when no ?chat= param).
   useEffect(() => {
     if (!chatId && chatsQuery.data?.chats?.length) {
       setChatId(chatsQuery.data.chats[0]!.chatId)

@@ -24,7 +24,13 @@ import { L1_USERNAMES_PORTAL_URL, ORI_REST_URL, ORI_DENOM } from '@/lib/chain-co
 import { getRecipientEncryptionPubkey } from '@/lib/api-profile'
 import { toast } from 'sonner'
 
-const DISMISS_KEY = 'ori.onboarding-banner.dismissed-at'
+// Per-wallet so dismissing on wallet A doesn't suppress wallet B's banner.
+// Falls back to a global key (no address) when called pre-connect, but the
+// banner only renders when isConnected so that path is unreachable in
+// practice.
+const DISMISS_KEY_PREFIX = 'ori.onboarding-banner.dismissed-at:'
+const dismissKeyFor = (addr: string | null | undefined): string =>
+  `${DISMISS_KEY_PREFIX}${addr ?? 'unknown'}`
 
 async function fetchBalanceUmin(initiaAddress: string): Promise<bigint> {
   // Cosmos SDK bank query — public REST endpoint of the rollup. Returns a
@@ -55,14 +61,25 @@ export function OnboardingBanner() {
 
   const [balance, setBalance] = useState<bigint | null>(null)
   const [pubkeyOnChain, setPubkeyOnChain] = useState<boolean | null>(null)
-  const [dismissed, setDismissed] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    const at = window.localStorage.getItem(DISMISS_KEY)
-    if (!at) return false
-    // Re-show banner once an hour even after dismissal so users don't
-    // permanently bury an actionable step.
-    return Date.now() - Number(at) < 60 * 60 * 1000
-  })
+  const [dismissed, setDismissed] = useState<boolean>(false)
+
+  // Re-evaluate dismissal whenever the connected wallet changes — dismissing
+  // on wallet A should NOT suppress the banner for wallet B even in the same
+  // browser session. One-hour TTL on dismiss keeps actionable steps from
+  // being permanently buried.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!initiaAddress) {
+      setDismissed(false)
+      return
+    }
+    const at = window.localStorage.getItem(dismissKeyFor(initiaAddress))
+    if (!at) {
+      setDismissed(false)
+      return
+    }
+    setDismissed(Date.now() - Number(at) < 60 * 60 * 1000)
+  }, [initiaAddress])
 
   // Refresh balance when wallet changes or after a successful seed claim.
   useEffect(() => {
@@ -116,8 +133,11 @@ export function OnboardingBanner() {
 
   const dismiss = (): void => {
     setDismissed(true)
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(DISMISS_KEY, String(Date.now()))
+    if (typeof window !== 'undefined' && initiaAddress) {
+      window.localStorage.setItem(
+        dismissKeyFor(initiaAddress),
+        String(Date.now()),
+      )
     }
   }
 

@@ -14,7 +14,7 @@
  * policy slider tied to env vars). Forking those branches by `isSelf`
  * doubles the surface area; a focused read-only page is simpler and safer.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Heart, MessageSquare, Send, Sparkles, UserPlus, UserMinus } from 'lucide-react'
@@ -56,11 +56,12 @@ export default function OtherProfilePage() {
   const { initiaAddress, isConnected } = kit
   const isSelf = isConnected && initiaAddress === targetAddress
 
-  // If the visitor lands on their own address by accident, send them to the
-  // editable self-page.
-  if (isSelf && typeof window !== 'undefined') {
-    router.replace('/profile')
-  }
+  // Redirect a self-visit to the editable /profile page. Has to live in a
+  // useEffect, not the render body — Next warns when router.replace fires
+  // during render and the redirect can race with the data hooks below.
+  useEffect(() => {
+    if (isSelf) router.replace('/profile')
+  }, [isSelf, router])
 
   const profile = useProfile(targetAddress)
   const followStats = useFollowStats(targetAddress)

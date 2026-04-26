@@ -63,7 +63,7 @@ import {
 import { resolve } from '@/lib/resolve'
 import { deriveChatId, randomBytes, sha256 } from '@/lib/crypto'
 import { buildAutoSignFee, extractTxHash, friendlyError, sendTx, txExplorerUrl } from '@/lib/tx'
-import { getSessionToken } from '@/lib/api'
+import { getSessionToken, markLinkClaimed } from '@/lib/api'
 
 // ---------- helpers ----------
 
@@ -281,7 +281,15 @@ export default function MoneyPage() {
           const memos: string[] = []
           const totalBase = toBaseUnits(totalStr)
           const split = rows.length > 0 ? totalBase / BigInt(rows.length) : 0n
-          for (const row of rows) {
+          // Integer division truncates: 7 INIT / 3 = 2.333 → 2 base units,
+          // total transferred 6.999. Detect non-zero remainder and assign
+          // it to the LAST per-row default-amount so the CSV sums to the
+          // user-typed total. Per-row explicit amounts override and are
+          // not adjusted.
+          const remainder = totalBase - split * BigInt(rows.length)
+          let defaultedSlots = 0
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i]!
             const cells = row.split(',').map((c) => c.trim())
             const who = cells[0] ?? ''
             const amt = cells[1] ?? ''
@@ -290,8 +298,24 @@ export default function MoneyPage() {
             const r = await resolve(who)
             if (!r?.initiaAddress) throw new Error(`Could not resolve ${who}`)
             recipients.push(r.initiaAddress)
-            amounts.push(amt ? toBaseUnits(amt) : split)
+            if (amt) {
+              amounts.push(toBaseUnits(amt))
+            } else {
+              defaultedSlots++
+              // Last defaulted row absorbs the remainder so the CSV sums
+              // exactly to the user-typed total.
+              const isLastDefault = defaultedSlots === rows.filter((rw) => {
+                const c = rw.split(',').map((s) => s.trim())
+                return !(c[1] ?? '')
+              }).length
+              amounts.push(isLastDefault ? split + remainder : split)
+            }
             memos.push(m)
+          }
+          if (remainder > 0n && defaultedSlots > 0) {
+            toast.message('Rounding adjustment', {
+              description: `Total didn't divide evenly across recipients — last defaulted row carries the ${remainder} u${ORI_DENOM} remainder.`,
+            })
           }
           const batchId = `batch-${Date.now()}`
           const msg = msgBatchSend({
@@ -443,6 +467,20 @@ export default function MoneyPage() {
             }),
           )
           toastTx('Link gift claimed', __r)
+          // Mirror the claim to the off-chain link store so /v1/links/<short>
+          // reports claimed=true and the OG preview / quest counters update.
+          // Best-effort: a backend hiccup here doesn't undo the on-chain
+          // claim, but does mean the off-chain row stays stale until the
+          // event-listener catches up.
+          const shortCode = (record.values['Short code'] || '').trim()
+          if (shortCode) {
+            try {
+              await markLinkClaimed(shortCode, initiaAddress)
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.warn('markLinkClaimed failed (non-fatal):', err)
+            }
+          }
           return
         }
 

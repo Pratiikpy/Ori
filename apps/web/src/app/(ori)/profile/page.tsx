@@ -1069,10 +1069,25 @@ export default function ProfilePage() {
               <Switch
                 checked={pushEnabled}
                 onCheckedChange={(next) => {
+                  // Optimistic toggle: flip state immediately, roll back on
+                  // failure. Without rollback the UI ends up showing 'on'
+                  // when the API call failed, and the next page-load shows
+                  // 'off' from server state — confusing.
                   setPushEnabled(next)
-                  void (next ? ensurePushSubscription() : unsubscribePush()).then(() => {
-                    toast.success(next ? 'Push notifications registered' : 'Push notifications removed')
-                  })
+                  void (next ? ensurePushSubscription() : unsubscribePush())
+                    .then(() => {
+                      toast.success(
+                        next
+                          ? 'Push notifications registered'
+                          : 'Push notifications removed',
+                      )
+                    })
+                    .catch((err) => {
+                      setPushEnabled(!next)
+                      toast.error('Push update failed', {
+                        description: err instanceof Error ? err.message : String(err),
+                      })
+                    })
                 }}
                 className="data-[state=checked]:bg-[#0022FF]"
                 data-testid="push-notification-switch"
