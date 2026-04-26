@@ -1,11 +1,11 @@
-# Dependencies
+# ─── Dependencies ───────────────────────────────────────────────────────────
 node_modules/
 .pnpm-store/
 
-# Local design-handoff reference (zip extract, not for repo)
+# ─── Local design-handoff reference (zip extract, not for repo) ─────────────
 design_ref/
 
-# Build
+# ─── Build artifacts ────────────────────────────────────────────────────────
 dist/
 build/
 .next/
@@ -14,44 +14,25 @@ out/
 *.tsbuildinfo
 
 # Move build artifacts
-build/
 artifacts/
 
-# Env & secrets
+# ─── Env & secrets ──────────────────────────────────────────────────────────
 .env
+.env.*
+*.env
 .env.local
 .env.*.local
 .env.production
 .env.vercel
+.credentials
+credentials.json
+
+# ...keep example templates checked in
 !.env.example
 !.env.production.example
 !.env.*.example
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# IDE
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
-.idea/
-*.swp
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Deployment
-.vercel
-
-# Testing
-coverage/
-
-# Keys (NEVER commit)
+# ─── Keys (NEVER commit) ────────────────────────────────────────────────────
 *.pem
 *.key
 deployer-key.json
@@ -60,37 +41,51 @@ deployer-key.json
 apps/*/.ori-*-wallets.json
 **/.ori-*-wallets.json
 
-# graphify — the CLI writes to ./graphify-out/ by default; we sync to
-# docs/architecture-graph/ via scripts/update-graph.sh, so the raw output
-# directory is disposable. docs/architecture-graph/cache/ is also rebuildable.
+# ─── Logs ───────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── IDE / OS ───────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ─── Deployment ─────────────────────────────────────────────────────────────
+.vercel
+
+# ─── Testing ────────────────────────────────────────────────────────────────
+coverage/
+
+# ─── graphify ───────────────────────────────────────────────────────────────
+# CLI writes to ./graphify-out/ by default; we sync to docs/architecture-graph/
+# via scripts/update-graph.sh, so the raw output directory is disposable.
 graphify-out/
 docs/architecture-graph/cache/
 
-.vercel
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
+# ─── Personal / auto-generated tooling that doesn't belong on GitHub ────────
+# Local dev tooling (emergent.sh agent runner) and per-machine git config —
+# these were accidentally tracked early on. Now ignored going forward.
+.emergent/
+.gitconfig
+
+# Internal planning docs and ephemeral test reports written by automation.
+# Not part of the project source; kept out of the public repo.
+memory/
+test_reports/
+
+# Auto-generated design tokens / planning artifacts that aren't imported by
+# any code in apps/ or packages/. Real design system lives in code (Tailwind
+# theme + apps/web/src/app/globals.css).
+design_guidelines.json
+
+# One-shot debugging scripts. Long-lived maintenance scripts stay tracked
+# under scripts/; these patterns catch the throwaway ones.
+scripts/debug-*.mjs
+scripts/debug-*.sh
