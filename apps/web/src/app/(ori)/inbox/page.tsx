@@ -24,6 +24,7 @@ import { mcpTools } from '@/data/ori-data'
 import { useChats, useChatMessages, useSendMessage, useMarkMessageRead } from '@/hooks/use-chats'
 import { useAgentActionsByOwner } from '@/hooks/use-agent-actions'
 import { useKeypair } from '@/hooks/use-keypair'
+import { useEnsureEncryption } from '@/hooks/use-ensure-encryption'
 import {
   deriveChatId,
   fromBase64,
@@ -87,6 +88,10 @@ export default function InboxPage() {
   const sendMessage = useSendMessage()
   const markRead = useMarkMessageRead()
   const { keypair, exists: keypairExists, isLocked, unlock } = useKeypair()
+  // Unified one-tap setup hook: derives keypair + publishes pubkey on-chain
+  // + caches it in the API. Used in the message-list "Enable encryption" CTA
+  // and the global onboarding banner — same logic, two surfaces.
+  const ensureEncryption = useEnsureEncryption()
 
   // Auto-select first chat once chats load
   useEffect(() => {
@@ -482,15 +487,17 @@ export default function InboxPage() {
                 <span data-testid="active-thread-handle">
                   {activeChat ? deriveThreadHandle(activeChat) : ''}
                 </span>
+                {/* Replaced static "online / typing dots ready / read receipts
+                    on" placeholders with a single accurate label. Realtime is
+                    not wired on Vercel (no Socket.IO host); the previous
+                    indicators were misleading. When WS is brought online a
+                    proper presence/typing/read-receipt set should replace
+                    this badge. */}
                 <span
-                  className="flex items-center gap-1 text-[#00A858]"
-                  data-testid="active-thread-online"
+                  className="flex items-center gap-1 text-[#52525B]"
+                  data-testid="active-thread-encryption-badge"
                 >
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-[#00C566]" /> online
-                </span>
-                <span data-testid="active-thread-typing">typing dots ready</span>
-                <span data-testid="active-thread-read-receipt">
-                  <CheckCheck className="inline h-3 w-3" /> read receipts on
+                  <CheckCheck className="inline h-3 w-3" /> end-to-end encrypted
                 </span>
               </div>
             </div>
@@ -508,17 +515,34 @@ export default function InboxPage() {
                   className="border border-black/10 bg-[#F5F5F5] p-4"
                   data-testid="message-list-locked"
                 >
-                  <p className="font-heading text-base font-bold">Unlock encryption</p>
+                  <p className="font-heading text-base font-bold">
+                    {keypairExists ? 'Unlock encryption' : 'Enable encrypted DMs'}
+                  </p>
                   <p className="mt-2 text-sm text-[#52525B]">
-                    Your X25519 keypair is on this device but locked. Sign once with your wallet
-                    to read this thread.
+                    {keypairExists
+                      ? 'Your X25519 keypair is on this device but locked. Sign once with your wallet to read this thread.'
+                      : 'One-tap setup: sign a derivation challenge, then publish your public key to the chain so others can encrypt to you. Future devices re-derive from the same wallet — no manual backup.'}
                   </p>
                   <Button
-                    onClick={() => void unlock()}
+                    onClick={() =>
+                      void (keypairExists ? unlock() : ensureEncryption.run())
+                    }
+                    disabled={
+                      ensureEncryption.status === 'unlocking' ||
+                      ensureEncryption.status === 'broadcasting' ||
+                      ensureEncryption.status === 'caching'
+                    }
                     className="mt-3 rounded-none bg-[#0022FF] hover:bg-[#0019CC]"
                     data-testid="message-list-unlock"
                   >
-                    Unlock
+                    {ensureEncryption.status === 'unlocking' && 'Sign…'}
+                    {ensureEncryption.status === 'broadcasting' && 'Publishing…'}
+                    {ensureEncryption.status === 'caching' && 'Saving…'}
+                    {(ensureEncryption.status === 'idle' ||
+                      ensureEncryption.status === 'ready' ||
+                      ensureEncryption.status === 'checking' ||
+                      ensureEncryption.status === 'error') &&
+                      (keypairExists ? 'Unlock' : 'Enable encryption')}
                   </Button>
                 </div>
               ) : messagesQuery.isLoading ? (

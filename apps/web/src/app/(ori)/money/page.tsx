@@ -62,7 +62,7 @@ import {
 } from '@/lib/contracts'
 import { resolve } from '@/lib/resolve'
 import { deriveChatId, randomBytes, sha256 } from '@/lib/crypto'
-import { buildAutoSignFee, friendlyError, sendTx } from '@/lib/tx'
+import { buildAutoSignFee, extractTxHash, friendlyError, sendTx, txExplorerUrl } from '@/lib/tx'
 import { getSessionToken } from '@/lib/api'
 
 // ---------- helpers ----------
@@ -140,6 +140,32 @@ export default function MoneyPage() {
       messages: [msg],
       autoSign,
       fee: autoSign ? buildAutoSignFee(500_000) : undefined,
+    })
+  }
+
+  /**
+   * Show a success toast that includes the tx hash and an "View on explorer"
+   * action button. Falls back to a plain success toast if the hash couldn't
+   * be extracted (e.g., the rollup returned a non-standard response shape).
+   */
+  function toastTx(
+    label: string,
+    res: Awaited<ReturnType<typeof sendOne>>,
+    extraDescription?: string,
+  ): void {
+    const hash = extractTxHash(res.rawResponse) || res.txHash
+    const url = hash ? txExplorerUrl(hash) : null
+    const desc = [
+      hash ? `Tx ${hash.slice(0, 10)}…` : null,
+      extraDescription,
+    ]
+      .filter(Boolean)
+      .join(' · ')
+    toast.success(label, {
+      description: desc || undefined,
+      action: url
+        ? { label: 'View tx', onClick: () => window.open(url, '_blank') }
+        : undefined,
     })
   }
 

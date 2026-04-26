@@ -8,7 +8,7 @@
  *   2. framer-motion removed (motion.* tags require client). The reference's
  *      entry animations are nice-to-have; correctness > polish.
  *   3. The reference's onLaunch callback (passed as prop in their SPA) is
- *      replaced with <Link href="/inbox"> wrapped in <Button asChild>.
+ *      replaced with <Link href="/inbox?connect=1"> wrapped in <Button asChild>.
  *      Buttons retain their styling and ArrowRight icon.
  *
  * Hero image uses the reference's external CDN URL verbatim per spec.
@@ -36,7 +36,7 @@ export default function Landing() {
           <span className="font-heading text-2xl font-black tracking-tight" data-testid="landing-brand-name">Ori</span>
         </div>
         <Button asChild className="rounded-none bg-black px-5 text-white hover:bg-[#0022FF]" data-testid="landing-connect-wallet-button">
-          <Link href="/inbox">
+          <Link href="/inbox?connect=1">
             Launch app <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
@@ -49,7 +49,7 @@ export default function Landing() {
           <p className="mt-8 max-w-2xl text-base leading-7 text-[#52525B] sm:text-lg" data-testid="landing-subheadline">Ori turns the wallet into the conversation layer: chat, pay, gift, sell, wager, stream, subscribe, and give agents spending limits from one minimalist control room.</p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row" data-testid="landing-cta-row">
             <Button asChild className="rounded-none bg-[#0022FF] px-7 py-6 text-base text-white hover:bg-[#0019CC]" data-testid="landing-launch-app-button">
-              <Link href="/inbox">
+              <Link href="/inbox?connect=1">
                 Open Ori <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -57,13 +57,13 @@ export default function Landing() {
           </div>
           <div className="mt-6 grid max-w-2xl grid-cols-1 gap-2 sm:grid-cols-3" data-testid="landing-login-options">
             <Button asChild variant="outline" className="h-auto whitespace-normal rounded-none border-black/20 px-3 py-3 text-xs hover:bg-black hover:text-white" data-testid="login-email-privy-button">
-              <Link href="/inbox"><Mail className="h-4 w-4" /> Email / Privy</Link>
+              <Link href="/inbox?connect=1"><Mail className="h-4 w-4" /> Email / Privy</Link>
             </Button>
             <Button asChild variant="outline" className="h-auto whitespace-normal rounded-none border-black/20 px-3 py-3 text-xs hover:bg-black hover:text-white" data-testid="login-google-privy-button">
-              <Link href="/inbox"><Sparkles className="h-4 w-4" /> Google / Privy</Link>
+              <Link href="/inbox?connect=1"><Sparkles className="h-4 w-4" /> Google / Privy</Link>
             </Button>
             <Button asChild variant="outline" className="h-auto whitespace-normal rounded-none border-black/20 px-3 py-3 text-xs hover:bg-black hover:text-white" data-testid="login-metamask-button">
-              <Link href="/inbox"><WalletCards className="h-4 w-4" /> MetaMask</Link>
+              <Link href="/inbox?connect=1"><WalletCards className="h-4 w-4" /> MetaMask</Link>
             </Button>
           </div>
           <p className="mt-3 font-mono text-xs text-[#52525B]" data-testid="landing-sign-message-note">Connect your existing wallet to load real chats, profile data, payments, and agent logs.</p>

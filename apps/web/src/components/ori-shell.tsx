@@ -15,8 +15,9 @@
  * are hidden entirely. The agent-cap topbar pill is also hidden because no
  * `agent_policy.move` view function is exposed yet.
  */
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
   CircleDollarSign,
@@ -64,6 +65,23 @@ export function OriShell({
     isConnected ? initiaAddress || undefined : undefined,
   )
   const trustQuery = useTrustScore(isConnected ? initiaAddress : null)
+
+  // Marketing landing CTAs deep-link to /inbox?connect=1 to ask the shell to
+  // pop the InterwovenKit drawer immediately. Without this hook those CTAs
+  // were misleading — three different buttons (Email / Google / MetaMask)
+  // all routed to /inbox and the user still had to click Connect Wallet
+  // again. Now any /inbox?connect=1 (or any (ori) page with the same query)
+  // opens the drawer once the shell mounts.
+  const searchParams = useSearchParams()
+  const autoConnectFiredRef = useRef(false)
+  useEffect(() => {
+    if (autoConnectFiredRef.current) return
+    if (isConnected) return
+    if (!searchParams) return
+    if (searchParams.get('connect') !== '1') return
+    autoConnectFiredRef.current = true
+    openConnect()
+  }, [searchParams, isConnected, openConnect])
 
   const username = usernameQuery.data
   // Display values — only shown when connected. No invented fallbacks.
