@@ -366,6 +366,34 @@ export default function ProfilePage() {
           )
           return
         }
+        case 'agent-kill-switch': {
+          // Revoke every agent the wallet has ever interacted with. We
+          // derive the list from the agent_actions log (distinctAgents
+          // memo above). Each revoke is its own tx — broadcast in
+          // sequence so a single failure doesn't strand the rest.
+          if (distinctAgents.length === 0) {
+            toast.message('No agents to revoke', {
+              description: 'No tracked agent activity for this wallet.',
+            })
+            return
+          }
+          let success = 0
+          for (const a of distinctAgents) {
+            try {
+              await submitMsg(
+                msgRevokeAgent({ sender: initiaAddress, agent: a.agentAddr }),
+                `Revoked ${a.agentAddr.slice(0, 10)}…`,
+              )
+              success++
+            } catch (err) {
+              toast.error(`Revoke failed for ${a.agentAddr.slice(0, 10)}…`, {
+                description: err instanceof Error ? err.message : String(err),
+              })
+            }
+          }
+          toast.success(`Kill switch complete — revoked ${success}/${distinctAgents.length}`)
+          return
+        }
 
         // ---------- settings tab ----------
         case 'push-subscribe': {

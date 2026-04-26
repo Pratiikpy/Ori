@@ -28,6 +28,17 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T
 }
 
+/**
+ * Lookup result:
+ *   - bytes : recipient has published a key — go ahead and encrypt
+ *   - null  : recipient hasn't set one yet (deterministic 404 /
+ *             PUBKEY_NOT_SET). Retrying won't help; UI should tell the
+ *             sender to ask the recipient to enable encryption.
+ *   - throws: backend / network failure. Retrying may help.
+ *
+ * The deterministic-vs-transient split matters because the UI used to
+ * collapse both into a generic 'send failed' toast.
+ */
 export async function getRecipientEncryptionPubkey(
   initiaAddress: string,
 ): Promise<Uint8Array | null> {
@@ -37,7 +48,9 @@ export async function getRecipientEncryptionPubkey(
     )
     return fromBase64(res.pubkeyBase64)
   } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return null
+    if (e instanceof ApiError) {
+      if (e.status === 404 || e.code === 'PUBKEY_NOT_SET') return null
+    }
     throw e
   }
 }

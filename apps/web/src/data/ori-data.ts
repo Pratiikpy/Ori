@@ -330,8 +330,9 @@ export const profileActions = [
     id: "agent-policy",
     label: "Agent policy",
     actions: [
-      { id: "set-agent-policy", title: "Set agent spending policy", contract: "agent_policy.move", fields: fields.policy },
-      { id: "revoke-agent", title: "Revoke agent", contract: "agent_policy.move", fields: ["Agent address", "Reason"] },
+      { id: "set-agent-policy", title: "Set agent spending policy", contract: "agent_policy.move", fields: ["Agent .init or address", "Daily cap in INIT", "Allowed methods (csv, optional)"] },
+      { id: "revoke-agent", title: "Revoke a single agent", contract: "agent_policy.move", fields: ["Agent .init or address"] },
+      { id: "agent-kill-switch", title: "Kill switch — revoke ALL agents", contract: "agent_policy.move", fields: [] },
     ],
   },
   {
