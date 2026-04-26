@@ -68,12 +68,18 @@ export function OriShell({
   )
   const trustQuery = useTrustScore(isConnected ? initiaAddress : null)
 
-  // Marketing landing CTAs deep-link to /inbox?connect=1 to ask the shell to
-  // pop the InterwovenKit drawer immediately. Without this hook those CTAs
-  // were misleading — three different buttons (Email / Google / MetaMask)
-  // all routed to /inbox and the user still had to click Connect Wallet
-  // again. Now any /inbox?connect=1 (or any (ori) page with the same query)
-  // opens the drawer once the shell mounts.
+  // Marketing landing CTAs deep-link to /inbox?connect=1 to ask the shell
+  // to pop the InterwovenKit drawer immediately. Without this hook those
+  // CTAs were misleading — three different buttons (Email / Google /
+  // MetaMask) all routed to /inbox and the user still had to click Connect
+  // Wallet again.
+  //
+  // Implementation: fire openConnect() on first render where ?connect=1 is
+  // present and we're disconnected, then strip the query param via
+  // history.replaceState so navigating around or refreshing doesn't pop
+  // the drawer again. Also guard against race where the kit hasn't yet
+  // exposed openConnect (very brief window during InterwovenKitProvider
+  // initialisation) by retrying on the next searchParams tick.
   const searchParams = useSearchParams()
   const autoConnectFiredRef = useRef(false)
   useEffect(() => {
@@ -81,8 +87,22 @@ export function OriShell({
     if (isConnected) return
     if (!searchParams) return
     if (searchParams.get('connect') !== '1') return
+    if (typeof openConnect !== 'function') return
     autoConnectFiredRef.current = true
-    openConnect()
+    // Pop drawer immediately. Use a microtask delay so this runs after
+    // the shell's initial paint — otherwise the drawer can render before
+    // the page CSS loads on a slow first visit.
+    queueMicrotask(() => {
+      openConnect()
+      // Strip the connect query param from the URL so refresh / nav
+      // doesn't re-fire. Use replaceState instead of router.replace to
+      // avoid a re-render storm.
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('connect')
+        window.history.replaceState(null, '', url.toString())
+      }
+    })
   }, [searchParams, isConnected, openConnect])
 
   const username = usernameQuery.data
