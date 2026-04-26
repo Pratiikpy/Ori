@@ -13,6 +13,7 @@ import { messageRoutes } from './routes/messages.js'
 import { linkRoutes } from './routes/links.js'
 import { profileRoutes } from './routes/profiles.js'
 import { chatRoutes } from './routes/chats.js'
+import { cronRoutes } from './routes/cron.js'
 import { obsRoutes } from './routes/obs.js'
 import { pushRoutes } from './routes/push.js'
 import { presenceRoutes } from './routes/presence.js'
@@ -130,6 +131,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(oracleRoutes)
   await app.register(wellKnownRoutes)
   await app.register(agentRoutes)
+  await app.register(cronRoutes)
 
   return app
 }

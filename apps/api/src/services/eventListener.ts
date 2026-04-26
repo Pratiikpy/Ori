@@ -74,6 +74,32 @@ export class EventListener {
     }
   }
 
+  /**
+   * Public single-scan entry point for serverless cron jobs. Vercel can't
+   * keep the listener running continuously, so an external cron hits
+   * /api/cron/sync-events on a schedule and that route calls scanOnce().
+   * Idempotent — bumps the cursor only after each block is processed.
+   */
+  async scanOnce(): Promise<{ scanned: number; cursor: string; tip: string }> {
+    const before = await prisma.eventCursor
+      .findUnique({ where: { listenerName: LISTENER_NAME } })
+      .catch(() => null)
+    await this.tick()
+    const after = await prisma.eventCursor
+      .findUnique({ where: { listenerName: LISTENER_NAME } })
+      .catch(() => null)
+    const tipRes = await fetch(`${config.ORI_RPC_URL}/status`).catch(() => null)
+    const tipBody = tipRes && tipRes.ok
+      ? ((await tipRes.json()) as { result?: { sync_info?: { latest_block_height?: string } } })
+      : null
+    return {
+      scanned:
+        Number((after?.lastHeight ?? 0n) - (before?.lastHeight ?? 0n)),
+      cursor: (after?.lastHeight ?? 0n).toString(),
+      tip: tipBody?.result?.sync_info?.latest_block_height ?? '0',
+    }
+  }
+
   private async tick(): Promise<void> {
     const statusRes = await fetch(`${config.ORI_RPC_URL}/status`)
     if (!statusRes.ok) return
