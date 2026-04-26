@@ -264,20 +264,23 @@ export default function ProfilePage() {
           )
           return
         }
-        case 'update-bio-avatar-links': {
-          // Heuristic: if the value looks like a URL, treat as avatar update;
-          // if it has commas, treat as links update; otherwise a bio update.
-          if (firstValue.includes(',')) {
-            const links = firstValue.split(',').map((s) => s.trim()).filter(Boolean)
-            await submitMsg(
-              msgUpdateLinks(initiaAddress, links, links),
-              'Links updated',
-            )
-          } else if (/^https?:\/\//i.test(firstValue)) {
-            await submitMsg(msgUpdateAvatar(initiaAddress, firstValue), 'Avatar updated')
-          } else {
-            await submitMsg(msgUpdateBio(initiaAddress, firstValue), 'Bio updated')
-          }
+        // Old combined 'update-bio-avatar-links' is split into three explicit
+        // actions per the audit feedback. The previous heuristic misclassified
+        // bios that contained commas as link lists (silent data loss).
+        case 'update-bio': {
+          await submitMsg(msgUpdateBio(initiaAddress, firstValue), 'Bio updated')
+          return
+        }
+        case 'update-avatar': {
+          await submitMsg(msgUpdateAvatar(initiaAddress, firstValue), 'Avatar updated')
+          return
+        }
+        case 'update-links': {
+          const links = firstValue
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+          await submitMsg(msgUpdateLinks(initiaAddress, links, links), 'Links updated')
           return
         }
         case 'set-slug': {

@@ -218,11 +218,16 @@ export const moneyTabs = [
     label: "Subscriptions",
     summary: "Creator plans, subscriber checkout, release cycles, and cancellation.",
     actions: [
-      { id: "register-plan", title: "Register subscription plan", contract: "subscription_vault.move", fields: ["Plan name", "Period price", "Billing cadence"] },
-      { id: "subscribe-plan", title: "Subscribe", contract: "subscription_vault.move", fields: ["Creator .init", "Plan ID"] },
-      { id: "release-period", title: "Release subscription period", contract: "subscription_vault.move", fields: ["Plan ID", "Period"] },
+      // Field labels match what the action handlers actually parse —
+      // previously e.g. release-period asked for "Plan ID" and "Period" but
+      // the handler treats those as subscriber address + creator address,
+      // so any user reading the labels typed nonsense. The handler in
+      // money/page.tsx is the source of truth here.
+      { id: "register-plan", title: "Register subscription plan", contract: "subscription_vault.move", fields: ["Period price (INIT)", "Billing cadence (seconds)"] },
+      { id: "subscribe-plan", title: "Subscribe to a creator", contract: "subscription_vault.move", fields: ["Creator .init or address", "Number of periods to pre-pay"] },
+      { id: "release-period", title: "Release subscription period (creator pulls funds)", contract: "subscription_vault.move", fields: ["Subscriber .init or address"] },
       { id: "cancel-subscription", title: "Cancel subscription", contract: "subscription_vault.move", fields: ["Creator .init or address"] },
-      { id: "deactivate-plan", title: "Deactivate plan", contract: "subscription_vault.move", fields: ["Plan ID", "Final message"] },
+      { id: "deactivate-plan", title: "Deactivate your plan (irreversible)", contract: "subscription_vault.move", fields: [] },
     ],
   },
   {
@@ -289,19 +294,25 @@ export const playTabs = [
   },
 ] as const
 
+// Identity actions are split per-field rather than the previous single
+// "Update bio/avatar/links" with a heuristic that misclassified bios
+// containing commas as link lists. The handler in profile/page.tsx
+// dispatches each id directly to the matching msg* helper.
 export const profileActions = [
   {
     id: "identity",
     label: "Profile / Identity",
     actions: [
-      "Create profile",
-      "Update bio/avatar/links",
-      "Set slug",
-      "Set encryption pubkey",
-      "Update privacy settings",
-      "Follow user",
-      "Unfollow user",
-    ].map((title) => ({ id: title.toLowerCase().replaceAll("/", "-").replaceAll(" ", "-"), title, contract: "profile_registry.move", fields: ["Target / value", "JSON or note"] })),
+      { id: "create-profile", title: "Create profile (one-time)", contract: "profile_registry.move", fields: ["Bio (optional)", "Avatar URL (optional)"] },
+      { id: "update-bio", title: "Update bio", contract: "profile_registry.move", fields: ["New bio"] },
+      { id: "update-avatar", title: "Update avatar URL", contract: "profile_registry.move", fields: ["New avatar URL"] },
+      { id: "update-links", title: "Update links (comma-separated URLs)", contract: "profile_registry.move", fields: ["Comma-separated URLs"] },
+      { id: "set-slug", title: "Set profile slug (creator vanity)", contract: "profile_registry.move", fields: ["New slug"] },
+      { id: "set-encryption-pubkey", title: "Set encryption pubkey (advanced — use 'Enable encrypted DMs' in Inbox instead)", contract: "profile_registry.move", fields: ["32-byte hex public key"] },
+      { id: "update-privacy-settings", title: "Update privacy settings", contract: "profile_registry.move", fields: ["hideBalance (true/false)", "hideActivity (true/false)", "whitelistOnly (true/false)"] },
+      { id: "follow-user", title: "Follow user", contract: "profile_registry.move", fields: ["Target .init or address"] },
+      { id: "unfollow-user", title: "Unfollow user", contract: "profile_registry.move", fields: ["Target .init or address"] },
+    ],
   },
   {
     id: "reputation",
