@@ -38,14 +38,16 @@ export function ActionDialog({
   const [values, setValues] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
 
-  if (!action) return null
-
-  const updateValue = (field: string, value: string) =>
-    setValues((current) => ({ ...current, [field]: value }))
-
   // ESC dismisses the modal when not mid-submit. Backdrop click does too —
   // Radix Dialog gives us this for free, but ActionDialog is hand-rolled,
   // so we wire it manually.
+  //
+  // IMPORTANT: this useEffect must run BEFORE any conditional early-return
+  // below — moving the `if (!action) return null` after the hook ensures
+  // React sees a stable hook count across renders. The original code put
+  // the early-return between the two useStates and the useEffect, which
+  // violated Rules of Hooks ("Rendered more hooks than during the previous
+  // render") whenever the dialog toggled open/closed.
   useEffect(() => {
     if (!action) return
     const onKey = (e: KeyboardEvent) => {
@@ -54,6 +56,11 @@ export function ActionDialog({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [action, submitting, onClose])
+
+  if (!action) return null
+
+  const updateValue = (field: string, value: string) =>
+    setValues((current) => ({ ...current, [field]: value }))
 
   const submitAction = async (event: React.FormEvent) => {
     event.preventDefault()

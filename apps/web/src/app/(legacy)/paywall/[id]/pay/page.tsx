@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
+import { bcs } from '@initia/initia.js'
 import { toast } from 'sonner'
 import { ArrowRight, Loader2, Lock } from 'lucide-react'
 
@@ -55,14 +56,17 @@ export default function PaywallPayPage() {
         // Query the Move view fn directly via the REST endpoint. We could also
         // proxy through our own API, but hitting the chain keeps the path
         // self-contained and matches what agents inspecting the gate see.
+        // BCS u64 is little-endian. The original hand-rolled encoding put the
+        // low byte at position 7 (big-endian), which made `id=15` look like
+        // (15 << 56) on chain — paywall would never be found. Use the BCS
+        // helper so the encoding matches what the contract expects.
+        const idArg = bcs.u64().serialize(paywallId.toString()).toBase64()
         const res = await fetch(`${ORI_REST_URL}/initia/move/v1/accounts/${ORI_MODULE_ADDRESS}/modules/paywall/view_functions/get_paywall`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type_args: [],
-            args: [
-              Buffer.from(new Uint8Array(8).fill(0).map((_, i) => (i === 7 ? Number(paywallId % 256n) : 0))).toString('base64'),
-            ],
+            args: [idArg],
           }),
         })
         const body = (await res.json()) as { data?: unknown }

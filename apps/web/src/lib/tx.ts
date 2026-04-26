@@ -71,16 +71,41 @@ export async function sendTx(
       haptic('confirm')
       return { txHash: extractTxHash(res), rawResponse: res }
     }
+    // Pre-pass `gas` so the kit skips its `simulate` step. The simulate path
+    // fails ("invalid uint32: undefined") for the wagmi `injected()` connector
+    // because the kit's SigningStargateClient.simulate flow can't build a
+    // SignerInfo without a derived pubkey when MetaMask hasn't yet exposed it.
+    // A flat gas budget is acceptable; gasAdjustment still applies under the
+    // hood for any callers passing a real gas estimate.
+    const flatGas = opts.gasLimit ?? 500_000
     const res = await kit.requestTxBlock({
       chainId,
       messages: messages as never,
       memo,
+      gas: flatGas,
       gasAdjustment: 1.4,
-    })
+    } as never)
     haptic('confirm')
     return { txHash: extractTxHash(res), rawResponse: res }
   } catch (e) {
     haptic('error')
+    // E2E DIAGNOSTIC: print full error context so wallet-integration bugs
+    // (e.g. "invalid uint32: undefined") surface with stack + cause chain.
+    if (typeof window !== 'undefined') {
+      const m = e instanceof Error ? e.message : String(e)
+      const s = e instanceof Error ? e.stack ?? '' : ''
+      const cause = e instanceof Error ? (e as Error & { cause?: unknown }).cause : null
+      const causeStr =
+        cause instanceof Error
+          ? `\nCAUSE: ${cause.message}\n${cause.stack ?? ''}`
+          : cause
+            ? `\nCAUSE: ${JSON.stringify(cause)}`
+            : ''
+      // eslint-disable-next-line no-console
+      console.error(
+        `[ori:tx-fail] message=${m}\nchainId=${chainId} autoSign=${autoSign} messageCount=${messages.length}\nSTACK:\n${s}${causeStr}`,
+      )
+    }
     throw e
   }
 }

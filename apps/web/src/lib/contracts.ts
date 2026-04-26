@@ -12,14 +12,29 @@ import { ORI_MODULE_ADDRESS, ORI_DENOM } from './chain-config'
 
 export const MOVE_MSG_TYPE = '/initia.move.v1.MsgExecute'
 
-/** Build a MsgExecute wire object. InterwovenKit's submitTxBlock/requestTxBlock expects this shape. */
+/** Decode a base64 string into a Uint8Array. Browsers have atob; we wrap to
+ *  handle Node-only environments and to keep the helper local to this file. */
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = typeof atob === 'function'
+    ? atob(b64)
+    : Buffer.from(b64, 'base64').toString('binary')
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
+/** Build a MsgExecute wire object. InterwovenKit's submitTxBlock/requestTxBlock
+ *  expects `args` as `Uint8Array[]` for direct protobuf encoding — base64
+ *  strings yield "invalid uint32: undefined" because the proto encoder reads
+ *  `value.byteLength` which is undefined for plain strings. Callers may pass
+ *  either base64-encoded strings (legacy) or Uint8Array directly; we normalize. */
 export function buildMsgExecute(params: {
   sender: string
   moduleAddress: string
   moduleName: string
   functionName: string
   typeArgs?: string[]
-  args: string[]
+  args: Array<string | Uint8Array>
 }): {
   typeUrl: string
   value: {
@@ -28,7 +43,7 @@ export function buildMsgExecute(params: {
     moduleName: string
     functionName: string
     typeArgs: string[]
-    args: string[]
+    args: Uint8Array[]
   }
 } {
   return {
@@ -39,7 +54,7 @@ export function buildMsgExecute(params: {
       moduleName: params.moduleName,
       functionName: params.functionName,
       typeArgs: params.typeArgs ?? [],
-      args: params.args,
+      args: params.args.map((a) => (typeof a === 'string' ? base64ToBytes(a) : a)),
     },
   }
 }

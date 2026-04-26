@@ -43,6 +43,9 @@ export const L1_USERNAMES_PORTAL_URL = env(
   'https://app.testnet.initia.xyz/usernames',
 )
 
+// In dev, /api/* is rewritten by next.config.ts to proxy to prod, so the
+// frontend always sees same-origin /api/* and avoids CORS. In prod the
+// catchall `/api/*` route serves traffic directly.
 export const API_URL = env('NEXT_PUBLIC_API_URL', '/api')
 export const WS_URL = env('NEXT_PUBLIC_WS_URL', '')
 export const APP_URL = env('NEXT_PUBLIC_APP_URL', '')

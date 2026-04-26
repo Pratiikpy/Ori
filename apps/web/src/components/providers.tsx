@@ -5,6 +5,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 import { ApiError, clearSessionToken } from '@/lib/api'
 import { toast } from 'sonner'
 import { WagmiProvider, createConfig, http } from 'wagmi'
+import { injected } from 'wagmi/connectors'
 import { defineChain } from 'viem'
 import {
   InterwovenKitProvider,
@@ -31,9 +32,14 @@ const dummyChain = defineChain({
 // to the wagmi connector list. The Connect drawer surfaces it as "Socials"
 // alongside any installed browser wallets. Source of truth:
 // initia-docs/interwovenkit/references/social-login/initia-privy-wallet-connector.mdx
+//
+// `injected()` is a real wagmi connector that picks up any EIP-1193 wallet the
+// browser exposes (MetaMask, Rabby, Frame, etc.). It sits next to the Privy
+// connector exactly as the docs prescribe — multi-connector is the official
+// pattern. Real users with MetaMask installed will see it in the drawer.
 const wagmiConfig = createConfig({
   chains: [dummyChain],
-  connectors: [initiaPrivyWalletConnector],
+  connectors: [initiaPrivyWalletConnector, injected()],
   transports: { [dummyChain.id]: http(ORI_RPC_URL) },
 })
 

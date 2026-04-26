@@ -2,6 +2,22 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+
+  // Dev-only: forward /api/* to the production deploy so a developer running
+  // `pnpm dev` without a full local backend (no DATABASE_URL/REDIS_URL/...)
+  // still gets working reads (profiles, leaderboards, chats) and writes
+  // (messages, follows). Same-origin so no CORS dance. In production the
+  // catchall route serves /api/* directly so this rewrite is a no-op.
+  async rewrites() {
+    if (process.env.NODE_ENV !== 'development') return []
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://ori-chi-rosy.vercel.app/api/:path*',
+      },
+    ]
+  },
+
   // `@ori/api` is imported only inside the catchall API route. It's pre-built
   // (via `pnpm --filter @ori/api build` before web builds) so we reference its
   // `./dist/server.js` output — no transpile step needed on the web side.
