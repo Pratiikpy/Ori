@@ -79,6 +79,7 @@ import {
   GAS_LIMITS,
 } from '@/lib/chain-config'
 import { sendTx, buildAutoSignFee, friendlyError } from '@/lib/tx'
+import { resolve } from '@/lib/resolve'
 import { ensurePushSubscription, unsubscribePush } from '@/lib/push-client'
 
 /**
@@ -250,24 +251,38 @@ export default function ProfilePage() {
     const firstValue = fieldEntries[0]?.[1] ?? ''
     const secondValue = fieldEntries[1]?.[1] ?? ''
 
+    // Resolve a user-supplied identifier (.init handle, alice.init, or
+    // raw init1… address) to its canonical bech32 address. Throws a
+    // friendly error if it can't be resolved — handlers below catch and
+    // toast. Centralising this stops every `bcs.address()` from blowing
+    // up with cryptic 'invalid uint32: undefined' BCS errors when a user
+    // types a name we forgot to resolve first.
+    const resolveAddress = async (raw: string): Promise<string> => {
+      const r = await resolve(raw.trim())
+      if (!r?.initiaAddress) {
+        throw new Error(`Could not resolve "${raw}" — type a .init handle or paste an init1… address`)
+      }
+      return r.initiaAddress
+    }
+
     try {
       switch (action.id) {
         // ---------- identity tab ----------
         case 'create-profile': {
-          const links = secondValue
-            ? secondValue.split(',').map((s) => s.trim()).filter(Boolean)
-            : []
+          // Field order matches the catalogue: bio (optional), avatar URL
+          // (optional). Previously we treated the second field as
+          // comma-separated links and threw the avatar away entirely.
           await submitMsg(
-            msgCreateProfile(initiaAddress, firstValue, '', links, links),
+            msgCreateProfile(initiaAddress, firstValue, secondValue, [], []),
             'Profile created',
             GAS_LIMITS.mediumTx,
           )
           return
         }
-        // Old combined 'update-bio-avatar-links' is split into three explicit
-        // actions per the audit feedback. The previous heuristic misclassified
-        // bios that contained commas as link lists (silent data loss).
         case 'update-bio': {
+          // bcs.string() needs a string — not undefined. firstValue is
+          // already coalesced to '' above so this is safe; assertion is
+          // for the next reader.
           await submitMsg(msgUpdateBio(initiaAddress, firstValue), 'Bio updated')
           return
         }
@@ -284,11 +299,14 @@ export default function ProfilePage() {
           return
         }
         case 'set-slug': {
-          await submitMsg(msgSetSlug(initiaAddress, firstValue), 'Slug set')
+          if (!firstValue.trim()) {
+            toast.error('Enter a slug.')
+            return
+          }
+          await submitMsg(msgSetSlug(initiaAddress, firstValue.trim()), 'Slug set')
           return
         }
         case 'set-encryption-pubkey': {
-          // Accept hex (with or without 0x) or base64-ish; minimal validation.
           let bytes: Uint8Array
           const hex = firstValue.startsWith('0x') ? firstValue.slice(2) : firstValue
           if (/^[0-9a-fA-F]+$/.test(hex) && hex.length === 64) {
@@ -296,7 +314,10 @@ export default function ProfilePage() {
               hex.match(/.{2}/g)!.map((b) => parseInt(b, 16)),
             )
           } else {
-            toast.error('Encryption pubkey must be 32 bytes (64 hex chars).')
+            toast.error('Encryption pubkey must be 32 bytes (64 hex chars).', {
+              description:
+                'Tip: use “Enable encrypted DMs” in Inbox — it generates and publishes the key for you.',
+            })
             return
           }
           await submitMsg(
@@ -306,33 +327,42 @@ export default function ProfilePage() {
           return
         }
         case 'update-privacy-settings': {
-          // Best-effort: read three booleans (true/yes/1) from first three fields.
-          const toBool = (s: string) => /^(1|true|yes|y|on)$/i.test(s.trim())
-          const [a, b, c] = fieldEntries.map(([, v]) => toBool(v))
+          // Booleans from three explicit fields. Even if the user only fills
+          // one, the missing entries collapse to false (Boolean(undefined)),
+          // which is BCS-safe (bcs.bool always sees a real boolean).
+          const toBool = (s: string | undefined): boolean =>
+            /^(1|true|yes|y|on)$/i.test((s ?? '').trim())
+          const hideBalance = toBool(values['hideBalance (true/false)'])
+          const hideActivity = toBool(values['hideActivity (true/false)'])
+          const whitelistOnly = toBool(values['whitelistOnly (true/false)'])
           await submitMsg(
-            msgUpdatePrivacy(initiaAddress, Boolean(a), Boolean(b), Boolean(c)),
+            msgUpdatePrivacy(initiaAddress, hideBalance, hideActivity, whitelistOnly),
             'Privacy updated',
           )
           return
         }
         case 'follow-user': {
-          if (!firstValue) {
-            toast.error('Enter an address to follow.')
+          if (!firstValue.trim()) {
+            toast.error('Enter a .init handle or address to follow.')
             return
           }
+          // Resolve before BCS — otherwise bcs.address() chokes on a .init
+          // name with the cryptic 'invalid uint32: undefined' error.
+          const target = await resolveAddress(firstValue)
           await submitMsg(
-            msgFollow({ follower: initiaAddress, target: firstValue }),
+            msgFollow({ follower: initiaAddress, target }),
             'Followed',
           )
           return
         }
         case 'unfollow-user': {
-          if (!firstValue) {
-            toast.error('Enter an address to unfollow.')
+          if (!firstValue.trim()) {
+            toast.error('Enter a .init handle or address to unfollow.')
             return
           }
+          const target = await resolveAddress(firstValue)
           await submitMsg(
-            msgUnfollow({ follower: initiaAddress, target: firstValue }),
+            msgUnfollow({ follower: initiaAddress, target }),
             'Unfollowed',
           )
           return
@@ -340,15 +370,16 @@ export default function ProfilePage() {
 
         // ---------- agent policy tab ----------
         case 'set-agent-policy': {
-          if (!firstValue) {
-            toast.error('Enter an agent address.')
+          if (!firstValue.trim()) {
+            toast.error('Enter an agent .init handle or address.')
             return
           }
+          const agent = await resolveAddress(firstValue)
           const cap = initToBaseUnits(secondValue || '0')
           await submitMsg(
             msgSetAgentPolicy({
               sender: initiaAddress,
-              agent: firstValue,
+              agent,
               dailyCap: cap,
             }),
             'Agent policy set',
@@ -356,12 +387,13 @@ export default function ProfilePage() {
           return
         }
         case 'revoke-agent': {
-          if (!firstValue) {
-            toast.error('Enter an agent address.')
+          if (!firstValue.trim()) {
+            toast.error('Enter an agent .init handle or address.')
             return
           }
+          const agent = await resolveAddress(firstValue)
           await submitMsg(
-            msgRevokeAgent({ sender: initiaAddress, agent: firstValue }),
+            msgRevokeAgent({ sender: initiaAddress, agent }),
             'Agent revoked',
           )
           return
