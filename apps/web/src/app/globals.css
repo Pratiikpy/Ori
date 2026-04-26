@@ -1,5 +1,21 @@
+/* Declare layer order BEFORE imports. CSS spec: @layer statement form is one
+ * of the few rules allowed before @import. Layers listed first have the
+ * lowest priority. Putting `interwovenkit` first means anything from the
+ * vendor CSS loses to any of our own Tailwind utilities, components, or base
+ * rules on competing properties — but its drawer-internal styling still
+ * applies inside the connect-wallet modal where Tailwind utilities don't
+ * reach. */
+@layer interwovenkit, theme, base, components, utilities;
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
+/* Vendor CSS loaded UNDER its own layer — see layer order above. Without
+ * `layer(interwovenkit)`, this file's `:where(*) { margin:0; padding:0 }`
+ * and `:where(button) { all:unset; width:100% }` rules ship unlayered and
+ * (per the cascade spec) beat every Tailwind utility regardless of
+ * specificity. With the layer, they only apply where nothing in our higher
+ * layers competes. */
+@import '@initia/interwovenkit-react/styles.css' layer(interwovenkit);
 
 @source "../**/*.{ts,tsx,js,jsx}";
 @source "../../src/**/*.{ts,tsx,js,jsx}";
@@ -176,42 +192,13 @@ textarea {
   transition-duration: 180ms;
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
- * InterwovenKit reset overrides — CSS @layer cascade defense
- *
- * `@initia/interwovenkit-react/styles.css` ships these UNLAYERED resets:
- *
- *   :where(*){ box-sizing: border-box; margin: 0; padding: 0 }
- *   :where(button){ all: unset; ...; display: flex; width: 100% }
- *   :where(input, button){ width: 100%; color: inherit; font: inherit;
- *                          display: block }
- *   :where(label){ display: block }
- *
- * Per the CSS @layer cascade spec, UNLAYERED styles always beat layered
- * styles, regardless of specificity. Tailwind v4 puts ALL utilities inside
- * `@layer utilities`, so `.p-4 { padding: 1rem }` is layered and loses to
- * the unlayered `:where(*) { padding: 0 }` even though `.p-4` has higher
- * specificity. Symptom: padding/margin Tailwind utilities silently
- * disappear in the (ori) routes (which mount Providers and load this
- * stylesheet) but work fine on the (marketing) route which doesn't.
- *
- * Fix: emit unlayered rules that use `revert-layer`. revert-layer says
- * "use the value from the next-lower cascade layer" — punting these
- * properties back into the layered cascade where Tailwind utilities win
- * by specificity as designed.
- * ────────────────────────────────────────────────────────────────────────── */
-*,
-::before,
-::after {
-  box-sizing: border-box;
-  padding: revert-layer;
-  margin: revert-layer;
-}
-
-button,
-input,
-label,
-textarea,
-select {
-  all: revert-layer;
+/* InterwovenKit's `:where(button) { all: unset; width: 100% }` rule still
+ * applies to buttons that don't carry an explicit Tailwind width utility.
+ * Force our own buttons back to width: auto by default; any button that
+ * actually wants full width can opt in with `w-full`. Scoped to our app
+ * tree so InterwovenKit's drawer-internal buttons keep their full-width
+ * styling. */
+.App button,
+[data-ori-app] button {
+  width: auto;
 }
