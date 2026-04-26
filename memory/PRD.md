@@ -36,3 +36,27 @@ Build the best frontend possible for Ori, a chat wallet on the Initia rollup. Ev
 ### P2
 - Add richer responsive visual polish for mobile action-heavy pages.
 - Add shareable success summaries after gifts, paywalls, wagers, and weekly stats.
+
+
+## Deployment fix — Vercel env vars
+- Vercel build failed because `NEXT_PUBLIC_JSON_RPC_URL` was missing after frontend config was changed to fail fast when required public chain env values are absent.
+- Updated `/app/.env.production.example` to include all required `NEXT_PUBLIC_*` values used by `apps/web/src/lib/chain-config.ts`, including JSON-RPC, native denom/symbol/decimals, bridge, app, websocket, and L1 username portal values.
+- Verified `pnpm --filter @ori/web build` completes locally when env values are present.
+
+### Required Vercel public env checklist
+- NEXT_PUBLIC_API_URL
+- NEXT_PUBLIC_WS_URL
+- NEXT_PUBLIC_CHAIN_ID
+- NEXT_PUBLIC_RPC_URL
+- NEXT_PUBLIC_REST_URL
+- NEXT_PUBLIC_JSON_RPC_URL
+- NEXT_PUBLIC_NATIVE_DENOM
+- NEXT_PUBLIC_NATIVE_SYMBOL
+- NEXT_PUBLIC_NATIVE_DECIMALS
+- NEXT_PUBLIC_ORI_MODULE_ADDRESS
+- NEXT_PUBLIC_BRIDGE_SRC_CHAIN_ID
+- NEXT_PUBLIC_BRIDGE_SRC_DENOM
+- NEXT_PUBLIC_APP_URL
+- NEXT_PUBLIC_L1_CHAIN_ID
+- NEXT_PUBLIC_L1_REST_URL
+- NEXT_PUBLIC_L1_USERNAMES_PORTAL_URL
