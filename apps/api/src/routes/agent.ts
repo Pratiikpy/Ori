@@ -59,11 +59,43 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
    * invocation. Idempotent via Idempotency-Key header (MCP generates a
    * UUID per-call) so a flaky network retry doesn't create duplicate
    * attribution rows.
+   *
+   * AUTH: shared-secret header (X-Agent-Log-Secret). The MCP server is
+   * the only legitimate caller and runs in the same trust zone as the
+   * API; without this guard, any anonymous client could POST forged
+   * agent attribution rows for arbitrary owner/agent addresses, which
+   * the profile / inbox UI surfaces directly. Configure
+   * AGENT_LOG_SHARED_SECRET in the API env. If unset, requests are
+   * rejected — fail-closed so a misconfigured deploy doesn't open the
+   * endpoint.
    */
   app.post(
     '/v1/agent/log',
     { config: idempotentConfig },
     async (req, reply) => {
+      const expected = process.env.AGENT_LOG_SHARED_SECRET ?? ''
+      const provided = req.headers['x-agent-log-secret']
+      if (!expected) {
+        req.log.error(
+          'AGENT_LOG_SHARED_SECRET not set — refusing /v1/agent/log',
+        )
+        await reply.status(503).send({
+          error: 'AGENT_LOG_NOT_CONFIGURED',
+          message: 'Server is missing AGENT_LOG_SHARED_SECRET env var.',
+        })
+        return
+      }
+      if (
+        typeof provided !== 'string' ||
+        provided.length === 0 ||
+        provided !== expected
+      ) {
+        await reply.status(401).send({
+          error: 'AGENT_LOG_UNAUTHORIZED',
+          message: 'Missing or invalid X-Agent-Log-Secret header.',
+        })
+        return
+      }
       const parsed = LogBody.safeParse(req.body)
       if (!parsed.success) {
         await reply.status(400).send({

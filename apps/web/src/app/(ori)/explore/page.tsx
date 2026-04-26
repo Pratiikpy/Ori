@@ -21,6 +21,7 @@
  */
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
+import { SkeletonText } from '@/components/skeleton'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { Activity, Compass, UsersRound, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -328,7 +329,7 @@ export default function ExplorePage() {
               </h2>
               <div className="mt-5 space-y-3" data-testid={`discover-list-${key}`}>
                 {query.isLoading ? (
-                  <p className="font-mono text-xs text-[#52525B]">Loading…</p>
+                  <SkeletonText lines={3} />
                 ) : query.isError ? (
                   <div className="border border-black/10 p-3">
                     <p className="font-mono text-xs text-[#0022FF]">
@@ -422,7 +423,7 @@ export default function ExplorePage() {
             </h2>
             <ol className="mt-5 space-y-3">
               {lbCreators.isLoading ? (
-                <li className="font-mono text-sm text-[#52525B]">Loading…</li>
+                <li><SkeletonText lines={3} /></li>
               ) : (lbCreators.data ?? []).length === 0 ? (
                 <li className="font-mono text-sm text-[#52525B]">No entries yet.</li>
               ) : (
@@ -459,7 +460,7 @@ export default function ExplorePage() {
             </h2>
             <ol className="mt-5 space-y-3">
               {lbTippers.isLoading ? (
-                <li className="font-mono text-sm text-[#52525B]">Loading…</li>
+                <li><SkeletonText lines={3} /></li>
               ) : (lbTippers.data ?? []).length === 0 ? (
                 <li className="font-mono text-sm text-[#52525B]">No entries yet.</li>
               ) : (
@@ -503,7 +504,7 @@ export default function ExplorePage() {
                   Connect wallet to see your supporters
                 </li>
               ) : lbProfileTippers.isLoading ? (
-                <li className="font-mono text-sm text-[#52525B]">Loading…</li>
+                <li><SkeletonText lines={3} /></li>
               ) : (lbProfileTippers.data ?? []).length === 0 ? (
                 <li className="font-mono text-sm text-[#52525B]">No entries yet.</li>
               ) : (

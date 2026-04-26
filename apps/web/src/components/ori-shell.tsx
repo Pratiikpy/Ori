@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button'
 import { navItems } from '@/data/ori-data'
 import { useTrustScore } from '@/hooks/use-trust-score'
 import { OnboardingBanner } from './onboarding-banner'
+import { OfflineBanner } from './offline-banner'
 import { CopyButton } from './copy-button'
 
 function shortenAddress(address: string | undefined | null): string {
@@ -261,6 +262,7 @@ export function OriShell({
         className="pb-20 lg:ml-72 lg:pb-12"
         data-testid="app-main-content"
       >
+        <OfflineBanner />
         <OnboardingBanner />
         {children}
       </main>
