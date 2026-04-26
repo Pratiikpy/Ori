@@ -5,42 +5,47 @@
  * (verified from initia-docs/hackathon/examples/move-game.mdx lines 437-476).
  */
 
-function requiredPublicEnv(key: string, value: string | undefined): string {
-  if (!value) throw new Error(`${key} is required`)
-  return value
-}
+// All NEXT_PUBLIC_* vars are inlined at build time. Missing vars used to throw
+// here at module-load — which crashed `next build` page-data collection on
+// Vercel for any deploy missing one of these. We now fall back to public
+// testnet defaults so the build always succeeds; production values come from
+// Vercel env vars at build time and override the defaults below.
+const env = (key: string, fallback: string): string =>
+  (process.env[key] && process.env[key]!.length > 0 ? process.env[key]! : fallback)
 
-export const ORI_CHAIN_ID = requiredPublicEnv('NEXT_PUBLIC_CHAIN_ID', process.env.NEXT_PUBLIC_CHAIN_ID)
-export const ORI_RPC_URL = requiredPublicEnv('NEXT_PUBLIC_RPC_URL', process.env.NEXT_PUBLIC_RPC_URL)
-export const ORI_REST_URL = requiredPublicEnv('NEXT_PUBLIC_REST_URL', process.env.NEXT_PUBLIC_REST_URL)
+export const ORI_CHAIN_ID = env('NEXT_PUBLIC_CHAIN_ID', 'ori-1')
+export const ORI_RPC_URL = env('NEXT_PUBLIC_RPC_URL', 'http://localhost:26657')
+export const ORI_REST_URL = env('NEXT_PUBLIC_REST_URL', 'http://localhost:1317')
 export const ORI_JSON_RPC_URL = process.env.NEXT_PUBLIC_JSON_RPC_URL
-export const ORI_DENOM = requiredPublicEnv('NEXT_PUBLIC_NATIVE_DENOM', process.env.NEXT_PUBLIC_NATIVE_DENOM)
+export const ORI_DENOM = env('NEXT_PUBLIC_NATIVE_DENOM', 'umin')
 // Rollup native denom is `umin` but the token is bridged INIT from L1. Pitch and
 // user-facing copy consistently say INIT, so the display symbol follows.
-export const ORI_SYMBOL = requiredPublicEnv('NEXT_PUBLIC_NATIVE_SYMBOL', process.env.NEXT_PUBLIC_NATIVE_SYMBOL)
-export const ORI_DECIMALS = Number(requiredPublicEnv('NEXT_PUBLIC_NATIVE_DECIMALS', process.env.NEXT_PUBLIC_NATIVE_DECIMALS))
+export const ORI_SYMBOL = env('NEXT_PUBLIC_NATIVE_SYMBOL', 'INIT')
+export const ORI_DECIMALS = Number(env('NEXT_PUBLIC_NATIVE_DECIMALS', '6'))
 
 /** Bech32 address that deployed the Move modules — the @ori named address. */
 export const ORI_MODULE_ADDRESS = process.env.NEXT_PUBLIC_ORI_MODULE_ADDRESS ?? ''
 
-/** L1 bridge defaults — for openBridge() calls. */
-export const BRIDGE_SRC_CHAIN_ID = requiredPublicEnv('NEXT_PUBLIC_BRIDGE_SRC_CHAIN_ID', process.env.NEXT_PUBLIC_BRIDGE_SRC_CHAIN_ID)
-export const BRIDGE_SRC_DENOM = requiredPublicEnv('NEXT_PUBLIC_BRIDGE_SRC_DENOM', process.env.NEXT_PUBLIC_BRIDGE_SRC_DENOM)
+/** L1 bridge defaults — for openBridge() calls. Public Initia testnet. */
+export const BRIDGE_SRC_CHAIN_ID = env('NEXT_PUBLIC_BRIDGE_SRC_CHAIN_ID', 'initiation-2')
+export const BRIDGE_SRC_DENOM = env('NEXT_PUBLIC_BRIDGE_SRC_DENOM', 'uinit')
 
 /**
  * Initia L1 REST / chain-id. Usernames (`.init`) live on L1, not on the Ori
  * rollup — any module that resolves names MUST query these endpoints.
  */
-export const L1_CHAIN_ID = requiredPublicEnv('NEXT_PUBLIC_L1_CHAIN_ID', process.env.NEXT_PUBLIC_L1_CHAIN_ID)
-export const L1_REST_URL = requiredPublicEnv('NEXT_PUBLIC_L1_REST_URL', process.env.NEXT_PUBLIC_L1_REST_URL)
+export const L1_CHAIN_ID = env('NEXT_PUBLIC_L1_CHAIN_ID', 'initiation-2')
+export const L1_REST_URL = env('NEXT_PUBLIC_L1_REST_URL', 'https://rest.testnet.initia.xyz')
 
 /** Portal where users claim a new .init name. */
-export const L1_USERNAMES_PORTAL_URL =
-  requiredPublicEnv('NEXT_PUBLIC_L1_USERNAMES_PORTAL_URL', process.env.NEXT_PUBLIC_L1_USERNAMES_PORTAL_URL)
+export const L1_USERNAMES_PORTAL_URL = env(
+  'NEXT_PUBLIC_L1_USERNAMES_PORTAL_URL',
+  'https://app.testnet.initia.xyz/usernames',
+)
 
-export const API_URL = requiredPublicEnv('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL)
-export const WS_URL = requiredPublicEnv('NEXT_PUBLIC_WS_URL', process.env.NEXT_PUBLIC_WS_URL)
-export const APP_URL = requiredPublicEnv('NEXT_PUBLIC_APP_URL', process.env.NEXT_PUBLIC_APP_URL)
+export const API_URL = env('NEXT_PUBLIC_API_URL', '/api')
+export const WS_URL = env('NEXT_PUBLIC_WS_URL', '')
+export const APP_URL = env('NEXT_PUBLIC_APP_URL', '')
 
 /**
  * Canonical gas limits for each Move call class. Over-allocated for safety --
